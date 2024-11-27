@@ -1,8 +1,5 @@
 // data/ai/ai_service.dart
 
-import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
-
 import '../models.dart';
 import 'providers/anthropic_service.dart';
 import 'providers/gemini_service.dart';

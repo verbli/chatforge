@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/providers.dart';
 import 'chat_screen.dart';
 import 'conversation_list.dart';
 

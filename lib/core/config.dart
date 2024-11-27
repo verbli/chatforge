@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:riverpod/riverpod.dart';
 
 part 'config.freezed.dart';
 part 'config.g.dart';

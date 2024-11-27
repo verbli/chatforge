@@ -9,7 +9,6 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models.dart';
-import '../storage/storage_service.dart';
 import 'base_repository.dart';
 
 class LocalChatRepository extends ChatRepository {

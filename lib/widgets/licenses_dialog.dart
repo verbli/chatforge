@@ -1,3 +1,5 @@
+// widgets/licenses_dialog.dart
+
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
