@@ -1,0 +1,26 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Circular background -->
+  <circle cx="200" cy="200" r="180" fill="#319795"/>
+  
+  <!-- Main orbital rings -->
+  <circle cx="200" cy="200" r="80" 
+          fill="none" 
+          stroke="#E6FFFA" 
+          stroke-width="20"
+          stroke-linecap="round"
+          stroke-dasharray="190 360"
+          transform="rotate(-30 200 200)"/>
+  
+  <circle cx="200" cy="200" r="120" 
+          fill="none" 
+          stroke="#E6FFFA" 
+          stroke-width="20"
+          stroke-linecap="round"
+          stroke-dasharray="270 360"
+          transform="rotate(30 200 200)"/>
+  
+  <!-- Connection points -->
+  <circle cx="120" cy="200" r="10" fill="#E6FFFA"/>
+  <circle cx="200" cy="200" r="15" fill="#E6FFFA"/>
+  <circle cx="280" cy="200" r="10" fill="#319795"/>
+</svg>
