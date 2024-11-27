@@ -35,6 +35,10 @@ class ModelDefaults {
       ),
       settings: ModelSettings(maxContextTokens: 128000),
     ),
+
+
+    // TODO: o1 models don't work right now, just disable
+    /*
     const ModelConfig(
       id: 'o1-preview',
       name: 'o1 Preview',
@@ -55,6 +59,8 @@ class ModelDefaults {
       ),
       settings: ModelSettings(maxContextTokens: 128000),
     ),
+     */
+
     const ModelConfig(
       id: 'gpt-4-turbo',
       name: 'GPT-4 Turbo',
