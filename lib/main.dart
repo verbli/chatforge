@@ -73,7 +73,7 @@ class ChatForgeApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
-      title: BuildConfig.appName,
+      title: "${BuildConfig.appName}${BuildConfig.isPro ? " Pro" : ""}",
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
