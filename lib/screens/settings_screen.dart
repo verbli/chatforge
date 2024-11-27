@@ -69,7 +69,7 @@ class SettingsScreen extends ConsumerWidget {
                                       Icon(Icons.star, color: Theme.of(context).colorScheme.primary),
                                       const SizedBox(width: 8),
                                       Text(
-                                        'Upgrade to Pro',
+                                        'Upgrade to Pro for an ad-free experience',
                                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                           color: Theme.of(context).colorScheme.primary,
                                           fontWeight: FontWeight.bold,
@@ -78,28 +78,8 @@ class SettingsScreen extends ConsumerWidget {
                                     ],
                                   ),
                                   const SizedBox(height: 12),
-                                  const Text('Get an ad-free experience and additional features:'),
-                                  const SizedBox(height: 8),
-                                  const Padding(
-                                    padding: EdgeInsets.only(left: 8),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text('• Remove all advertisements'),
-                                        Text('• Cloud backup and sync'),
-                                        Text('• Advanced conversation management'),
-                                        Text('• Priority support'),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
                                   FilledButton.icon(
-                                    onPressed: () {
-                                      // TODO: Implement upgrade flow
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Coming soon!')),
-                                      );
-                                    },
+                                    onPressed: () => _openPlayStore(context, "org.verbli.chatforge.pro"),
                                     icon: const Icon(Icons.upgrade),
                                     label: const Text('UPGRADE NOW'),
                                   ),
@@ -198,7 +178,7 @@ class SettingsScreen extends ConsumerWidget {
                         ListTile(
                           title: const Text('Rate ChatForge'),
                           trailing: const Icon(Icons.star_rate),
-                          onTap: () => _openPlayStore(context),
+                          onTap: () => _openPlayStore(context, "org.verbli.chatforge${BuildConfig.isPro ? '.pro' : ''}"),
                         ),
                       ],
                     ),
@@ -311,9 +291,8 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  void _openPlayStore(BuildContext context) async {
-    const appId = 'org.verbli.chatforge';
-    final uri = Uri.parse('market://details?id=$appId');
+  void _openPlayStore(BuildContext context, String id) async {
+    final uri = Uri.parse('market://details?id=$id');
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(
