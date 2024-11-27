@@ -19,6 +19,8 @@ class GeminiService extends AIService {
     };
   }
 
+  // TODO: Implement when working
+  /*
   @override
   Future<String> getCompletion({
     required ProviderConfig provider,
@@ -105,6 +107,7 @@ class GeminiService extends AIService {
       );
     }
   }
+   */
 
   @override
   Future<int> countTokens(String text) async {
@@ -128,5 +131,17 @@ class GeminiService extends AIService {
     } catch (_) {
       return false;
     }
+  }
+
+  @override
+  Future<String> getCompletion({required ProviderConfig provider, required ModelConfig model, required ModelSettings settings, required List<Message> messages}) {
+    // TODO: implement getCompletion
+    throw UnimplementedError();
+  }
+
+  @override
+  Stream<Map<String, dynamic>> streamCompletion({required ProviderConfig provider, required ModelConfig model, required ModelSettings settings, required List<Message> messages}) {
+    // TODO: implement streamCompletion
+    throw UnimplementedError();
   }
 }

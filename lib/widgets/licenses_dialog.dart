@@ -88,6 +88,13 @@ class LicensesDialog extends StatelessWidget {
                   copyright: "Copyright 2014, the Dart project authors"),
             ),
             ListTile(
+              title: const Text('flutter_markdown'),
+              subtitle: const Text('BSD-3-Clause'),
+              onTap: () => _showLicenseDetails(
+                  context, 'flutter_markdown', LicenseType.bsd_3_clause,
+                  copyright: "Copyright 2013 The Flutter Authors"),
+            ),
+            ListTile(
               title: const Text('google_mobile_ads'),
               subtitle: const Text('Apache 2.0'),
               onTap: () => _showLicenseDetails(

@@ -38,6 +38,10 @@ This document contains the licenses and attributions for third-party software us
 - **License**: BSD-3-Clause
 - **Copyright**: Copyright 2014, the Dart project authors
 
+#### flutter_markdown
+- **License**: BSD-3-Clause
+- **Copyright**: Copyright 2013 The Flutter Authors
+
 #### google_mobile_ads
 - **License**: Apache 2.0
 

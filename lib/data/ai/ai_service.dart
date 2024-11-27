@@ -6,7 +6,7 @@ import 'providers/gemini_service.dart';
 import 'providers/openai_service.dart';
 
 abstract class AIService {
-  Stream<String> streamCompletion({
+  Stream<Map<String, dynamic>> streamCompletion({
     required ProviderConfig provider,
     required ModelConfig model,
     required ModelSettings settings,

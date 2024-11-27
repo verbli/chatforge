@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:tiktoken/tiktoken.dart';
 
 import '../../models.dart';
@@ -38,14 +39,15 @@ class OpenAIService extends AIService {
     final response = await streamCompletion(
       model: model,
       settings: settings,
-      messages: messages, provider: provider,
-    ).reduce((previous, element) => previous + element);
+      messages: messages,
+      provider: provider,
+    ).map((chunk) => chunk['content'] as String).join();
 
     return response;
   }
 
   @override
-  Stream<String> streamCompletion({
+  Stream<Map<String, dynamic>> streamCompletion({
     required ProviderConfig provider,
     required ModelConfig model,
     required ModelSettings settings,
@@ -83,7 +85,10 @@ class OpenAIService extends AIService {
       // Make streaming request
       final response = await _dio.post<ResponseBody>(
         '/chat/completions',
-        options: Options(responseType: ResponseType.stream),
+        options: Options(
+          responseType: ResponseType.stream,
+          receiveTimeout: const Duration(minutes: 2), // Increase timeout for long responses
+        ),
         data: {
           'model': model.id,
           'messages': openAIMessages,
@@ -97,18 +102,74 @@ class OpenAIService extends AIService {
       );
 
       // Process the stream
+      String currentBlock = '';
+      bool isCodeBlock = false;
+      bool isHtmlBlock = false;
+
       await for (final chunk in response.data!.stream) {
         final lines = utf8.decode(chunk).split('\n');
         for (final line in lines) {
           if (line.isEmpty || line.startsWith('data: [DONE]')) continue;
           if (line.startsWith('data: ')) {
-            final data = json.decode(line.substring(6));
-            final content = data['choices'][0]['delta']['content'];
-            if (content != null) yield content;
+            try {
+              final data = json.decode(line.substring(6));
+              final content = data['choices'][0]['delta']['content'];
+              if (content != null) {
+                // Check for code blocks and HTML content
+                if (content.contains('```') && !isCodeBlock) {
+                  isCodeBlock = true;
+                  currentBlock = content;
+                } else if (content.contains('```') && isCodeBlock) {
+                  isCodeBlock = false;
+                  currentBlock += content;
+                  yield {
+                    'type': 'markdown',
+                    'content': currentBlock,
+                  };
+                  currentBlock = '';
+                } else if (content.contains('<') && content.contains('>') && !isHtmlBlock) {
+                  isHtmlBlock = true;
+                  currentBlock = content;
+                } else if (content.contains('</') && isHtmlBlock) {
+                  isHtmlBlock = false;
+                  currentBlock += content;
+                  yield {
+                    'type': 'html',
+                    'content': currentBlock,
+                  };
+                  currentBlock = '';
+                } else if (isCodeBlock || isHtmlBlock) {
+                  currentBlock += content;
+                } else {
+                  yield {
+                    'type': 'text',
+                    'content': content,
+                  };
+                }
+              }
+            } catch (e) {
+              debugPrint('Error processing chunk: $e');
+              continue;
+            }
           }
         }
       }
+
+      // Yield any remaining block content
+      if (currentBlock.isNotEmpty) {
+        yield {
+          'type': isCodeBlock ? 'markdown' : (isHtmlBlock ? 'html' : 'text'),
+          'content': currentBlock,
+        };
+      }
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout) {
+        throw AIServiceException(
+          'Connection timed out - try reducing response length',
+          provider: provider.name,
+          statusCode: e.response?.statusCode,
+        );
+      }
       throw AIServiceException(
         'OpenAI API error: ${e.message}',
         provider: provider.name,

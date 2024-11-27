@@ -3,6 +3,8 @@
 import 'package:chatforge/router.dart';
 import 'package:chatforge/screens/home_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -90,14 +92,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         settings: conversation.settings,
         messages: ref.read(messagesProvider(widget.conversationId)).value ?? [],
       )) {
-        fullResponse += chunk;
-        tokenCount = await aiService.countTokens(fullResponse);
-        await ref.read(chatRepositoryProvider).updateMessage(
-          assistantMessage.copyWith(
-            content: fullResponse,
-            tokenCount: tokenCount,  // Update with current token count
-          ),
-        );
+        // Add the content based on type
+        switch (chunk['type']) {
+          case 'text':
+          case 'markdown':
+          case 'html':
+            fullResponse += chunk['content'];
+            tokenCount = await aiService.countTokens(fullResponse);
+            await ref.read(chatRepositoryProvider).updateMessage(
+              assistantMessage.copyWith(
+                content: fullResponse,
+                tokenCount: tokenCount,
+              ),
+            );
+            break;
+          default:
+            debugPrint('Unknown chunk type: ${chunk['type']}');
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -293,10 +304,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           settings: conversation.settings,
           messages: ref.read(messagesProvider(widget.conversationId)).value ?? [],
         )) {
-          fullResponse += chunk;
-          await ref.read(chatRepositoryProvider).updateMessage(
-            assistantMessage.copyWith(content: fullResponse),
-          );
+          // Add the content based on type
+          switch (chunk['type']) {
+            case 'text':
+            case 'markdown':
+            case 'html':
+              fullResponse += chunk['content'];
+              tokenCount = await aiService.countTokens(fullResponse);
+              await ref.read(chatRepositoryProvider).updateMessage(
+                assistantMessage.copyWith(
+                  content: fullResponse,
+                  tokenCount: tokenCount,
+                ),
+              );
+              break;
+            default:
+              debugPrint('Unknown chunk type: ${chunk['type']}');
+          }
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -346,11 +370,13 @@ class MessageBubble extends StatefulWidget {
   final Message message;
   final Function(Message) onEdit;
   final Function(Message) onDelete;
+  final bool showTimestamp;
 
   const MessageBubble({
     required this.message,
     required this.onEdit,
     required this.onDelete,
+    this.showTimestamp = false,
     Key? key,
   }) : super(key: key);
 
@@ -360,6 +386,50 @@ class MessageBubble extends StatefulWidget {
 
 class _MessageBubbleState extends State<MessageBubble> {
   bool _showOptions = false;
+
+  Widget _buildContent(BuildContext context, String content) {
+    if (content.contains('```') || content.contains('*') || content.contains('_')) {
+      return MarkdownBody(
+        data: content,
+        selectable: true,
+        styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+          p: TextStyle(
+            color: widget.message.role == Role.user
+                ? Theme.of(context).colorScheme.onPrimary
+                : Theme.of(context).colorScheme.onSurface,
+          ),
+          code: TextStyle(
+            backgroundColor: widget.message.role == Role.user
+                ? Theme.of(context).colorScheme.primary.withOpacity(0.7)
+                : Theme.of(context).colorScheme.surface.withOpacity(0.7),
+            color: widget.message.role == Role.user
+                ? Theme.of(context).colorScheme.onPrimary
+                : Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+      );
+    } else if (content.contains('<') && content.contains('>')) {
+      return Html(
+        data: content,
+        style: {
+          "*": Style(
+            color: widget.message.role == Role.user
+                ? Theme.of(context).colorScheme.onPrimary
+                : Theme.of(context).colorScheme.onSurface,
+          ),
+        },
+      );
+    }
+
+    return SelectableText(
+      content,
+      style: TextStyle(
+        color: widget.message.role == Role.user
+            ? Theme.of(context).colorScheme.onPrimary
+            : Theme.of(context).colorScheme.onSurface,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -390,15 +460,20 @@ class _MessageBubbleState extends State<MessageBubble> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SelectableText(
-                widget.message.content,
-                style: TextStyle(
-                  color: isUser ?
-                  theme.colorScheme.onPrimary :
-                  theme.colorScheme.onSurface,
+              _buildContent(context, widget.message.content),
+              if (widget.showTimestamp) ...[
+                const SizedBox(height: 4),
+                Text(
+                  DateTime.parse(widget.message.timestamp).toLocal().toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isUser
+                        ? theme.colorScheme.onPrimary.withOpacity(0.7)
+                        : theme.colorScheme.onSurface.withOpacity(0.7),
+                  ),
                 ),
-              ),
-              if (_showOptions && isUser) ... [
+              ],
+              if (_showOptions && isUser) ...[
                 const Divider(),
                 Row(
                   mainAxisSize: MainAxisSize.min,
