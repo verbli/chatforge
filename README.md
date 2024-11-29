@@ -49,12 +49,12 @@ flutter run
 ### Build Variants
 ChatForge supports multiple build configurations:
 
-- **Community Edition** (Apache 2.0 License)
+- **Community Edition** (GPLv3)
     - Free with ads
     - Local storage only
     - Basic features
 
-- **Pro Edition** (Apache 2.0 License)
+- **Pro Edition** (GPLv3)
     - Ad-free experience
 
 - **Enterprise Edition** (Commercial License)
@@ -69,8 +69,7 @@ flutter build apk --dart-define=IS_PRO=true --dart-define=ENABLE_ADS=false
 Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting pull requests.
 
 ## License
-- **Community Edition**: Apache License 2.0
-- **Enterprise Edition**: Commercial License (**[Contact](mailto:info@verbli.org)** for details)
+ChatForge is released under GPLv3 for personal use only. For commercial use, [**contact](mailto:info@verbli.org)** for details
 
 See the [LICENSE](LICENSE.md) file for details.
 
