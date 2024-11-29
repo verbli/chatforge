@@ -274,6 +274,13 @@ class SettingsScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text('Version 1.0.1',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text(
+                '• Improved launch speed\n'
+                '• Added animated splash screen\n'
+              ),
               Text('Version 1.0.0',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),

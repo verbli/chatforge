@@ -20,7 +20,6 @@ class InitService {
 
     try {
 
-      onProgress('Initializing essential services...', 0.25);
       final initEssential = Future.wait([
         SharedPreferences.getInstance().then((prefs) {
           _prefs = prefs;
@@ -30,14 +29,15 @@ class InitService {
       ]);
 
 
-      onProgress('Initializing features...', 0.25);
       final initOptional = BuildConfig.enableAds
           ? MobileAds.instance.initialize()
           : Future.value();
 
 
-      onProgress('Loading initial content...', 0.25);
+      onProgress('Loading database ...', 0.333);
       await initEssential;
+
+      onProgress('Loading analytics ...', 0.666);
       await initOptional;
 
       // Check changelog after prefs are loaded
@@ -46,7 +46,7 @@ class InitService {
         await _prefs!.setString('last_version', BuildConfig.appVersion);
       }
 
-      onProgress('Ready!', 0.25);
+      onProgress('Ready!', 1.0);
       _initialized = true;
     } catch (e, stack) {
       onError(e.toString());

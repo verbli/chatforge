@@ -56,10 +56,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             if (!mounted) return;
             setState(() {
               _status = status;
-              _targetProgress += progress;
+              _targetProgress = progress;
               _progressAnimation = Tween<double>(
                 begin: _progressAnimation.value,
-                end: progress,
+                end: _targetProgress,
               ).animate(CurvedAnimation(
                 parent: _progressController,
                 curve: widget.progressCurve,

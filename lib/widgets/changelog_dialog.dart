@@ -14,6 +14,13 @@ class ChangelogDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            const Text('Version 1.0.1',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text(
+                '• Improved launch speed\n'
+                '• Added animated splash screen\n'
+            ),
             const Text('Version 1.0.0',
                 style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
