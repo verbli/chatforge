@@ -13,6 +13,10 @@ class ProviderStorage {
     _prefs = await SharedPreferences.getInstance();
   }
 
+  static Future<void> initializeWithPrefs(SharedPreferences prefs) async {
+    _prefs = prefs;
+  }
+
   static Future<List<ProviderConfig>> loadProviders() async {
     try {
       final jsonString = _prefs.getString(_providersKey);

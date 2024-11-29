@@ -1,15 +1,14 @@
 // screens/splash_screen.dart
 
-import 'dart:math';
-
 import 'package:chatforge/data/storage/init_service.dart';
+import 'package:chatforge/screens/error_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:restart_app/restart_app.dart';
 
 class SplashScreen extends StatefulWidget {
   final Widget child;
 
-  const SplashScreen({required this.child, Key? key}) : super(key: key);
+  const SplashScreen({required this.child, super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -19,6 +18,7 @@ class _SplashScreenState extends State<SplashScreen> {
   bool _initialized = false;
   String _status = 'Initializing...';
   double _progress = 0.0;
+  bool _errored = false;
 
   @override
   void initState() {
@@ -33,12 +33,14 @@ class _SplashScreenState extends State<SplashScreen> {
           setState(() {
             _status = status;
             _progress = progress;
-            if (progress >= 1.0) _initialized = true;
           });
         },
       );
+
+      if (_progress >= 1.0)  _initialized = true;
     } catch (e) {
       setState(() {
+        _errored = true;
         _status = 'Error: $e';
       });
     }
@@ -48,11 +50,16 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     if (_initialized) {
       return widget.child;
+    } else if (_errored) {
+      return ErrorScreen(
+        error: _status,
+        onRetry: () => Restart.restartApp(),
+      );
     }
 
     return Material(
       child: Container(
-        color: Theme.of(context).colorScheme.background,
+        color: Theme.of(context).colorScheme.surface,
         child: Center(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 400),
