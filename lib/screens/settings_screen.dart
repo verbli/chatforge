@@ -1,6 +1,7 @@
 // screens/settings_screen.dart
 
 import 'dart:math';
+import 'package:chatforge/widgets/license_dialog.dart';
 import 'package:chatforge/widgets/licenses_dialog.dart';
 import 'package:intl/intl.dart';
 
@@ -157,7 +158,12 @@ class SettingsScreen extends ConsumerWidget {
                           ),
                         ),
                         ListTile(
-                          title: const Text('Licenses'),
+                          title: const Text('License'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => _showLicense(context),
+                        ),
+                        ListTile(
+                          title: const Text('Third Party Libraries'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => _showLicenses(context),
                         ),
@@ -189,6 +195,13 @@ class SettingsScreen extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+
+  void _showLicense(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => const LicenseDialog(),
     );
   }
 

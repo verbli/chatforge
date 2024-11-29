@@ -4,6 +4,7 @@ import 'package:chatforge/data/storage/database_service.dart';
 import 'package:chatforge/data/storage/provider_storage.dart';
 import 'package:chatforge/screens/error_screen.dart';
 import 'package:chatforge/screens/home_screen.dart';
+import 'package:chatforge/screens/splash_screen.dart';
 import 'package:chatforge/widgets/changelog_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,10 +28,10 @@ void main() async {
     }
 
     // Initialize provider storage first
-    await ProviderStorage.initialize();
+    //await ProviderStorage.initialize();
 
     // Initialize SQLite database
-    await DatabaseService.database;
+    //await DatabaseService.database;
 
   } catch (e, stack) {
     debugPrint('Initialization error: $e\n$stack');
@@ -58,7 +59,7 @@ void main() async {
           runApp(const ProviderScope(child: ChatForgeApp()));
         },
       )
-          : ChatForgeApp(showChangelog: isNewVersion),
+          : SplashScreen(child: ChatForgeApp(showChangelog: isNewVersion)),
     ),
   );
 }

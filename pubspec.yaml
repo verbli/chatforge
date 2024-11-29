@@ -50,6 +50,7 @@ dependencies:
   path: ^1.9.0
   flutter_markdown: ^0.7.4+3
   flutter_html: ^3.0.0-beta.2
+  flutter_svg: ^2.0.16
 
 
 dev_dependencies:
@@ -77,6 +78,10 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - LICENSE
+    - assets/icon/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

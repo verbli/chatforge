@@ -9,8 +9,14 @@ class DatabaseService {
   static const int _currentVersion = 2;  // Increment version number
 
   static Future<Database> get database async {
-    _database ??= await _initDatabase();
+    if (_database == null) {
+      await initialize();
+    }
     return _database!;
+  }
+
+  static Future<void> initialize() async {
+    _database ??= await _initDatabase();
   }
 
   static Future<Database> _initDatabase() async {
