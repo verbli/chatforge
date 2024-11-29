@@ -37,6 +37,9 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
         return Scaffold(
           appBar: widget.isPanel ? null : AppBar(
             title: const Text('ChatForge'),
+            leading: Image.asset(
+              'assets/icon/icon.png',
+            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.settings),

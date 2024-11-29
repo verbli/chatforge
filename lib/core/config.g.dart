@@ -1,4 +1,4 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// core/config.g.dart
 
 part of 'config.dart';
 

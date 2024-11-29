@@ -1,8 +1,11 @@
 // screens/chat_screen.dart
 
+import 'dart:async';
+
 import 'package:chatforge/router.dart';
 import 'package:chatforge/screens/home_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,27 +33,54 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _inputController = TextEditingController();
   final _scrollController = ScrollController();
   bool _isGenerating = false;
+  bool _isNearBottom = true;
+  StreamSubscription? _messageStream;
+  bool _hasScrolledToBottom = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Add scroll listener to detect when user is near bottom
+    _scrollController.addListener(_onScroll);
+  }
 
   @override
   void dispose() {
+    _messageStream?.cancel();
+    _scrollController.removeListener(_onScroll);
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _handleMessagesLoaded(List<Message> messages) {
+    if (!_hasScrolledToBottom && messages.isNotEmpty) {
+      // Use a short delay to ensure the list has been built
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _scrollToBottom();
+          _hasScrolledToBottom = true;
+        }
+      });
+    }
+  }
+
+  Future<void> _stopGeneration() async {
+    if (_messageStream != null) {
+      await _messageStream!.cancel(); // Cancel the stream
+      _messageStream = null;
+      setState(() => _isGenerating = false);
+    }
   }
 
   Future<void> _sendMessage() async {
     final message = _inputController.text.trim();
     if (message.isEmpty || _isGenerating) return;
 
-    final conversation = await ref.read(chatRepositoryProvider)
-        .getConversation(widget.conversationId);
-
-    final provider = await ref.read(providerRepositoryProvider)
-        .getProvider(conversation.providerId);
-
-    final model = provider.models.firstWhere(
-          (m) => m.id == conversation.modelId,
-    );
+    final conversation = await ref.read(chatRepositoryProvider).getConversation(widget.conversationId);
+    final provider = await ref.read(providerRepositoryProvider).getProvider(conversation.providerId);
+    final model = provider.models.firstWhere((m) => m.id == conversation.modelId);
 
     setState(() => _isGenerating = true);
     _inputController.clear();
@@ -61,55 +91,109 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         conversationId: widget.conversationId,
         content: message,
         role: Role.user,
-        timestamp: DateTime.now().toIso8601String(),  // Convert to ISO string
+        timestamp: DateTime.now().toIso8601String(),
       );
 
       await ref.read(chatRepositoryProvider).addMessage(userMessage);
+
+      if (_isNearBottom) {
+        _scrollToBottom();
+      }
 
       final assistantMessage = Message(
         id: const Uuid().v4(),
         conversationId: widget.conversationId,
         content: '',
         role: Role.assistant,
-        timestamp: DateTime.now().toIso8601String(),  // Convert to string
+        timestamp: DateTime.now().toIso8601String(),
       );
 
       await ref.read(chatRepositoryProvider).addMessage(assistantMessage);
 
+      if (_isNearBottom) {
+        _scrollToBottom();
+      }
+
       final aiService = ref.read(aiServiceProvider(provider));
       String fullResponse = '';
-      int tokenCount = 0;  // Add token counter
+      int tokenCount = 0;
+      bool isStopped = false;
 
       final userTokens = await aiService.countTokens(message);
-
       await ref.read(chatRepositoryProvider).updateMessage(
-        userMessage.copyWith(tokenCount: userTokens),  // Update user message with token count
+        userMessage.copyWith(tokenCount: userTokens),
       );
 
-      await for (final chunk in aiService.streamCompletion(
+      final stream = aiService.streamCompletion(
         provider: provider,
         model: model,
         settings: conversation.settings,
         messages: ref.read(messagesProvider(widget.conversationId)).value ?? [],
-      )) {
-        // Add the content based on type
-        switch (chunk['type']) {
-          case 'text':
-          case 'markdown':
-          case 'html':
-            fullResponse += chunk['content'];
-            tokenCount = await aiService.countTokens(fullResponse);
-            await ref.read(chatRepositoryProvider).updateMessage(
-              assistantMessage.copyWith(
-                content: fullResponse,
-                tokenCount: tokenCount,
-              ),
-            );
-            break;
-          default:
-            debugPrint('Unknown chunk type: ${chunk['type']}');
-        }
-      }
+      );
+
+      _messageStream = stream.listen(
+            (chunk) async {
+          if (isStopped) return; // Don't process more chunks if stopped
+
+          switch (chunk['type']) {
+            case 'text':
+            case 'markdown':
+            case 'html':
+              fullResponse += chunk['content'];
+              tokenCount = await aiService.countTokens(fullResponse);
+
+              // Update the message with current content
+              await ref.read(chatRepositoryProvider).updateMessage(
+                assistantMessage.copyWith(
+                  content: fullResponse,
+                  tokenCount: tokenCount,
+                ),
+              );
+
+              if (_isNearBottom) {
+                _scrollToBottom();
+              }
+              break;
+            default:
+              debugPrint('Unknown chunk type: ${chunk['type']}');
+          }
+        },
+        onDone: () async {
+          // Ensure final message state is saved
+          await ref.read(chatRepositoryProvider).updateMessage(
+            assistantMessage.copyWith(
+              content: fullResponse,
+              tokenCount: tokenCount,
+            ),
+          );
+
+          if (mounted) {
+            setState(() {
+              _isGenerating = false;
+              _messageStream = null;
+            });
+          }
+
+          if (_isNearBottom) {
+            _scrollToBottom();
+          }
+
+          ref.read(tokenUsageUpdater.notifier).state++;
+        },
+        onError: (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+          setState(() {
+            _isGenerating = false;
+            _messageStream = null;
+          });
+        },
+        cancelOnError: true, // Make sure stream cancels on error
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -118,10 +202,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ),
       );
     } finally {
-      setState(() => _isGenerating = false);
-
-      // Force refresh of usage statistics
-      ref.read(tokenUsageUpdater.notifier).state++;
+      if (mounted && _messageStream == null) {
+        setState(() => _isGenerating = false);
+      }
     }
   }
 
@@ -131,6 +214,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final conversation = ref.watch(conversationProvider(widget.conversationId));
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         leading: widget.isPanel ? null : const BackButton(),
         title: Text(conversation.value?.title ?? 'Chat'),
@@ -143,7 +227,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   children: [
                     Icon(Icons.delete, color: Colors.red),
                     SizedBox(width: 8),
-                    Text('Delete Conversation', style: TextStyle(color: Colors.red)),
+                    Text('Delete Conversation',
+                        style: TextStyle(color: Colors.red)),
                   ],
                 ),
               ),
@@ -184,10 +269,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 );
 
                 if (confirm == true && context.mounted) {
-                  await ref.read(chatRepositoryProvider)
+                  await ref
+                      .read(chatRepositoryProvider)
                       .deleteConversation(widget.conversationId);
                   if (widget.isPanel) {
-                    ref.read(selectedConversationProvider.notifier).state = null;
+                    ref.read(selectedConversationProvider.notifier).state =
+                        null;
                   } else {
                     Navigator.pop(context);
                   }
@@ -197,31 +284,38 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          const AdBannerWidget(),
-          Expanded(
-            child: messages.when(
-              data: (msgs) => ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(16),
-                itemCount: msgs.length,
-                itemBuilder: (context, index) => MessageBubble(
-                  message: msgs[index],
-                  onEdit: (message) => _editMessage(message),
-                  onDelete: (message) => _deleteMessage(message),
-                ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const AdBannerWidget(),
+            Expanded(
+              child: messages.when(
+                data: (msgs) {
+                  _handleMessagesLoaded(msgs);
+                  return ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: msgs.length,
+                    itemBuilder: (context, index) => MessageBubble(
+                      message: msgs[index],
+                      onEdit: (message) => _editMessage(message),
+                      onDelete: (message) => _deleteMessage(message),
+                    ),
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => Center(child: Text('Error: $err')),
               ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('Error: $err')),
             ),
-          ),
-          _MessageInput(
-            controller: _inputController,
-            onSubmit: _sendMessage,
-            isGenerating: _isGenerating,
-          ),
-        ],
+            _MessageInput(
+              controller: _inputController,
+              onSubmit: _sendMessage,
+              onStop: _stopGeneration,
+              onTap: () {},
+              isGenerating: _isGenerating,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -233,8 +327,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Edit Message'),
         content: const Text(
-            'Editing this message will remove all subsequent messages and generate a new response. Do you want to continue?'
-        ),
+            'Editing this message will remove all subsequent messages and generate a new response. Do you want to continue?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -257,7 +350,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     if (newContent != null && newContent != message.content) {
       // Get all messages
-      final messages = ref.read(messagesProvider(widget.conversationId)).value ?? [];
+      final messages =
+          ref.read(messagesProvider(widget.conversationId)).value ?? [];
       final messageIndex = messages.indexWhere((m) => m.id == message.id);
 
       // Delete all subsequent messages
@@ -269,16 +363,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
       // Update the edited message
       await ref.read(chatRepositoryProvider).updateMessage(
-        message.copyWith(content: newContent),
-      );
+            message.copyWith(content: newContent),
+          );
 
       // Get current conversation settings
-      final conversation = await ref.read(chatRepositoryProvider)
+      final conversation = await ref
+          .read(chatRepositoryProvider)
           .getConversation(widget.conversationId);
-      final provider = await ref.read(providerRepositoryProvider)
+      final provider = await ref
+          .read(providerRepositoryProvider)
           .getProvider(conversation.providerId);
       final model = provider.models.firstWhere(
-            (m) => m.id == conversation.modelId,
+        (m) => m.id == conversation.modelId,
       );
 
       // Generate new response
@@ -296,13 +392,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
         final aiService = ref.read(aiServiceProvider(provider));
         String fullResponse = '';
-        int tokenCount = 0;  // Add token counter
+        int tokenCount = 0; // Add token counter
 
         await for (final chunk in aiService.streamCompletion(
           provider: provider,
           model: model,
           settings: conversation.settings,
-          messages: ref.read(messagesProvider(widget.conversationId)).value ?? [],
+          messages:
+              ref.read(messagesProvider(widget.conversationId)).value ?? [],
         )) {
           // Add the content based on type
           switch (chunk['type']) {
@@ -312,11 +409,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               fullResponse += chunk['content'];
               tokenCount = await aiService.countTokens(fullResponse);
               await ref.read(chatRepositoryProvider).updateMessage(
-                assistantMessage.copyWith(
-                  content: fullResponse,
-                  tokenCount: tokenCount,
-                ),
-              );
+                    assistantMessage.copyWith(
+                      content: fullResponse,
+                      tokenCount: tokenCount,
+                    ),
+                  );
               break;
             default:
               debugPrint('Unknown chunk type: ${chunk['type']}');
@@ -364,6 +461,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _showSettings() {
     Navigator.pushNamed(context, AppRouter.settings);
   }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  void _onScroll() {
+    // Consider "near bottom" if within 50 pixels of the bottom
+    final isNearBottom = _scrollController.offset >=
+        (_scrollController.position.maxScrollExtent - 50);
+
+    if (isNearBottom != _isNearBottom) {
+      setState(() => _isNearBottom = isNearBottom);
+    }
+  }
 }
 
 class MessageBubble extends StatefulWidget {
@@ -385,13 +502,13 @@ class MessageBubble extends StatefulWidget {
 }
 
 class _MessageBubbleState extends State<MessageBubble> {
-  bool _showOptions = false;
-
   Widget _buildContent(BuildContext context, String content) {
-    if (content.contains('```') || content.contains('*') || content.contains('_')) {
+    if (content.contains('```') ||
+        content.contains('*') ||
+        content.contains('_')) {
       return MarkdownBody(
         data: content,
-        selectable: true,
+        selectable: false,
         styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
           p: TextStyle(
             color: widget.message.role == Role.user
@@ -421,12 +538,53 @@ class _MessageBubbleState extends State<MessageBubble> {
       );
     }
 
-    return SelectableText(
+    return Text(
       content,
       style: TextStyle(
         color: widget.message.role == Role.user
             ? Theme.of(context).colorScheme.onPrimary
             : Theme.of(context).colorScheme.onSurface,
+      ),
+    );
+  }
+
+  void _showMessageOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: const Text('Copy'),
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: widget.message.content));
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Message copied to clipboard')),
+                );
+              },
+            ),
+            if (widget.message.role == Role.user)
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Edit'),
+                onTap: () {
+                  Navigator.pop(context);
+                  widget.onEdit(widget.message);
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Text('Delete'),
+              onTap: () {
+                Navigator.pop(context);
+                widget.onDelete(widget.message);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -437,7 +595,7 @@ class _MessageBubbleState extends State<MessageBubble> {
     final isUser = widget.message.role == Role.user;
 
     return GestureDetector(
-      onLongPress: isUser ? () => setState(() => _showOptions = !_showOptions) : null,
+      onLongPress: () => _showMessageOptions(context),
       child: Align(
         alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
@@ -447,11 +605,12 @@ class _MessageBubbleState extends State<MessageBubble> {
           margin: const EdgeInsets.symmetric(vertical: 4),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isUser ? theme.colorScheme.primary : theme.colorScheme.surface,
+            color:
+                isUser ? theme.colorScheme.primary : theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: theme.shadowColor.withOpacity(0.1),
+                color: theme.shadowColor.withOpacity(0.5),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -473,30 +632,6 @@ class _MessageBubbleState extends State<MessageBubble> {
                   ),
                 ),
               ],
-              if (_showOptions && isUser) ...[
-                const Divider(),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.edit,
-                        size: 16,
-                        color: theme.colorScheme.onPrimary.withOpacity(0.7),
-                      ),
-                      onPressed: () => widget.onEdit(widget.message),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.delete,
-                        size: 16,
-                        color: theme.colorScheme.onPrimary.withOpacity(0.7),
-                      ),
-                      onPressed: () => widget.onDelete(widget.message),
-                    ),
-                  ],
-                ),
-              ],
             ],
           ),
         ),
@@ -508,11 +643,15 @@ class _MessageBubbleState extends State<MessageBubble> {
 class _MessageInput extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSubmit;
+  final VoidCallback onStop;
+  final VoidCallback onTap;
   final bool isGenerating;
 
   const _MessageInput({
     required this.controller,
     required this.onSubmit,
+    required this.onStop,
+    required this.onTap,
     required this.isGenerating,
   });
 
@@ -532,16 +671,30 @@ class _MessageInput extends StatelessWidget {
               maxLines: null,
               enabled: !isGenerating,
               onSubmitted: (_) => onSubmit(),
+              onTap: onTap,
             ),
           ),
           const SizedBox(width: 8),
           IconButton.filled(
-            onPressed: isGenerating ? null : onSubmit,
+            onPressed: isGenerating ? onStop : onSubmit,
             icon: isGenerating
-                ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
+                ? Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+                Icon(
+                  Icons.stop_rounded,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              ],
             )
                 : const Icon(Icons.send),
           ),

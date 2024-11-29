@@ -25,6 +25,24 @@ class _NewChatDialogState extends ConsumerState<NewChatDialog> {
   void initState() {
     super.initState();
     _settings = const ModelSettings(maxContextTokens: 4096);
+
+    // Add post-frame callback to select default provider if only one available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final providers = ref.read(providersProvider).value;
+      if (providers != null) {
+        final validProviders = providers.where((p) => p.apiKey.isNotEmpty).toList();
+        if (validProviders.length == 1) {
+          final provider = validProviders.first;
+          setState(() {
+            _selectedProviderId = provider.id;
+            if (provider.models.isNotEmpty) {
+              _selectedModelId = provider.models.first.id;
+              _settings = provider.models.first.settings;
+            }
+          });
+        }
+      }
+    });
   }
 
   @override
@@ -63,6 +81,7 @@ class _NewChatDialogState extends ConsumerState<NewChatDialog> {
                     value?.isEmpty == true
                         ? 'Required'
                         : null,
+                    textCapitalization: TextCapitalization.sentences,
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
@@ -156,6 +175,7 @@ class _NewChatDialogState extends ConsumerState<NewChatDialog> {
                                 setState(() => _settings = _settings.copyWith(temperature: temp));
                               }
                             },
+                            textCapitalization: TextCapitalization.sentences,
                           ),
                         ),
                         IconButton(

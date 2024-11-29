@@ -638,6 +638,7 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'Name'),
               validator: (value) => value?.isEmpty == true ? 'Required' : null,
+              textCapitalization: TextCapitalization.sentences,
             ),
             TextFormField(
               controller: _apiKeyController,

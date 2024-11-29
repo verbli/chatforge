@@ -1,4 +1,4 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// data/models.g.dart
 
 part of 'models.dart';
 
