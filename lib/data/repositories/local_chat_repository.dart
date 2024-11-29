@@ -19,6 +19,7 @@ class LocalChatRepository extends ChatRepository {
 
   @override
   Future<void> initialize() async {
+    super.initialize();
     // Initial load
     _broadcastConversations();
   }

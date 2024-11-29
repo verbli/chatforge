@@ -7,7 +7,7 @@ import '../core/ad_helper.dart';
 import '../core/config.dart';
 
 class AdBannerWidget extends StatefulWidget {
-  const AdBannerWidget({Key? key}) : super(key: key);
+  const AdBannerWidget({super.key});
 
   @override
   State<AdBannerWidget> createState() => _AdBannerWidgetState();

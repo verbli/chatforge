@@ -1,8 +1,5 @@
 // data/ai/providers/gemini_service.dart
 
-import 'dart:convert';
-import 'dart:math';
-
 import 'package:dio/dio.dart';
 
 import '../../models.dart';

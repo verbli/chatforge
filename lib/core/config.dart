@@ -31,8 +31,9 @@ class BuildConfig {
     defaultValue: 'none', // Valid values: none, supabase, pocketbase, appwrite
   );
 
-  static const String? backendUrl = String.fromEnvironment(
+  static const String backendUrl = String.fromEnvironment(
     'BACKEND_URL',
+    defaultValue: '',
   );
 
   // App information
@@ -68,7 +69,7 @@ class BuildConfig {
   );
 
   // Feature checks
-  static bool get hasBackend => enableBackend && backendType != 'none' && backendUrl != null;
+  static bool get hasBackend => enableBackend && backendType != 'none' && backendUrl.isNotEmpty;
   static bool get requiresAuth => hasBackend || isEnterprise;
   static bool get allowsSignUp => enableSignUp && !isEnterprise; // Enterprise builds don't allow self-signup
 

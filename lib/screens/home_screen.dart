@@ -8,7 +8,7 @@ import 'conversation_list.dart';
 final selectedConversationProvider = StateProvider<String?>((ref) => null);
 
 class HomeScreen extends ConsumerWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,7 +22,7 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       body: Row(
         children: [
-          SizedBox(
+          const SizedBox(
             width: 350,
             child: ConversationListPanel(),
           ),
@@ -39,6 +39,8 @@ class HomeScreen extends ConsumerWidget {
 }
 
 class ConversationListPanel extends ConsumerWidget {
+  const ConversationListPanel({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return const ConversationListScreen(isPanel: true);
@@ -48,7 +50,7 @@ class ConversationListPanel extends ConsumerWidget {
 class ChatPanel extends ConsumerWidget {
   final String conversationId;
 
-  const ChatPanel({required this.conversationId, Key? key}) : super(key: key);
+  const ChatPanel({required this.conversationId, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

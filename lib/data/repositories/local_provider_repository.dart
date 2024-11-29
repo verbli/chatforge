@@ -15,6 +15,7 @@ class LocalProviderRepository extends ProviderRepository {
 
   @override
   Future<void> initialize() async {
+    super.initialize();
     _providers = await ProviderStorage.loadProviders();
 
     if (_providers.isEmpty) {

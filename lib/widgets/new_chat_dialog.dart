@@ -7,7 +7,7 @@ import '../../data/models.dart';
 import '../../data/providers.dart';
 
 class NewChatDialog extends ConsumerStatefulWidget {
-  const NewChatDialog({Key? key}) : super(key: key);
+  const NewChatDialog({super.key});
 
   @override
   ConsumerState<NewChatDialog> createState() => _NewChatDialogState();

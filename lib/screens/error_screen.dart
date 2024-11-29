@@ -12,8 +12,8 @@ class ErrorScreen extends StatelessWidget {
     required this.error,
     this.details,
     required this.onRetry,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ChangelogDialog extends StatelessWidget {
-  const ChangelogDialog({Key? key}) : super(key: key);
+  const ChangelogDialog({super.key});
 
   @override
   Widget build(BuildContext context) {

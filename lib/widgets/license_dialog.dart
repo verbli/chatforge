@@ -5,7 +5,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LicenseDialog extends StatelessWidget {
-  const LicenseDialog({Key? key}) : super(key: key);
+  const LicenseDialog({super.key});
 
   @override
   Widget build(BuildContext context) {

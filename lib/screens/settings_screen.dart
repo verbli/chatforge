@@ -18,14 +18,10 @@ import '../data/providers.dart';
 import '../providers/theme_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tokenUsage = ref.watch(tokenUsageProvider);
-    final providers = ref.watch(providersProvider);
-    final themeMode = ref.watch(themeModeProvider);
-
     return FutureBuilder(
       future: StorageService.initialize(),
       builder: (context, snapshot) {
@@ -362,7 +358,6 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _showThemeDialog(BuildContext context, WidgetRef ref) async {
-    final currentTheme = ref.read(themeModeProvider);
     final theme = await showDialog<ThemeMode>(
       context: context,
       builder: (context) => SimpleDialog(
@@ -384,7 +379,7 @@ class SettingsScreen extends ConsumerWidget {
       BuildContext context, WidgetRef ref) async {
     final preset = await showDialog<ProviderConfig>(
       context: context,
-      builder: (context) => _ProviderSetupDialog(),
+      builder: (context) => const _ProviderSetupDialog(),
     );
     if (preset != null) {
       await ref.read(providerRepositoryProvider).addProvider(preset);
@@ -457,8 +452,7 @@ class _ProviderListItem extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onTest,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -513,7 +507,7 @@ class _ProviderListItem extends StatelessWidget {
 class _UsageStatistics extends StatelessWidget {
   final Map<String, int> usage;
 
-  const _UsageStatistics({required this.usage, Key? key}) : super(key: key);
+  const _UsageStatistics({required this.usage});
 
   @override
   Widget build(BuildContext context) {
@@ -588,8 +582,7 @@ class _UsageStatistics extends StatelessWidget {
 class _ProviderSetupDialog extends StatefulWidget {
   final ProviderConfig? existingProvider;
 
-  const _ProviderSetupDialog({this.existingProvider, Key? key})
-      : super(key: key);
+  const _ProviderSetupDialog({this.existingProvider});
 
   @override
   State<_ProviderSetupDialog> createState() => _ProviderSetupDialogState();

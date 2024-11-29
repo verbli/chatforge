@@ -82,11 +82,11 @@ class GeminiModelFetcher implements ModelFetcher {
           .map((m) => ModelConfig(
         id: m['name'],
         name: m['displayName'] ?? m['name'],
-        capabilities: ModelCapabilities(
+        capabilities: const ModelCapabilities(
           maxTokens: 8192,
           supportsStreaming: true,
         ),
-        settings: ModelSettings(maxContextTokens: 32000),
+        settings: const ModelSettings(maxContextTokens: 32000),
       ))
           .toList();
     } catch (e) {

@@ -13,7 +13,7 @@ import '../widgets/ad_banner.dart';
 class ConversationListScreen extends ConsumerStatefulWidget {
   final bool isPanel;
 
-  const ConversationListScreen({this.isPanel = false, Key? key}) : super(key: key);
+  const ConversationListScreen({this.isPanel = false, super.key});
 
   @override
   ConsumerState<ConversationListScreen> createState() => _ConversationListScreenState();
@@ -127,8 +127,7 @@ class _ConversationList extends ConsumerWidget {
     required this.conversations,
     required this.providers,
     required this.isPanel,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

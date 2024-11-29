@@ -19,8 +19,8 @@ class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({
     required this.conversationId,
     this.isPanel = false,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -377,8 +377,8 @@ class MessageBubble extends StatefulWidget {
     required this.onEdit,
     required this.onDelete,
     this.showTimestamp = false,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<MessageBubble> createState() => _MessageBubbleState();
@@ -514,8 +514,7 @@ class _MessageInput extends StatelessWidget {
     required this.controller,
     required this.onSubmit,
     required this.isGenerating,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -555,7 +554,7 @@ class _MessageInput extends StatelessWidget {
 class _EditMessageDialog extends StatefulWidget {
   final Message message;
 
-  const _EditMessageDialog({required this.message, Key? key}) : super(key: key);
+  const _EditMessageDialog({required this.message});
 
   @override
   State<_EditMessageDialog> createState() => _EditMessageDialogState();
