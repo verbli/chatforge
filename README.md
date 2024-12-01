@@ -2,8 +2,6 @@
 
 ChatForge is a versatile, privacy-focused chat application that enables seamless interaction with Large Language Models (LLMs). Built with Flutter, it prioritizes user privacy by keeping data local while providing powerful features for both individual users and enterprises.
 
-[<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png">](https://buymeacoffee.com/eshipman)
-
 ## Features
 
 ### Current Features
@@ -18,8 +16,6 @@ ChatForge is a versatile, privacy-focused chat application that enables seamless
 - Detailed Usage Statistics and Analytics
 - Cross-Platform Support (Web, Windows, Linux)
 - External Backend Options (Supabase, Firebase, Appwrite, PocketBase)
-- Cloud Sync and Backup (Pro Feature)
-- Advanced Conversation Management (Pro Feature)
 
 ## Installation
 
@@ -76,7 +72,7 @@ See the [LICENSE](LICENSE.md) file for details.
 ## Support
 If you find ChatForge useful, consider supporting its development:
 
-[Buy Me a Coffee](https://buymeacoffee.com/eshipman)
+[<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png">](https://buymeacoffee.com/eshipman)
 
 ## Acknowledgments
 See [ACKNOWLEDGMENTS.md](ACKNOWLEDGMENTS.md) for a list of open source libraries used in this project.
