@@ -52,6 +52,7 @@ dependencies:
   flutter_html: ^3.0.0-beta.2
   flutter_svg: ^2.0.16
   restart_app: ^1.3.2
+  flutter_gemini: ^3.0.0
 
 
 dev_dependencies:

@@ -1,23 +1,19 @@
 // data/ai/providers/gemini_service.dart
 
-import 'package:dio/dio.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
 
 import '../../models.dart';
 import '../ai_service.dart';
 
 class GeminiService extends AIService {
   final ProviderConfig _provider;
-  final Dio _dio;
 
-  GeminiService(this._provider) : _dio = Dio() {
-    _dio.options.baseUrl = _provider.baseUrl;
-    _dio.options.headers = {
-      'Authorization': 'Bearer ${_provider.apiKey}',
-    };
+  GeminiService(this._provider) {
+    Gemini.init(
+      apiKey: _provider.apiKey
+    );
   }
 
-  // TODO: Implement when working
-  /*
   @override
   Future<String> getCompletion({
     required ProviderConfig provider,
@@ -26,119 +22,223 @@ class GeminiService extends AIService {
     required List<Message> messages,
   }) async {
     final response = await streamCompletion(
-      provider: provider,
       model: model,
       settings: settings,
       messages: messages,
-    ).reduce((previous, element) => previous + element);
+      provider: provider,
+    ).map((chunk) => chunk['content'] as String).join();
 
     return response;
   }
 
   @override
-  Stream<String> streamCompletion({
+  Stream<Map<String, dynamic>> streamCompletion({
     required ProviderConfig provider,
     required ModelConfig model,
     required ModelSettings settings,
     required List<Message> messages,
   }) async* {
     try {
-      // Convert messages to Gemini format
-      final geminiMessages = messages.map((msg) => {
-        'role': msg.role == Role.user ? 'user' : 'model',
-        'parts': [{'text': msg.content}],
+      // Filter out empty messages and transform the history
+      final history = messages.where((message) {
+        final contentLength = message.content.trim().length;
+        if (contentLength == 0) {
+          return false;
+        }
+        return true;
+      }).map((message) {
+        // Ensure role is properly mapped to what Gemini expects
+        final geminiRole = message.role == Role.user ? 'user' : 'model';
+
+        // Clean and validate the content - preserve newlines but trim whitespace
+        final cleanContent = message.content
+            .split('\n')
+            .map((line) => line.trim())
+            .join('\n')
+            .trim();
+
+        // Only throw if content is completely empty or only whitespace
+        if (cleanContent.isEmpty || cleanContent.replaceAll(RegExp(r'\s'), '').isEmpty) {
+          throw AIServiceException(
+            'Empty message content not allowed',
+            provider: provider.name,
+          );
+        }
+
+        return Content(
+            role: geminiRole,
+            parts: [Part.text(cleanContent)]
+        );
       }).toList();
+
+      // Validate we have at least one message
+      if (history.isEmpty) {
+        throw AIServiceException(
+          'No messages provided',
+          provider: provider.name,
+        );
+      }
 
       // Calculate available tokens for response
       final inputTokens = await countTokens(
         messages.map((m) => m.content).join('\n'),
       );
-      final maxTokens = min(
-          settings.maxResponseTokens,
-          model.capabilities.maxTokens - inputTokens
-      );
 
-      if (maxTokens <= 0) {
+      if (inputTokens >= model.capabilities.maxTokens) {
         throw AIServiceException(
           'Context window full',
           provider: provider.name,
         );
       }
 
-      // Make streaming request
-      final response = await _dio.post<ResponseBody>(
-        '/models/${model.id}:streamGenerateContent',
-        options: Options(responseType: ResponseType.stream),
-        data: {
-          'contents': geminiMessages,
-          'generation_config': {
-            'max_output_tokens': maxTokens,
-            'temperature': settings.temperature,
-            'top_p': settings.topP,
-          },
-        },
+      // Make the streaming request
+      // Create generation config with safety settings
+      final config = GenerationConfig(
+        temperature: settings.temperature,
+        topP: settings.topP,
+        maxOutputTokens: model.capabilities.maxTokens - inputTokens,
       );
 
-      await for (final chunk in response.data!.stream) {
-        final lines = utf8.decode(chunk).split('\n');
-        for (final line in lines) {
-          if (line.isEmpty) continue;
+      final response = Gemini.instance.streamChat(history,
+          modelName: model.id,
+          generationConfig: config
+      );
 
-          final data = json.decode(line);
-          if (data['candidates'] == null) continue;
+      // Process the stream
+      String currentBlock = '';
+      bool isCodeBlock = false;
+      bool isHtmlBlock = false;
+      String accumulatedText = '';
 
-          final content = data['candidates'][0]['content']['parts'][0]['text'];
-          if (content != null) yield content;
+      await for (final candidate in response) {
+        final firstPart = candidate.content?.parts?.firstOrNull ?? Part.text('');
+        final content = (firstPart as TextPart).text;
+
+        if (content.isEmpty) continue;
+
+        try {
+          // Handle code blocks
+          if (content.contains('```')) {
+            if (!isCodeBlock) {
+              // Starting a code block - yield accumulated text first
+              if (accumulatedText.isNotEmpty) {
+                yield {
+                  'type': 'text',
+                  'content': accumulatedText,
+                };
+                accumulatedText = '';
+              }
+              isCodeBlock = true;
+              currentBlock = content;
+            } else {
+              isCodeBlock = false;
+              currentBlock += content;
+              yield {
+                'type': 'markdown',
+                'content': currentBlock,
+              };
+              currentBlock = '';
+            }
+            continue;
+          }
+
+          // Handle HTML blocks
+          if (!isHtmlBlock && content.contains('<') && content.contains('>')) {
+            if (accumulatedText.isNotEmpty) {
+              yield {
+                'type': 'text',
+                'content': accumulatedText,
+              };
+              accumulatedText = '';
+            }
+            isHtmlBlock = true;
+            currentBlock = content;
+            continue;
+          }
+
+          if (isHtmlBlock && content.contains('</')) {
+            isHtmlBlock = false;
+            currentBlock += content;
+            yield {
+              'type': 'html',
+              'content': currentBlock,
+            };
+            currentBlock = '';
+            continue;
+          }
+
+          // Accumulate blocks or regular text
+          if (isCodeBlock || isHtmlBlock) {
+            currentBlock += content;
+          } else {
+            // For regular text, we'll accumulate it and add proper spacing
+            if (content.startsWith(' ') || accumulatedText.endsWith(' ') ||
+                accumulatedText.isEmpty || content.isEmpty) {
+              accumulatedText += content;
+            } else {
+              accumulatedText += ' $content';
+            }
+
+            // If we see certain markers, yield the accumulated text
+            if (content.endsWith('\n') || content.endsWith('.') ||
+                content.endsWith('?') || content.endsWith('!')) {
+              yield {
+                'type': 'text',
+                'content': accumulatedText,
+              };
+              accumulatedText = '';
+            }
+          }
+        } catch (e) {
+          throw AIServiceException(
+            'Error processing response chunk: $e',
+            provider: provider.name,
+          );
         }
       }
-    } on DioException catch (e) {
-      throw AIServiceException(
-        'Gemini API error: ${e.message}',
-        provider: provider.name,
-        statusCode: e.response?.statusCode,
-      );
-    } catch (e) {
+
+      // Yield any remaining block content
+      if (accumulatedText.isNotEmpty) {
+        yield {
+          'type': 'text',
+          'content': accumulatedText,
+        };
+      }
+      if (currentBlock.isNotEmpty) {
+        yield {
+          'type': isCodeBlock ? 'markdown' : (isHtmlBlock ? 'html' : 'text'),
+          'content': currentBlock,
+        };
+      }
+    } catch (e, st) {
       throw AIServiceException(
         'Error during completion: $e',
         provider: provider.name,
       );
     }
   }
-   */
 
   @override
   Future<int> countTokens(String text) async {
-    // Gemini uses WordPiece tokenization
-    // This is an approximation until Google provides an official tokenizer
-    return (text.split(' ').length * 1.3).ceil();
+    try {
+      return await Gemini.instance.countTokens(text) ?? 0;
+    } catch (e) {
+      throw AIServiceException(
+        'Failed to count tokens: $e',
+        provider: _provider.name,
+      );
+    }
   }
 
   @override
   Future<bool> testConnection() async {
     try {
-      await _dio.post(
-        '/models/gemini-pro:generateContent',
-        data: {
-          'contents': [{
-            'parts': [{'text': 'test'}]
-          }],
-        },
+      return await countTokens("test string") > 0;
+    } catch (e) {
+      throw AIServiceException(
+        'Failed to test connection: $e',
+        provider: _provider.name,
       );
-      return true;
-    } catch (_) {
-      return false;
     }
-  }
-
-  @override
-  Future<String> getCompletion({required ProviderConfig provider, required ModelConfig model, required ModelSettings settings, required List<Message> messages}) {
-    // TODO: implement getCompletion
-    throw UnimplementedError();
-  }
-
-  @override
-  Stream<Map<String, dynamic>> streamCompletion({required ProviderConfig provider, required ModelConfig model, required ModelSettings settings, required List<Message> messages}) {
-    // TODO: implement streamCompletion
-    throw UnimplementedError();
   }
 }

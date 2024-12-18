@@ -1,6 +1,7 @@
-// data/ai/providers/model_fetcher.dart
+// lib/data/ai/providers/model_fetcher.dart
 
 import 'package:dio/dio.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
 import '../../models.dart';
 
 abstract class ModelFetcher {
@@ -68,27 +69,18 @@ class AnthropicModelFetcher implements ModelFetcher {
 class GeminiModelFetcher implements ModelFetcher {
   @override
   Future<List<ModelConfig>> fetchModels(String apiKey) async {
-    final dio = Dio(BaseOptions(
-      headers: {'Authorization': 'Bearer $apiKey'},
-    ));
-
     try {
-      final response = await dio.get(
-        'https://generativelanguage.googleapis.com/v1/models',
-        queryParameters: {'key': apiKey},
-      );
-      return (response.data['models'] as List)
-          .where((m) => m['name'].toString().contains('gemini'))
-          .map((m) => ModelConfig(
-        id: m['name'],
-        name: m['displayName'] ?? m['name'],
-        capabilities: const ModelCapabilities(
-          maxTokens: 8192,
-          supportsStreaming: true,
-        ),
-        settings: const ModelSettings(maxContextTokens: 32000),
-      ))
-          .toList();
+      return (await Gemini.instance.listModels()).map((model) {
+        return ModelConfig(
+          id: model.name ?? 'unknown-model',
+          name: model.displayName ?? 'Unknown Model',
+          capabilities: ModelCapabilities(
+              maxTokens: model.outputTokenLimit ?? 0
+          ),
+          settings: ModelSettings(
+              maxContextTokens: model.inputTokenLimit ?? 0),
+        );
+      }).toList();
     } catch (e) {
       throw Exception('Failed to fetch Gemini models: $e');
     }
