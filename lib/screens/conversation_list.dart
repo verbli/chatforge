@@ -1,5 +1,6 @@
 // screens/conversation_list.dart
 
+import 'package:chatforge/core/config.dart';
 import 'package:chatforge/data/storage/storage_service.dart';
 import 'package:chatforge/screens/home_screen.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +38,7 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
           appBar: widget.isPanel ? null : AppBar(
             title: const Text('ChatForge'),
             leading: Image.asset(
-              'assets/icon/icon.png',
+              BuildConfig.isPro ? 'assets/icon/icon_pro.png' : 'assets/icon/icon.png',
             ),
             actions: [
               IconButton(

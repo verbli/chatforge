@@ -1,5 +1,6 @@
 // screens/splash_screen.dart
 
+import 'package:chatforge/core/config.dart';
 import 'package:chatforge/data/storage/init_service.dart';
 import 'package:chatforge/screens/error_screen.dart';
 import 'package:flutter/material.dart';
@@ -124,7 +125,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Image.asset('assets/icon/icon.png', height: 96),
+                      Image.asset(BuildConfig.isPro ? 'assets/icon/icon_pro.png' : 'assets/icon/icon.png', height: 96),
                       const SizedBox(height: 32),
                       Text(
                         'ChatForge',
