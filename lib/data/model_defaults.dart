@@ -1,4 +1,4 @@
-// data/model_defaults.dart
+// lib/data/model_defaults.dart
 
 import 'models.dart';
 
@@ -60,31 +60,8 @@ class ModelDefaults {
       settings: ModelSettings(maxContextTokens: 128000),
     ),
      */
-
-    const ModelConfig(
-      id: 'gpt-4-turbo',
-      name: 'GPT-4 Turbo',
-      capabilities: ModelCapabilities(
-        maxTokens: 4096,
-        supportsStreaming: true,
-        supportsFunctions: true,
-      ),
-      settings: ModelSettings(maxContextTokens: 128000),
-    ),
-    const ModelConfig(
-      id: 'gpt-3.5-turbo',
-      name: 'GPT-3.5 Turbo',
-      capabilities: ModelCapabilities(
-        maxTokens: 4096,
-        supportsStreaming: true,
-        supportsFunctions: true,
-      ),
-      settings: ModelSettings(maxContextTokens: 16385),
-    ),
   ];
 
-  // TODO: Uncomment when other providers work
-  /*
   // Anthropic Models
   static final anthropicModels = [
     const ModelConfig(
@@ -137,7 +114,17 @@ class ModelDefaults {
   // Google Models
   static final geminiModels = [
     const ModelConfig(
-      id: 'gemini-1.5-flash',
+      id: 'models/gemini-2.0-flash-exp',
+      name: 'Gemini 2.0 Flash',
+      capabilities: ModelCapabilities(
+        maxTokens: 8192,
+        supportsStreaming: true,
+        supportsFunctions: false,
+      ),
+      settings: ModelSettings(maxContextTokens: 1048576)
+    ),
+    const ModelConfig(
+      id: 'models/gemini-1.5-flash-latest',
       name: 'Gemini 1.5 Flash',
       capabilities: ModelCapabilities(
         maxTokens: 8192,
@@ -147,7 +134,7 @@ class ModelDefaults {
       settings: ModelSettings(maxContextTokens: 1048576),
     ),
     const ModelConfig(
-      id: 'gemini-1.5-flash-8b',
+      id: 'models/gemini-1.5-flash-8b-latest',
       name: 'Gemini 1.5 Flash 8B',
       capabilities: ModelCapabilities(
         maxTokens: 8192,
@@ -157,7 +144,7 @@ class ModelDefaults {
       settings: ModelSettings(maxContextTokens: 1048576),
     ),
     const ModelConfig(
-      id: 'gemini-1.5-pro',
+      id: 'models/gemini-1.5-pro-latest',
       name: 'Gemini 1.5 Pro',
       capabilities: ModelCapabilities(
         maxTokens: 8192,
@@ -167,7 +154,6 @@ class ModelDefaults {
       settings: ModelSettings(maxContextTokens: 2097152),
     ),
   ];
-   */
 
   static final defaultProviders = [
     ProviderConfig(
@@ -179,9 +165,6 @@ class ModelDefaults {
       models: openAIModels,
     ),
 
-
-    // TODO: Uncomment when other providers work
-    /*
     ProviderConfig(
       id: 'anthropic',
       name: 'Anthropic',
@@ -194,11 +177,10 @@ class ModelDefaults {
       id: 'gemini',
       name: 'Google Gemini',
       type: ProviderType.gemini,
-      baseUrl: 'https://generativelanguage.googleapis.com/v1',
+      baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
       apiKey: '',
       models: geminiModels,
     ),
-     */
   ];
 
   static ProviderConfig? getDefaultProvider(ProviderType type) {
