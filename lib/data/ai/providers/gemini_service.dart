@@ -104,8 +104,9 @@ class GeminiService extends AIService {
         temperature: settings.temperature,
         topP: settings.topP,
         maxOutputTokens: settings.maxResponseTokens,
-        presencePenalty: settings.presencePenalty,
-        frequencyPenalty: settings.frequencyPenalty,
+        // Library does not support these at the moment
+        //presencePenalty: settings.presencePenalty,
+        //frequencyPenalty: settings.frequencyPenalty,
       );
 
       final response = Gemini.instance.streamChat(history,
