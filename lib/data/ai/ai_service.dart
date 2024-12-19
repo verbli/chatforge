@@ -27,7 +27,6 @@ abstract class AIService {
   static AIService forProvider(ProviderConfig provider) {
     switch (provider.type) {
       case ProviderType.openAI:
-      case ProviderType.openAICompatible:
         return OpenAIService(provider);
       case ProviderType.anthropic:
         return AnthropicService(provider);

@@ -1,4 +1,4 @@
-// data/models.g.dart
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'models.dart';
 
@@ -35,7 +35,6 @@ const _$ProviderTypeEnumMap = {
   ProviderType.openAI: 'openAI',
   ProviderType.anthropic: 'anthropic',
   ProviderType.gemini: 'gemini',
-  ProviderType.openAICompatible: 'openAICompatible',
 };
 
 _$ModelConfigImpl _$$ModelConfigImplFromJson(Map<String, dynamic> json) =>

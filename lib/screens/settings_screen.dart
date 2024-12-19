@@ -87,35 +87,10 @@ class SettingsScreen extends ConsumerWidget {
                         ],
 
                         ListTile(
-                          title: Text(
-                            'AI Providers',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          // TODO: Uncomment when other providers work
-                          /*
-                          trailing: IconButton(
-                            icon: const Icon(Icons.add),
-                            onPressed: () => _showAddProviderDialog(context, ref),
-                          ),
-                           */
-                        ),
-                        providers.when(
-                          data: (providerList) => Column(
-                            children: providerList
-                                .map((provider) => _ProviderListItem(
-                                      provider: provider,
-                                      onEdit: () =>
-                                          _editProvider(context, ref, provider),
-                                      onDelete: () =>
-                                          _deleteProvider(context, ref, provider),
-                                      onTest: () =>
-                                          _testProvider(context, ref, provider),
-                                    ))
-                                .toList(),
-                          ),
-                          loading: () =>
-                              const Center(child: CircularProgressIndicator()),
-                          error: (err, stack) => Center(child: Text('Error: $err')),
+                          title: const Text('AI Providers'),
+                          subtitle: const Text('Configure API keys'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => Navigator.pushNamed(context, '/providers'),
                         ),
 
                         // TODO: Uncomment when this works
