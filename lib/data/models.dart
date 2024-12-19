@@ -75,11 +75,16 @@ class ModelCapabilities with _$ModelCapabilities {
 @freezed
 class ModelSettings with _$ModelSettings {
   const factory ModelSettings({
-    @Default(0.7) double temperature,
-    @Default(0.9) double topP,
-    @Default(0.0) double presencePenalty,
-    @Default(0.0) double frequencyPenalty,
-    @Default("You are a helpful AI assistant.") String systemPrompt,
+    @Default(0.7)
+    double temperature,
+    @Default(0.9)
+    double topP,
+    @Default(0.0)
+    double presencePenalty,
+    @Default(0.0)
+    double frequencyPenalty,
+    @Default("You are a helpful AI assistant.")
+    String systemPrompt,
     required int maxContextTokens,
     @Default(TruncationStrategy.keepSystemPrompt) TruncationStrategy truncationStrategy,
     @Default(4096) int maxResponseTokens,

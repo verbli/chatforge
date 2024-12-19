@@ -285,6 +285,103 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                         setState(() =>
                         _settings = _settings.copyWith(systemPrompt: value)),
                   ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Text('Presence Penalty:', style: TextStyle(fontWeight: FontWeight.w500)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextFormField(
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          initialValue: _settings.presencePenalty.toString(),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return 'Required';
+                            final penalty = double.tryParse(value);
+                            if (penalty == null || penalty < -2 || penalty > 2) {
+                              return 'Must be between -2 and 2';
+                            }
+                            return null;
+                          },
+                          onChanged: (value) {
+                            final penalty = double.tryParse(value);
+                            if (penalty != null) {
+                              setState(() => _settings = _settings.copyWith(presencePenalty: penalty));
+                            }
+                          },
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.help_outline, size: 20),
+                        onPressed: () => showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Presence Penalty'),
+                            content: const Text(
+                                'Controls the likelihood of the model repeating the same concepts. Higher values (up to 2) discourage repetition.'
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      const Text('Frequency Penalty:', style: TextStyle(fontWeight: FontWeight.w500)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextFormField(
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          initialValue: _settings.frequencyPenalty.toString(),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return 'Required';
+                            final penalty = double.tryParse(value);
+                            if (penalty == null || penalty < -2 || penalty > 2) {
+                              return 'Must be between -2 and 2';
+                            }
+                            return null;
+                          },
+                          onChanged: (value) {
+                            final penalty = double.tryParse(value);
+                            if (penalty != null) {
+                              setState(() => _settings = _settings.copyWith(frequencyPenalty: penalty));
+                            }
+                          },
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.help_outline, size: 20),
+                        onPressed: () => showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Frequency Penalty'),
+                            content: const Text(
+                                'Controls the likelihood of the model repeating the same words. Higher values (up to 2) discourage word repetition.'
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ],
             );
