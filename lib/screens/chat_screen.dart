@@ -973,7 +973,7 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                               width: 100,
                               child: TextFormField(
                                 decoration: const InputDecoration(
-                                  hintText: '0.0 - 2.0',
+                                  hintText: '0.0 - 1.0',
                                 ),
                                 keyboardType: TextInputType.number,
                                 controller: _temperatureController,
@@ -986,10 +986,10 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                                 },
                               ),
                             ),
-                            _HelpIcon(
+                            const _HelpIcon(
                               title: 'Temperature',
                               content:
-                                  'Controls the randomness of the output. Lower values result in more predictable text, while higher values result in more surprising text.',
+                                  'Controls randomness in LLM responses by scaling the probability distribution over possible outputs; higher values (e.g., 0.7–1.0) increase creativity, while lower values (e.g., 0.1–0.3) make output more focused.',
                             ),
                           ],
                         ),
@@ -1015,10 +1015,10 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                                 },
                               ),
                             ),
-                            _HelpIcon(
+                            const _HelpIcon(
                               title: 'Top P',
                               content:
-                                  'Controls the diversity of the output. Lower values result in more focused and deterministic text, while higher values result in more diverse and creative text.',
+                                  'Filters output probabilities to include only the most likely tokens whose cumulative probability is below a threshold (e.g., 0.8–1.0); it reduces randomness by considering a limited set of plausible continuations.',
                             ),
                           ],
                         ),
@@ -1045,10 +1045,10 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                                   },
                                 ),
                               ),
-                              _HelpIcon(
+                              const _HelpIcon(
                                 title: 'Presence Penalty',
                                 content:
-                                    'Controls the likelihood of the model using new words or phrases. Higher values increase the likelihood of new content.',
+                                    'Discourages the repetition of tokens already present in the conversation, enhancing novelty; typical ranges are -2 to 2, with higher values enforcing stricter penalties.',
                               ),
                             ],
                           ),
@@ -1074,10 +1074,10 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                                   },
                                 ),
                               ),
-                              _HelpIcon(
+                              const _HelpIcon(
                                 title: 'Frequency Penalty',
                                 content:
-                                    'Controls the likelihood of the model repeating words or phrases. Higher values decrease the likelihood of repetition.',
+                                    'Reduces the likelihood of repeating frequently used tokens in a response, encouraging diversity in phrasing; it ranges from -2 to 2, with higher values penalizing repetition more strongly.',
                               ),
                             ],
                           ),
@@ -1099,10 +1099,10 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                                     _settings.copyWith(systemPrompt: value)),
                               ),
                             ),
-                            _HelpIcon(
+                            const _HelpIcon(
                               title: 'System Prompt',
                               content:
-                                  'A system prompt is a set of instructions that tells the AI how to behave. It can be used to set the tone, style, and persona of the AI.',
+                                  'Sets the behavior, tone, and role of the AI, ensuring its responses align with the desired context or task. For example, it can instruct the model to act as a technical expert or a friendly assistant.',
                             ),
                           ],
                         ),

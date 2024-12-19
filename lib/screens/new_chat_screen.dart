@@ -147,13 +147,6 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                         textCapitalization: TextCapitalization.sentences,
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.help_outline),
-                      onPressed: () => _showHelpDialog(
-                        'Title',
-                        'The title of the conversation. This is only used to identify the conversation in the list.',
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -251,19 +244,21 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                         label: 'Temperature',
                         value: _settings.temperature,
                         min: 0.0,
-                        max: 2.0,
+                        max: 1.0,
                         divisions: 20,
                         controller: _temperatureController,
                         onChanged: (value) => setState(() => _settings = _settings.copyWith(temperature: value)),
+                        helpText: 'Controls randomness in LLM responses by scaling the probability distribution over possible outputs; higher values (e.g., 0.7–1.0) increase creativity, while lower values (e.g., 0.1–0.3) make output more focused.',
                       ),
                       SettingsRow(
                         label: 'Top P',
                         value: _settings.topP,
                         min: 0.0,
                         max: 1.0,
-                        divisions: 10,
+                        divisions: 20,
                         controller: _topPController,
                         onChanged: (value) => setState(() => _settings = _settings.copyWith(topP: value)),
+                        helpText: 'Filters output probabilities to include only the most likely tokens whose cumulative probability is below a threshold (e.g., 0.8–1.0); it reduces randomness by considering a limited set of plausible continuations.',
                       ),
                       if (_selectedProviderId != 'gemini') ...[
                         SettingsRow(
@@ -274,6 +269,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                           divisions: 40,
                           controller: _presencePenaltyController,
                           onChanged: (value) => setState(() => _settings = _settings.copyWith(presencePenalty: value)),
+                          helpText: 'Discourages the repetition of tokens already present in the conversation, enhancing novelty; typical ranges are -2 to 2, with higher values enforcing stricter penalties.',
                         ),
                         SettingsRow(
                           label: 'Frequency Penalty',
@@ -283,6 +279,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                           divisions: 40,
                           controller: _frequencyPenaltyController,
                           onChanged: (value) => setState(() => _settings = _settings.copyWith(frequencyPenalty: value)),
+                          helpText: 'Reduces the likelihood of repeating frequently used tokens in a response, encouraging diversity in phrasing; it ranges from -2 to 2, with higher values penalizing repetition more strongly.',
                         ),
                       ],
                       Row(
@@ -304,7 +301,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                             icon: const Icon(Icons.help_outline),
                             onPressed: () => _showHelpDialog(
                               'System Prompt',
-                              'A system prompt provides instructions to the AI on how to behave. This can be used to customize the AI\'s personality or to provide it with specific knowledge.',
+                              'Sets the behavior, tone, and role of the AI, ensuring its responses align with the desired context or task. For example, it can instruct the model to act as a technical expert or a friendly assistant.',
                             ),
                           ),
                         ],

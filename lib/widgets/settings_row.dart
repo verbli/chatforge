@@ -13,9 +13,9 @@ class SettingsRow extends StatelessWidget {
 
   const SettingsRow({
     super.key,
+    this.helpText,
     required this.label,
     required this.value,
-    this.helpText,
     required this.min,
     required this.max,
     required this.divisions,
