@@ -71,6 +71,13 @@ class GeminiService extends AIService {
         );
       }).toList();
 
+      // Add the system prompt
+      if (settings.systemPrompt.isNotEmpty) {
+        history.insert(0, Content(
+            role: 'system',
+            parts: [Part.text(settings.systemPrompt)]));
+      }
+
       // Validate we have at least one message
       if (history.isEmpty) {
         throw AIServiceException(
@@ -96,7 +103,7 @@ class GeminiService extends AIService {
       final config = GenerationConfig(
         temperature: settings.temperature,
         topP: settings.topP,
-        maxOutputTokens: model.capabilities.maxTokens - inputTokens,
+        maxOutputTokens: settings.maxResponseTokens,
       );
 
       final response = Gemini.instance.streamChat(history,
