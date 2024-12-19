@@ -2,7 +2,6 @@
 
 import 'package:chatforge/data/storage/storage_service.dart';
 import 'package:chatforge/screens/home_screen.dart';
-import 'package:chatforge/widgets/new_chat_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -87,17 +86,17 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
         return;
       }
 
-      final result = await showDialog<Map<String, dynamic>>(
-        context: context,
-        builder: (context) => const NewChatDialog(),
+      final result = await Navigator.pushNamed(
+        context,
+        '/new-chat',
       );
 
-      if (result != null && mounted) {
+      if (result != null && result is Map<String, dynamic> && mounted) {
         final conversation = await ref.read(chatRepositoryProvider).createConversation(
-          title: result['title'],
-          providerId: result['providerId'],
-          modelId: result['modelId'],
-          settings: result['settings'],
+          title: result['title'] as String,
+          providerId: result['providerId'] as String,
+          modelId: result['modelId'] as String,
+          settings: result['settings'] as ModelSettings,
         );
 
         if (mounted) {
