@@ -8,10 +8,12 @@ part 'models.g.dart';
 
 // Core enums
 enum ProviderType {
-  openAI,
-  anthropic,
-  gemini,
-  openAICompatible
+  openAI('OpenAI'),
+  anthropic('Anthropic'),
+  gemini('Google Gemini');
+
+  final String displayName;
+  const ProviderType(this.displayName);
 }
 
 enum Role {

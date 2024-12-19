@@ -120,27 +120,26 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _selectedProviderId,
-                  decoration: const InputDecoration(labelText: 'AI Provider'),
+                  value: _selectedModelId,
+                  decoration: const InputDecoration(labelText: 'Model'),
                   items: provs
-                      .where((p) => p.apiKey.isNotEmpty) // Only show providers with API keys
-                      .map((p) => DropdownMenuItem(
-                    value: p.id,
-                    child: Text(p.name),
+                      .firstWhere((p) => p.id == _selectedProviderId)
+                      .models
+                      .where((m) => m.isEnabled)  // Only show enabled models
+                      .map((m) => DropdownMenuItem(
+                    value: m.id,
+                    child: Text(m.name),
                   ))
                       .toList(),
                   onChanged: (id) {
-                    setState(() {
-                      _selectedProviderId = id;
-                      _selectedModelId = null;
-                      if (id != null) {
-                        final provider = provs.firstWhere((p) => p.id == id);
-                        if (provider.models.isNotEmpty) {
-                          _selectedModelId = provider.models.first.id;
-                          _settings = provider.models.first.settings;
-                        }
-                      }
-                    });
+                    if (id != null) {
+                      final provider = provs.firstWhere((p) => p.id == _selectedProviderId);
+                      final model = provider.models.firstWhere((m) => m.id == id);
+                      setState(() {
+                        _selectedModelId = id;
+                        _settings = model.settings;
+                      });
+                    }
                   },
                   validator: (value) => value == null ? 'Required' : null,
                 ),

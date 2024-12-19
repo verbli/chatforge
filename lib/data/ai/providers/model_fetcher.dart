@@ -2,6 +2,7 @@
 
 import 'package:dio/dio.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:anthropic_sdk_dart/anthropic_sdk_dart.dart';
 import '../../models.dart';
 
 abstract class ModelFetcher {
@@ -40,29 +41,54 @@ class OpenAIModelFetcher implements ModelFetcher {
 class AnthropicModelFetcher implements ModelFetcher {
   @override
   Future<List<ModelConfig>> fetchModels(String apiKey) async {
-    final dio = Dio(BaseOptions(
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2024-01-01'
-      },
-    ));
-
-    try {
-      final response = await dio.get('https://api.anthropic.com/v1/models');
-      return (response.data['models'] as List)
-          .map((m) => ModelConfig(
-        id: m['id'],
-        name: m['name'] ?? m['id'],
+    // Anthropic doesn't have a way to programmatically fetch these yet
+    return [
+      const ModelConfig(
+        id: 'claude-3-5-sonnet-latest',
+        name: 'Claude 3.5 Sonnet',
         capabilities: ModelCapabilities(
-          maxTokens: m['context_window'] ?? 16000,
+          maxTokens: 8192,
           supportsStreaming: true,
         ),
-        settings: ModelSettings(maxContextTokens: m['context_window'] ?? 16000),
-      ))
-          .toList();
-    } catch (e) {
-      throw Exception('Failed to fetch Anthropic models: $e');
-    }
+        settings: ModelSettings(maxContextTokens: 200000),
+      ),
+      const ModelConfig(
+        id: 'claude-3-5-haiku-latest',
+        name: 'Claude 3.5 Haiku',
+        capabilities: ModelCapabilities(
+          maxTokens: 8192,
+          supportsStreaming: true,
+        ),
+        settings: ModelSettings(maxContextTokens: 200000),
+      ),
+      const ModelConfig(
+        id: 'claude-3-opus-latest',
+        name: 'Claude 3 Opus',
+        capabilities: ModelCapabilities(
+          maxTokens: 4096,
+          supportsStreaming: true,
+        ),
+        settings: ModelSettings(maxContextTokens: 200000),
+      ),
+      const ModelConfig(
+        id: 'claude-3-sonnet-20240229',
+        name: 'Claude 3 Sonnet',
+        capabilities: ModelCapabilities(
+          maxTokens: 4096,
+          supportsStreaming: true,
+        ),
+        settings: ModelSettings(maxContextTokens: 200000),
+      ),
+      const ModelConfig(
+        id: 'claude-3-haiku-20240307',
+        name: 'Claude 3 Haiku',
+        capabilities: ModelCapabilities(
+          maxTokens: 4096,
+          supportsStreaming: true,
+        ),
+        settings: ModelSettings(maxContextTokens: 200000),
+      ),
+    ];
   }
 }
 
@@ -70,6 +96,7 @@ class GeminiModelFetcher implements ModelFetcher {
   @override
   Future<List<ModelConfig>> fetchModels(String apiKey) async {
     try {
+      Gemini.reInitialize(apiKey: apiKey);
       return (await Gemini.instance.listModels()).map((model) {
         return ModelConfig(
           id: model.name ?? 'unknown-model',

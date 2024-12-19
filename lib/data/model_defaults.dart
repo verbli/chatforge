@@ -16,16 +16,6 @@ class ModelDefaults {
       settings: ModelSettings(maxContextTokens: 128000),
     ),
     const ModelConfig(
-      id: 'gpt-4o-2024-11-20',
-      name: 'GPT-4o 2024-11-20 Snapshot',
-      capabilities: ModelCapabilities(
-        maxTokens: 16384,
-        supportsStreaming: true,
-        supportsFunctions: true,
-      ),
-      settings: ModelSettings(maxContextTokens: 128000),
-    ),
-    const ModelConfig(
       id: 'gpt-4o-mini',
       name: 'GPT-4o mini',
       capabilities: ModelCapabilities(
@@ -36,9 +26,18 @@ class ModelDefaults {
       settings: ModelSettings(maxContextTokens: 128000),
     ),
 
-
-    // TODO: o1 models don't work right now, just disable
+    // TODO: Figure out why these don't work
     /*
+    const ModelConfig(
+      id: 'o1',
+      name: 'o1',
+      capabilities: ModelCapabilities(
+        maxTokens: 100000,
+        supportsStreaming: true,
+        supportsFunctions: true,
+      ),
+      settings: ModelSettings(maxContextTokens: 200000),
+    ),
     const ModelConfig(
       id: 'o1-preview',
       name: 'o1 Preview',
@@ -53,7 +52,7 @@ class ModelDefaults {
       id: 'o1-mini',
       name: 'o1 Mini',
       capabilities: ModelCapabilities(
-        maxTokens: 32768,
+        maxTokens: 65536,
         supportsStreaming: true,
         supportsFunctions: true,
       ),
@@ -85,15 +84,6 @@ class ModelDefaults {
     const ModelConfig(
       id: 'claude-3-opus-latest',
       name: 'Claude 3 Opus',
-      capabilities: ModelCapabilities(
-        maxTokens: 4096,
-        supportsStreaming: true,
-      ),
-      settings: ModelSettings(maxContextTokens: 200000),
-    ),
-    const ModelConfig(
-      id: 'claude-3-sonnet-20240229',
-      name: 'Claude 3 Sonnet',
       capabilities: ModelCapabilities(
         maxTokens: 4096,
         supportsStreaming: true,
