@@ -10,7 +10,7 @@ class GeminiService extends AIService {
 
   GeminiService(this._provider) {
     Gemini.init(
-      apiKey: _provider.apiKey
+      apiKey: _provider.apiKey,
     );
   }
 
@@ -74,7 +74,7 @@ class GeminiService extends AIService {
       // Add the system prompt
       if (settings.systemPrompt.isNotEmpty) {
         history.insert(0, Content(
-            role: 'system',
+            role: 'model',
             parts: [Part.text(settings.systemPrompt)]));
       }
 
@@ -108,7 +108,7 @@ class GeminiService extends AIService {
 
       final response = Gemini.instance.streamChat(history,
           modelName: model.id,
-          generationConfig: config
+          generationConfig: config,
       );
 
       // Process the stream

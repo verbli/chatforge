@@ -113,31 +113,26 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                   controller: _titleController,
                   decoration: const InputDecoration(labelText: 'Title'),
                   validator: (value) =>
-                  value?.isEmpty == true
-                      ? 'Required'
-                      : null,
+                  value?.isEmpty == true ? 'Required' : null,
                   textCapitalization: TextCapitalization.sentences,
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _selectedModelId,
-                  decoration: const InputDecoration(labelText: 'Model'),
-                  items: provs
-                      .firstWhere((p) => p.id == _selectedProviderId)
-                      .models
-                      .where((m) => m.isEnabled)  // Only show enabled models
-                      .map((m) => DropdownMenuItem(
-                    value: m.id,
-                    child: Text(m.name),
+                  value: _selectedProviderId,
+                  decoration: const InputDecoration(labelText: 'Provider'),
+                  items: validProviders
+                      .map((p) => DropdownMenuItem(
+                    value: p.id,
+                    child: Text(p.name),
                   ))
                       .toList(),
                   onChanged: (id) {
                     if (id != null) {
-                      final provider = provs.firstWhere((p) => p.id == _selectedProviderId);
-                      final model = provider.models.firstWhere((m) => m.id == id);
+                      final provider = provs.firstWhere((p) => p.id == id);
                       setState(() {
-                        _selectedModelId = id;
-                        _settings = model.settings;
+                        _selectedProviderId = id;
+                        _selectedModelId = provider.models.firstWhere((m) => m.isEnabled, orElse: () => provider.models.first).id;
+                        _settings = provider.models.firstWhere((m) => m.id == _selectedModelId).settings;
                       });
                     }
                   },
@@ -151,18 +146,16 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                     items: provs
                         .firstWhere((p) => p.id == _selectedProviderId)
                         .models
-                        .map((m) =>
-                        DropdownMenuItem(
-                          value: m.id,
-                          child: Text(m.name),
-                        ))
+                        .where((m) => m.isEnabled)
+                        .map((m) => DropdownMenuItem(
+                      value: m.id,
+                      child: Text(m.name),
+                    ))
                         .toList(),
                     onChanged: (id) {
                       if (id != null) {
-                        final provider = provs.firstWhere((p) =>
-                        p.id == _selectedProviderId);
-                        final model = provider.models.firstWhere((m) =>
-                        m.id == id);
+                        final provider = provs.firstWhere((p) => p.id == _selectedProviderId);
+                        final model = provider.models.firstWhere((m) => m.id == id);
                         setState(() {
                           _selectedModelId = id;
                           _settings = model.settings;
