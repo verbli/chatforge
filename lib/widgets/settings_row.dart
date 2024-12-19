@@ -45,12 +45,12 @@ class SettingsRow extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text(label),
+          child: Text(label, softWrap: true),
         ),
         Row(
           children: [
             SizedBox(
-              width: 100,
+              width: 50,
               child: TextFormField(
                 controller: controller,
                 keyboardType: TextInputType.number,
@@ -60,7 +60,7 @@ class SettingsRow extends StatelessWidget {
                 decoration: const InputDecoration(
                   isDense: true,
                   contentPadding:
-                      EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      EdgeInsets.symmetric(vertical: 8, horizontal: 5),
                 ),
                 onChanged: (newValue) {
                   final parsedValue = double.tryParse(newValue);
