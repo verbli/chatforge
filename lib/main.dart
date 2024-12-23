@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/config.dart';
+import 'core/theme.dart';
 import 'providers/theme_provider.dart';
 import 'router.dart';
 
@@ -30,21 +31,13 @@ class ChatForgeApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
+    final themeColor = ref.watch(themeColorProvider);
 
     return MaterialApp(
       title: "${BuildConfig.appName}${BuildConfig.isPro ? " Pro" : ""}",
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme(seedColor: themeColor),
+      darkTheme: AppTheme.darkTheme(seedColor: themeColor),
       debugShowCheckedModeBanner: false,
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
       themeMode: themeMode,
       initialRoute: AppRouter.home,
       onGenerateRoute: AppRouter.generateRoute,

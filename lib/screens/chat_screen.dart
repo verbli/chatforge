@@ -223,7 +223,35 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         leading: widget.isPanel ? null : const BackButton(),
-        title: Text(conversation.value?.title ?? 'Chat'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(conversation.value?.title ?? 'Chat'),
+            if (conversation.value != null)
+              FutureBuilder<ProviderConfig>(
+                future: ref.read(providerRepositoryProvider).getProvider(
+                  conversation.value!.providerId,
+                ),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) return const SizedBox.shrink();
+                  final provider = snapshot.data!;
+                  final model = provider.models.firstWhere(
+                        (m) => m.id == conversation.value!.modelId,
+                    orElse: () => const ModelConfig(
+                      id: 'unknown',
+                      name: 'Unknown Model',
+                      capabilities: ModelCapabilities(maxTokens: 4096),
+                      settings: ModelSettings(maxContextTokens: 4096),
+                    ),
+                  );
+                  return Text(
+                    '${provider.name} / ${model.name}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  );
+                },
+              ),
+          ],
+        ),
         actions: [
           PopupMenuButton<String>(
             itemBuilder: (context) => [
@@ -680,8 +708,9 @@ class _MessageBubbleState extends State<MessageBubble> {
           margin: const EdgeInsets.symmetric(vertical: 4),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color:
-                isUser ? theme.colorScheme.primary : theme.colorScheme.surface,
+            color: isUser
+                ? theme.colorScheme.primary
+                : theme.colorScheme.surfaceTint.withValues(alpha: 0.15), // Changed from surface
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -741,7 +770,9 @@ class _MessageInput extends StatelessWidget {
               controller: controller,
               decoration: const InputDecoration(
                 hintText: 'Type a message...',
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(24)),
+                ),
               ),
               maxLines: null,
               enabled: !isGenerating,
