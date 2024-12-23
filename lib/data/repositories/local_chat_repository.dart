@@ -61,22 +61,6 @@ class LocalChatRepository extends ChatRepository {
     _conversationController.add(conversations);
   }
 
-  Future<void> _updateCumulativeUsage(
-      DatabaseService txn,
-      String modelKey,
-      int inputTokens,
-      int outputTokens,
-      ) async {
-    await txn.insert(
-      'token_usage',
-      {
-        'model_key': modelKey,
-        'total_input_tokens': inputTokens,
-        'total_output_tokens': outputTokens,
-        'updated_at': DateTime.now().millisecondsSinceEpoch,
-      },
-    );
-  }
 
   @override
   Stream<List<Conversation>> watchConversations() {
@@ -139,8 +123,7 @@ class LocalChatRepository extends ChatRepository {
       'providerId': maps[0]['provider_id'],
       'modelId': maps[0]['model_id'],
       'settings': json.decode(maps[0]['settings']),
-      'totalInputTokens': maps[0]['total_input_tokens'],
-      'totalOutputTokens': maps[0]['total_output_tokens'],
+      'totalTokens': maps[0]['total_tokens'],
       'sortOrder': maps[0]['sort_order'],
     });
   }
@@ -180,8 +163,7 @@ class LocalChatRepository extends ChatRepository {
         'provider_id': conversation.providerId,
         'model_id': conversation.modelId,
         'settings': json.encode(conversation.settings.toJson()),
-        'total_input_tokens': conversation.totalInputTokens,
-        'total_output_tokens': conversation.totalOutputTokens,
+        'total_tokens': conversation.totalTokens,
         'sort_order': conversation.sortOrder,
       },
     );
@@ -203,53 +185,18 @@ class LocalChatRepository extends ChatRepository {
         'token_count': message.tokenCount,
       });
 
-      // Update conversation token counts
+      // Update conversation total tokens
       await txn.rawUpdate('''
       UPDATE conversations 
       SET 
-        total_input_tokens = total_input_tokens + ?,
-        total_output_tokens = total_output_tokens + ?,
+        total_tokens = total_tokens + ?,
         updated_at = ?
       WHERE id = ?
     ''', [
-        message.role == Role.user ? message.tokenCount : 0,
-        message.role == Role.assistant ? message.tokenCount : 0,
+        message.tokenCount,
         DateTime.now().millisecondsSinceEpoch,
         message.conversationId,
       ]);
-
-      // Get conversation details for model key
-      final List<Map<String, dynamic>> convos = await txn.query(
-        'conversations',
-        columns: ['provider_id', 'model_id'],
-        where: 'id = ?',
-        whereArgs: [message.conversationId],
-      );
-
-      if (convos.isNotEmpty) {
-        final modelKey = '${convos[0]['provider_id']}/${convos[0]['model_id']}';
-        final inputTokens = message.role == Role.user ? message.tokenCount : 0;
-        final outputTokens =
-        message.role == Role.assistant ? message.tokenCount : 0;
-
-        // Get current cumulative usage
-        final List<Map<String, dynamic>> currentUsage = await txn.query(
-          'token_usage',
-          where: 'model_key = ?',
-          whereArgs: [modelKey],
-        );
-
-        final newInput =
-            (currentUsage.isEmpty ? 0 : currentUsage[0]['total_input_tokens'] as int) +
-                inputTokens;
-        final newOutput =
-            (currentUsage.isEmpty ? 0 : currentUsage[0]['total_output_tokens'] as int) +
-                outputTokens;
-
-        debugPrint(
-            'Updating token usage for $modelKey: input=$newInput, output=$newOutput');
-        await _updateCumulativeUsage(txn, modelKey, newInput, newOutput);
-      }
     });
 
     _broadcastMessages(message.conversationId);
@@ -258,41 +205,27 @@ class LocalChatRepository extends ChatRepository {
   }
 
   @override
-  Future<void> resetTokenUsage(Set<String> modelKeys) async {
-    await databaseService.transaction((txn) async {
-      for (final modelKey in modelKeys) {
-        await txn.delete(
-          'token_usage',
-          where: 'model_key = ?',
-          whereArgs: [modelKey],
-        );
-      }
-    });
-
-    // Broadcast changes
-    _broadcastConversations();
-  }
-
-  @override
   Future<Map<String, int>> getTokenUsageByModel() async {
     try {
-      final List<Map<String, dynamic>> results = await databaseService.query(
-          'token_usage', orderBy: 'updated_at DESC');
+      final List<Map<String, dynamic>> results = await databaseService.rawQuery('''
+        SELECT c.provider_id, c.model_id, m.role, SUM(m.token_count) as total
+        FROM messages m
+        JOIN conversations c ON m.conversation_id = c.id
+        GROUP BY c.provider_id, c.model_id, m.role
+      ''');
 
       final usage = <String, int>{};
       for (final row in results) {
-        final modelKey = row['model_key'] as String;
-        final inputTokens = row['total_input_tokens'] as int;
-        final outputTokens = row['total_output_tokens'] as int;
-
-        if (inputTokens > 0) {
-          usage['$modelKey/input'] = inputTokens;
-        }
-        if (outputTokens > 0) {
-          usage['$modelKey/output'] = outputTokens;
+        final modelKey = '${row['provider_id']}/${row['model_id']}';
+        final role = row['role'] as String;
+        final total = row['total'] as int;
+        
+        if (role == 'user') {
+          usage['$modelKey/input'] = total;
+        } else if (role == 'assistant') {
+          usage['$modelKey/output'] = total;
         }
       }
-      debugPrint('Token usage loaded: $usage');
       return usage;
     } catch (e) {
       debugPrint('Error getting token usage: $e');
@@ -310,8 +243,7 @@ class LocalChatRepository extends ChatRepository {
         'provider_id': conversation.providerId,
         'model_id': conversation.modelId,
         'settings': json.encode(conversation.settings.toJson()),
-        'total_input_tokens': conversation.totalInputTokens,
-        'total_output_tokens': conversation.totalOutputTokens,
+        'total_tokens': conversation.totalTokens,
         'sort_order': conversation.sortOrder,
       },
       where: 'id = ?',
@@ -402,19 +334,11 @@ class LocalChatRepository extends ChatRepository {
 
       // Update conversation token counts if there's a difference
       if (tokenDiff != 0) {
-        if (message.role == Role.user) {
-          await txn.rawUpdate('''
+        await txn.rawUpdate('''
           UPDATE conversations
-          SET total_input_tokens = total_input_tokens + ?
+          SET total_tokens = total_tokens + ?
           WHERE id = ?
         ''', [tokenDiff, message.conversationId]);
-        } else if (message.role == Role.assistant) {
-          await txn.rawUpdate('''
-          UPDATE conversations
-          SET total_output_tokens = total_output_tokens + ?
-          WHERE id = ?
-        ''', [tokenDiff, message.conversationId]);
-        }
       }
     });
 
@@ -448,20 +372,12 @@ class LocalChatRepository extends ChatRepository {
         whereArgs: [id],
       );
 
-      // Update conversation token counts
-      if (role == 'user') {
-        await txn.rawUpdate('''
-          UPDATE conversations
-          SET total_input_tokens = total_input_tokens - ?
-          WHERE id = ?
-        ''', [tokenCount, conversationId]);
-      } else if (role == 'assistant') {
-        await txn.rawUpdate('''
-          UPDATE conversations
-          SET total_output_tokens = total_output_tokens - ?
-          WHERE id = ?
-        ''', [tokenCount, conversationId]);
-      }
+      // Update conversation total tokens
+      await txn.rawUpdate('''
+        UPDATE conversations
+        SET total_tokens = total_tokens - ?
+        WHERE id = ?
+      ''', [tokenCount, conversationId]);
     });
 
     _broadcastMessages(conversationId);
@@ -514,6 +430,56 @@ class LocalChatRepository extends ChatRepository {
         });
         break;
       }
+    }
+  }
+
+  @override
+  Future<void> resetTokenUsage(Set<String> modelKeys) async {
+    if (modelKeys.isEmpty) return;
+
+    // Split the model keys into provider and model IDs
+    final modelPairs = modelKeys.map((key) {
+      final parts = key.split('/');
+      return (providerId: parts[0], modelId: parts[1]);
+    });
+
+    // Build the WHERE clause for matching provider_id/model_id pairs
+    final conditions = modelPairs.map((pair) => 
+      "(provider_id = '${pair.providerId}' AND model_id = '${pair.modelId}')"
+    ).join(' OR ');
+
+    await databaseService.transaction((txn) async {
+      // First get affected conversation IDs
+      final affectedConversations = await txn.rawQuery('''
+        SELECT id FROM conversations 
+        WHERE $conditions
+      ''');
+      
+      final conversationIds = affectedConversations
+          .map((row) => row['id'] as String)
+          .toList();
+
+      if (conversationIds.isEmpty) return;
+
+      // Reset message token counts
+      await txn.rawUpdate('''
+        UPDATE messages 
+        SET token_count = 0
+        WHERE conversation_id IN (${conversationIds.map((_) => '?').join(',')})
+      ''', conversationIds);
+
+      // Reset conversation total tokens
+      await txn.rawUpdate('''
+        UPDATE conversations
+        SET total_tokens = 0
+        WHERE id IN (${conversationIds.map((_) => '?').join(',')})
+      ''', conversationIds);
+    });
+
+    // Broadcast updates
+    _broadcastConversations();
+    for (final id in _messageControllers.keys) {
+      _broadcastMessages(id);
     }
   }
 }

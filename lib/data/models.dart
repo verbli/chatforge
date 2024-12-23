@@ -107,8 +107,7 @@ class Conversation with _$Conversation {
     required String providerId,
     required String modelId,
     required ModelSettings settings,
-    @Default(0) int totalInputTokens,
-    @Default(0) int totalOutputTokens,
+    @Default(0) int totalTokens,
     @Default(0) int sortOrder,
   }) = _Conversation;
 

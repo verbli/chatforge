@@ -123,8 +123,7 @@ _$ConversationImpl _$$ConversationImplFromJson(Map<String, dynamic> json) =>
       modelId: json['modelId'] as String,
       settings:
           ModelSettings.fromJson(json['settings'] as Map<String, dynamic>),
-      totalInputTokens: (json['totalInputTokens'] as num?)?.toInt() ?? 0,
-      totalOutputTokens: (json['totalOutputTokens'] as num?)?.toInt() ?? 0,
+      totalTokens: (json['totalTokens'] as num?)?.toInt() ?? 0,
       sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
     );
 
@@ -137,8 +136,7 @@ Map<String, dynamic> _$$ConversationImplToJson(_$ConversationImpl instance) =>
       'providerId': instance.providerId,
       'modelId': instance.modelId,
       'settings': instance.settings,
-      'totalInputTokens': instance.totalInputTokens,
-      'totalOutputTokens': instance.totalOutputTokens,
+      'totalTokens': instance.totalTokens,
       'sortOrder': instance.sortOrder,
     };
 

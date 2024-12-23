@@ -1,17 +1,16 @@
+import 'package:chatforge/data/storage/drivers/sqlite3_driver.dart';
+import 'package:chatforge/data/storage/services/sqlite3_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatforge/data/storage/drivers/sqflite_driver.dart';
 import 'ai/ai_service.dart';
 import 'models.dart';
 import 'repositories/base_repository.dart';
 import 'repositories/local_chat_repository.dart';
 import 'repositories/local_provider_repository.dart';
 import 'storage/services/database_service.dart';
-import 'storage/services/sqflite_service.dart';
 
 final databaseServiceProvider = Provider<DatabaseService>((ref) {
-  // Use Sqflite as the default for now.
-  final driver = SqfliteDriver();
-  return SqfliteService(driver);
+  final driver = SQLite3Driver();
+  return SQLite3Service(driver);
 });
 
 final chatRepositoryProvider =

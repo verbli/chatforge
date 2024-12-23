@@ -1,5 +1,7 @@
 
 abstract class DatabaseDriver {
+  // Debug helper
+  String get debugLabel => runtimeType.toString();
   Future<void> open({
     required String path,
     int? version,

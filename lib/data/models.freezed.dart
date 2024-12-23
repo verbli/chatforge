@@ -1222,8 +1222,7 @@ mixin _$Conversation {
   String get providerId => throw _privateConstructorUsedError;
   String get modelId => throw _privateConstructorUsedError;
   ModelSettings get settings => throw _privateConstructorUsedError;
-  int get totalInputTokens => throw _privateConstructorUsedError;
-  int get totalOutputTokens => throw _privateConstructorUsedError;
+  int get totalTokens => throw _privateConstructorUsedError;
   int get sortOrder => throw _privateConstructorUsedError;
 
   /// Serializes this Conversation to a JSON map.
@@ -1250,8 +1249,7 @@ abstract class $ConversationCopyWith<$Res> {
       String providerId,
       String modelId,
       ModelSettings settings,
-      int totalInputTokens,
-      int totalOutputTokens,
+      int totalTokens,
       int sortOrder});
 
   $ModelSettingsCopyWith<$Res> get settings;
@@ -1279,8 +1277,7 @@ class _$ConversationCopyWithImpl<$Res, $Val extends Conversation>
     Object? providerId = null,
     Object? modelId = null,
     Object? settings = null,
-    Object? totalInputTokens = null,
-    Object? totalOutputTokens = null,
+    Object? totalTokens = null,
     Object? sortOrder = null,
   }) {
     return _then(_value.copyWith(
@@ -1312,13 +1309,9 @@ class _$ConversationCopyWithImpl<$Res, $Val extends Conversation>
           ? _value.settings
           : settings // ignore: cast_nullable_to_non_nullable
               as ModelSettings,
-      totalInputTokens: null == totalInputTokens
-          ? _value.totalInputTokens
-          : totalInputTokens // ignore: cast_nullable_to_non_nullable
-              as int,
-      totalOutputTokens: null == totalOutputTokens
-          ? _value.totalOutputTokens
-          : totalOutputTokens // ignore: cast_nullable_to_non_nullable
+      totalTokens: null == totalTokens
+          ? _value.totalTokens
+          : totalTokens // ignore: cast_nullable_to_non_nullable
               as int,
       sortOrder: null == sortOrder
           ? _value.sortOrder
@@ -1354,8 +1347,7 @@ abstract class _$$ConversationImplCopyWith<$Res>
       String providerId,
       String modelId,
       ModelSettings settings,
-      int totalInputTokens,
-      int totalOutputTokens,
+      int totalTokens,
       int sortOrder});
 
   @override
@@ -1382,8 +1374,7 @@ class __$$ConversationImplCopyWithImpl<$Res>
     Object? providerId = null,
     Object? modelId = null,
     Object? settings = null,
-    Object? totalInputTokens = null,
-    Object? totalOutputTokens = null,
+    Object? totalTokens = null,
     Object? sortOrder = null,
   }) {
     return _then(_$ConversationImpl(
@@ -1415,13 +1406,9 @@ class __$$ConversationImplCopyWithImpl<$Res>
           ? _value.settings
           : settings // ignore: cast_nullable_to_non_nullable
               as ModelSettings,
-      totalInputTokens: null == totalInputTokens
-          ? _value.totalInputTokens
-          : totalInputTokens // ignore: cast_nullable_to_non_nullable
-              as int,
-      totalOutputTokens: null == totalOutputTokens
-          ? _value.totalOutputTokens
-          : totalOutputTokens // ignore: cast_nullable_to_non_nullable
+      totalTokens: null == totalTokens
+          ? _value.totalTokens
+          : totalTokens // ignore: cast_nullable_to_non_nullable
               as int,
       sortOrder: null == sortOrder
           ? _value.sortOrder
@@ -1442,8 +1429,7 @@ class _$ConversationImpl with DiagnosticableTreeMixin implements _Conversation {
       required this.providerId,
       required this.modelId,
       required this.settings,
-      this.totalInputTokens = 0,
-      this.totalOutputTokens = 0,
+      this.totalTokens = 0,
       this.sortOrder = 0});
 
   factory _$ConversationImpl.fromJson(Map<String, dynamic> json) =>
@@ -1465,17 +1451,14 @@ class _$ConversationImpl with DiagnosticableTreeMixin implements _Conversation {
   final ModelSettings settings;
   @override
   @JsonKey()
-  final int totalInputTokens;
-  @override
-  @JsonKey()
-  final int totalOutputTokens;
+  final int totalTokens;
   @override
   @JsonKey()
   final int sortOrder;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'Conversation(id: $id, title: $title, createdAt: $createdAt, updatedAt: $updatedAt, providerId: $providerId, modelId: $modelId, settings: $settings, totalInputTokens: $totalInputTokens, totalOutputTokens: $totalOutputTokens, sortOrder: $sortOrder)';
+    return 'Conversation(id: $id, title: $title, createdAt: $createdAt, updatedAt: $updatedAt, providerId: $providerId, modelId: $modelId, settings: $settings, totalTokens: $totalTokens, sortOrder: $sortOrder)';
   }
 
   @override
@@ -1490,8 +1473,7 @@ class _$ConversationImpl with DiagnosticableTreeMixin implements _Conversation {
       ..add(DiagnosticsProperty('providerId', providerId))
       ..add(DiagnosticsProperty('modelId', modelId))
       ..add(DiagnosticsProperty('settings', settings))
-      ..add(DiagnosticsProperty('totalInputTokens', totalInputTokens))
-      ..add(DiagnosticsProperty('totalOutputTokens', totalOutputTokens))
+      ..add(DiagnosticsProperty('totalTokens', totalTokens))
       ..add(DiagnosticsProperty('sortOrder', sortOrder));
   }
 
@@ -1511,28 +1493,16 @@ class _$ConversationImpl with DiagnosticableTreeMixin implements _Conversation {
             (identical(other.modelId, modelId) || other.modelId == modelId) &&
             (identical(other.settings, settings) ||
                 other.settings == settings) &&
-            (identical(other.totalInputTokens, totalInputTokens) ||
-                other.totalInputTokens == totalInputTokens) &&
-            (identical(other.totalOutputTokens, totalOutputTokens) ||
-                other.totalOutputTokens == totalOutputTokens) &&
+            (identical(other.totalTokens, totalTokens) ||
+                other.totalTokens == totalTokens) &&
             (identical(other.sortOrder, sortOrder) ||
                 other.sortOrder == sortOrder));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      title,
-      createdAt,
-      updatedAt,
-      providerId,
-      modelId,
-      settings,
-      totalInputTokens,
-      totalOutputTokens,
-      sortOrder);
+  int get hashCode => Object.hash(runtimeType, id, title, createdAt, updatedAt,
+      providerId, modelId, settings, totalTokens, sortOrder);
 
   /// Create a copy of Conversation
   /// with the given fields replaced by the non-null parameter values.
@@ -1559,8 +1529,7 @@ abstract class _Conversation implements Conversation {
       required final String providerId,
       required final String modelId,
       required final ModelSettings settings,
-      final int totalInputTokens,
-      final int totalOutputTokens,
+      final int totalTokens,
       final int sortOrder}) = _$ConversationImpl;
 
   factory _Conversation.fromJson(Map<String, dynamic> json) =
@@ -1581,9 +1550,7 @@ abstract class _Conversation implements Conversation {
   @override
   ModelSettings get settings;
   @override
-  int get totalInputTokens;
-  @override
-  int get totalOutputTokens;
+  int get totalTokens;
   @override
   int get sortOrder;
 
