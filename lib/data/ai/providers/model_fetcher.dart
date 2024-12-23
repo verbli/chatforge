@@ -1,6 +1,7 @@
 // lib/data/ai/providers/model_fetcher.dart
 
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:anthropic_sdk_dart/anthropic_sdk_dart.dart';
 import '../../models.dart';

@@ -5,7 +5,7 @@ import 'package:chatforge/widgets/license_dialog.dart';
 import 'package:chatforge/widgets/licenses_dialog.dart';
 import 'package:intl/intl.dart';
 
-import 'package:chatforge/data/storage/storage_service.dart';
+import 'package:chatforge/data/storage/services/storage_service.dart';
 import 'package:chatforge/widgets/ad_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

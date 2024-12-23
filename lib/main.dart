@@ -1,6 +1,6 @@
 // main.dart
 
-import 'package:chatforge/data/storage/init_service.dart';
+import 'package:chatforge/data/storage/services/init_service.dart';
 import 'package:chatforge/screens/home_screen.dart';
 import 'package:chatforge/screens/splash_screen.dart';
 import 'package:chatforge/widgets/changelog_dialog.dart';

@@ -1,7 +1,7 @@
 // screens/conversation_list.dart
 
 import 'package:chatforge/core/config.dart';
-import 'package:chatforge/data/storage/storage_service.dart';
+import 'package:chatforge/data/storage/services/storage_service.dart';
 import 'package:chatforge/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
