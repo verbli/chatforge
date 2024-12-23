@@ -58,9 +58,9 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
           final provider = validProviders.first;
           setState(() {
             _selectedProviderId = provider.id;
-            if (provider.models.isNotEmpty) {
-              _selectedModelId = provider.models.first.id;
-              _settings = provider.models.first.settings;
+            if (provider.models.isNotEmpty && provider.models.where((m) => m.isEnabled).isNotEmpty) {
+              _selectedModelId = provider.models.where((m) => m.isEnabled).first.id;
+              _settings = provider.models.where((m) => m.isEnabled).first.settings;
             }
           });
         }
