@@ -134,7 +134,13 @@ class SQLite3Driver implements DatabaseDriver {
       _database!.execute('COMMIT');
       return result;
     } catch (e) {
-      _database!.execute('ROLLBACK');
+      try {
+        if (_database != null) {
+          _database!.execute('ROLLBACK');
+        }
+      } catch (rollbackError) {
+        debugPrint('Error rolling back transaction: $rollbackError');
+      }
       rethrow;
     }
   }

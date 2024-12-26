@@ -101,10 +101,11 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                 }
 
                 final result = {
-                  'title': _titleController.text,
+                  'title': _titleController.text.isEmpty ? 'New Chat' : _titleController.text,
                   'providerId': _selectedProviderId,
                   'modelId': _selectedModelId,
                   'settings': _settings,
+                  'needsTitle': _titleController.text.isEmpty,
                 };
 
                 Navigator.pop(context, result);
@@ -141,9 +142,9 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _titleController,
-                        decoration: const InputDecoration(labelText: 'Title'),
-                        validator: (value) =>
-                        value?.isEmpty == true ? 'Required' : null,
+                        decoration: const InputDecoration(
+                          hintText: 'Title (optional)',
+                        ),
                         textCapitalization: TextCapitalization.sentences,
                       ),
                     ),

@@ -33,10 +33,12 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _inputController = TextEditingController();
   final _scrollController = ScrollController();
+  bool _generatingTitle = false;
   bool _isGenerating = false;
   bool _isNearBottom = true;
   StreamSubscription? _messageStream;
   bool _hasScrolledToBottom = false;
+  String? _lastMessageId;
 
   @override
   void initState() {
@@ -53,6 +55,64 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _generateTitle(List<Message> messages) async {
+    if (_generatingTitle) return;
+
+    setState(() => _generatingTitle = true);
+
+    try {
+      final conversation = await ref
+          .read(chatRepositoryProvider)
+          .getConversation(widget.conversationId);
+
+      final provider = await ref
+          .read(providerRepositoryProvider)
+          .getProvider(conversation.providerId);
+
+      final model = provider.models.firstWhere(
+            (m) => m.id == conversation.modelId,
+      );
+
+      final aiService = ref.read(aiServiceProvider(provider));
+
+      final titlePrompt = Message(
+        id: const Uuid().v4(),
+        conversationId: widget.conversationId,
+        content: 'Generate a very brief, descriptive title (2-4 words) that captures the main topic of the conversation. Respond with ONLY the title - no quotes, explanation or additional text.',
+        role: Role.system,
+        timestamp: DateTime.now().toIso8601String(),
+      );
+
+      String generatedTitle = await aiService.getCompletion(
+        provider: provider,
+        model: model,
+        settings: conversation.settings.copyWith(temperature: 1),
+        messages: messages + [titlePrompt],
+      );
+
+      generatedTitle = generatedTitle
+          .trim()
+          .replaceAll(RegExp(r'["\n]'), '')
+          .replaceAll(RegExp(r'^Title:\s*'), '')
+          .trim();
+
+      if (generatedTitle.isNotEmpty && mounted) {
+        await ref.read(chatRepositoryProvider).updateConversation(
+          conversation.copyWith(
+            title: generatedTitle,
+            updatedAt: DateTime.now(),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error generating title: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _generatingTitle = false);
+      }
+    }
   }
 
   void _handleMessagesLoaded(List<Message> messages) {
@@ -137,69 +197,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         messages: ref.read(messagesProvider(widget.conversationId)).value ?? [],
       );
 
-      _messageStream = stream.listen(
-        (chunk) async {
-          if (isStopped) return; // Don't process more chunks if stopped
+      await for (final chunk in stream) {
+        if (!mounted) break;
 
-          switch (chunk['type']) {
-            case 'text':
-            case 'markdown':
-            case 'html':
-              fullResponse += chunk['content'];
-              tokenCount = await aiService.countTokens(fullResponse);
+        switch (chunk['type']) {
+          case 'text':
+          case 'markdown':
+          case 'html':
+            fullResponse += chunk['content'];
+            tokenCount = await aiService.countTokens(fullResponse);
 
-              // Update the message with current content
-              await ref.read(chatRepositoryProvider).updateMessage(
-                    assistantMessage.copyWith(
-                      content: fullResponse,
-                      tokenCount: tokenCount,
-                    ),
-                  );
+            await ref.read(chatRepositoryProvider).updateMessage(
+              assistantMessage.copyWith(
+                content: fullResponse,
+                tokenCount: tokenCount,
+              ),
+            );
 
-              if (_isNearBottom) {
-                _scrollToBottom();
-              }
-              break;
-            default:
-              debugPrint('Unknown chunk type: ${chunk['type']}');
-          }
-        },
-        onDone: () async {
-          // Ensure final message state is saved
-          await ref.read(chatRepositoryProvider).updateMessage(
-                assistantMessage.copyWith(
-                  content: fullResponse,
-                  tokenCount: tokenCount,
-                ),
-              );
-
-          if (mounted) {
-            setState(() {
-              _isGenerating = false;
-              _messageStream = null;
-            });
-          }
-
-          if (_isNearBottom) {
-            _scrollToBottom();
-          }
-
-          ref.read(tokenUsageUpdater.notifier).state++;
-        },
-        onError: (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-          setState(() {
-            _isGenerating = false;
-            _messageStream = null;
-          });
-        },
-        cancelOnError: true, // Make sure stream cancels on error
-      );
+            if (_isNearBottom) {
+              _scrollToBottom();
+            }
+            break;
+          default:
+            debugPrint('Unknown chunk type: ${chunk['type']}');
+        }
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -216,8 +238,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+
     final messages = ref.watch(messagesProvider(widget.conversationId));
     final conversation = ref.watch(conversationProvider(widget.conversationId));
+
+    // Check if we need to generate a title
+    if (conversation.hasValue && messages.hasValue) {
+      final msgs = messages.value!;
+      if (!_generatingTitle &&
+          msgs.isNotEmpty &&
+          conversation.value!.title == 'New Chat' &&
+          msgs.last.id != _lastMessageId) {
+        _lastMessageId = msgs.last.id;
+        // Use Future.microtask to avoid calling setState during build
+        Future.microtask(() => _generateTitle(msgs));
+      }
+    }
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -226,43 +262,46 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(conversation.value?.title ?? 'Chat'),
-            if (conversation.value != null)
-              FutureBuilder<ProviderConfig>(
-                future: ref.read(providerRepositoryProvider).getProvider(
-                  conversation.value!.providerId,
+            Row(
+              children: [
+                if (_generatingTitle)
+                  const SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: conversation.when(
+                    data: (conv) => Text(conv.title),
+                    loading: () => const Text('Loading...'),
+                    error: (err, stack) => Text('Error: $err'),
+                  ),
                 ),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) return const SizedBox.shrink();
-                  final provider = snapshot.data!;
-                  final model = provider.models.firstWhere(
-                        (m) => m.id == conversation.value!.modelId,
-                    orElse: () => const ModelConfig(
-                      id: 'unknown',
-                      name: 'Unknown Model',
-                      capabilities: ModelCapabilities(maxTokens: 4096),
-                      settings: ModelSettings(maxContextTokens: 4096),
-                    ),
-                  );
-                  return Text(
-                    '${provider.name} / ${model.name}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  );
-                },
-              ),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  iconSize: 16,
+                  onPressed: _regenerateTitle,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  iconSize: 16,
+                  onPressed: () => _showTitleEditDialog(context),
+                ),
+              ],
+            ),
           ],
         ),
         actions: [
           PopupMenuButton<String>(
             itemBuilder: (context) => [
               const PopupMenuItem(
-                value: 'delete',
+                value: 'regenerate_title',
                 child: Row(
                   children: [
-                    Icon(Icons.delete, color: Colors.red),
+                    Icon(Icons.refresh),
                     SizedBox(width: 8),
-                    Text('Delete Conversation',
-                        style: TextStyle(color: Colors.red)),
+                    Text('Regenerate Title'),
                   ],
                 ),
               ),
@@ -278,7 +317,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ],
             onSelected: (value) async {
-              if (value == 'settings') {
+              if (value == 'regenerate_title') {
+                final messages = ref.read(messagesProvider(widget.conversationId)).value;
+                if (messages != null && messages.isNotEmpty) {
+                  await _generateTitle(messages);
+                }
+              } else if (value == 'settings') {
                 _showSettings();
               } else if (value == 'delete') {
                 final confirm = await showDialog<bool>(
@@ -352,6 +396,79 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _regenerateTitle() async {
+    if (_generatingTitle) return;
+    setState(() => _generatingTitle = true);
+
+    try {
+      final messages = ref.read(messagesProvider(widget.conversationId)).value;
+      if (messages != null && messages.isNotEmpty) {
+        final conversation = await ref
+            .read(chatRepositoryProvider)
+            .getConversation(widget.conversationId);
+        final provider = await ref
+            .read(providerRepositoryProvider)
+            .getProvider(conversation.providerId);
+
+        final aiService = ref.read(aiServiceProvider(provider));
+        final newTitle = await aiService.generateSummary(messages);
+
+        if (newTitle.isNotEmpty && mounted) {
+          await ref.read(chatRepositoryProvider).updateConversation(
+            conversation.copyWith(
+              title: newTitle,
+              updatedAt: DateTime.now(),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error generating title: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _generatingTitle = false);
+      }
+    }
+  }
+
+  Future<void> _showTitleEditDialog(BuildContext context) async {
+    final conversation = await ref
+        .read(chatRepositoryProvider)
+        .getConversation(widget.conversationId);
+
+    final controller = TextEditingController(text: conversation.title);
+
+    final newTitle = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Title'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Enter conversation title',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('SAVE'),
+          ),
+        ],
+      ),
+    );
+
+    if (newTitle != null && newTitle.isNotEmpty && mounted) {
+      await ref.read(chatRepositoryProvider).updateConversation(
+        conversation.copyWith(title: newTitle),
+      );
+    }
   }
 
   Future<void> _editMessage(Message message) async {

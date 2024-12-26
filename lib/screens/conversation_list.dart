@@ -91,8 +91,7 @@ class _ConversationListScreenState
       final providers = ref.read(providersProvider).value;
       if (providers == null || providers.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Please configure an AI provider first')),
+          const SnackBar(content: Text('Please configure an AI provider first')),
         );
         return;
       }
@@ -103,18 +102,16 @@ class _ConversationListScreenState
       );
 
       if (result != null && result is Map<String, dynamic> && mounted) {
-        final conversation =
-            await ref.read(chatRepositoryProvider).createConversation(
-                  title: result['title'] as String,
-                  providerId: result['providerId'] as String,
-                  modelId: result['modelId'] as String,
-                  settings: result['settings'] as ModelSettings,
-                );
+        final conversation = await ref.read(chatRepositoryProvider).createConversation(
+          title: result['title'] as String,  // This will be 'New Chat' if empty
+          providerId: result['providerId'] as String,
+          modelId: result['modelId'] as String,
+          settings: result['settings'] as ModelSettings,
+        );
 
         if (mounted) {
           if (widget.isPanel) {
-            ref.read(selectedConversationProvider.notifier).state =
-                conversation.id;
+            ref.read(selectedConversationProvider.notifier).state = conversation.id;
           } else {
             Navigator.pushNamed(context, '/chat', arguments: conversation.id);
           }

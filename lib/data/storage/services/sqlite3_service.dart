@@ -43,10 +43,10 @@ class SQLite3Service extends DatabaseService {
   }
 
   Future<void> _onUpgrade(
-      dynamic db,
-      int oldVersion,
-      int newVersion,
-      ) async {
+    dynamic db,
+    int oldVersion,
+    int newVersion,
+  ) async {
     if (oldVersion < 2) {
       await driver.execute('''
         CREATE TABLE IF NOT EXISTS token_usage(
@@ -97,8 +97,7 @@ class SQLite3Service extends DatabaseService {
     ''');
 
     await driver.execute(
-        'CREATE INDEX idx_messages_conversation ON messages(conversation_id)'
-    );
+        'CREATE INDEX idx_messages_conversation ON messages(conversation_id)');
   }
 
   @override
@@ -108,17 +107,17 @@ class SQLite3Service extends DatabaseService {
 
   @override
   Future<List<Map<String, dynamic>>> query(
-      String table, {
-        bool? distinct,
-        List<String>? columns,
-        String? where,
-        List<dynamic>? whereArgs,
-        String? groupBy,
-        String? having,
-        String? orderBy,
-        int? limit,
-        int? offset,
-      }) async {
+    String table, {
+    bool? distinct,
+    List<String>? columns,
+    String? where,
+    List<dynamic>? whereArgs,
+    String? groupBy,
+    String? having,
+    String? orderBy,
+    int? limit,
+    int? offset,
+  }) async {
     final sql = StringBuffer('SELECT');
     if (distinct == true) {
       sql.write(' DISTINCT');
@@ -158,11 +157,11 @@ class SQLite3Service extends DatabaseService {
 
   @override
   Future<int> update(
-      String table,
-      Map<String, dynamic> values, {
-        String? where,
-        List<dynamic>? whereArgs,
-      }) async {
+    String table,
+    Map<String, dynamic> values, {
+    String? where,
+    List<dynamic>? whereArgs,
+  }) async {
     final sql = StringBuffer('UPDATE $table SET');
     final args = <dynamic>[];
     var first = true;
@@ -185,17 +184,18 @@ class SQLite3Service extends DatabaseService {
 
   @override
   Future<int> delete(
-      String table, {
-        String? where,
-        List<dynamic>? whereArgs,
-      }) async {
+    String table, {
+    String? where,
+    List<dynamic>? whereArgs,
+  }) async {
     final sql = StringBuffer('DELETE FROM $table');
     sql.write(where != null ? ' WHERE $where' : '');
     return await driver.delete(sql.toString(), whereArgs);
   }
 
   @override
-  Future<T> transaction<T>(Future<T> Function(DatabaseService txn) action) async {
+  Future<T> transaction<T>(
+      Future<T> Function(DatabaseService txn) action) async {
     return driver.transaction<T>((txn) async {
       final transactionService = SQLite3TransactionService(txn);
       return await action(transactionService);
@@ -208,7 +208,8 @@ class SQLite3Service extends DatabaseService {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> rawQuery(String sql, [List<dynamic>? arguments]) async {
+  Future<List<Map<String, dynamic>>> rawQuery(String sql,
+      [List<dynamic>? arguments]) async {
     return driver.rawQuery(sql, arguments);
   }
 
@@ -243,18 +244,18 @@ class SQLite3TransactionService extends DatabaseService {
 
   @override
   Future<List<Map<String, dynamic>>> query(
-      String table, {
-        bool? distinct,
-        List<String>? columns,
-        String? where,
-        List<dynamic>? whereArgs,
-        String? groupBy,
-        String? having,
-        String? orderBy,
-        int? limit,
-        int? offset,
-      }) async {
-    final sql = StringBuffer('SELECT');
+    String table, {
+    bool? distinct,
+    List<String>? columns,
+    String? where,
+    List<dynamic>? whereArgs,
+    String? groupBy,
+    String? having,
+    String? orderBy,
+    int? limit,
+    int? offset,
+  }) async {
+    final sql = StringBuffer('SELECT ');
     if (distinct == true) {
       sql.write(' DISTINCT');
     }
@@ -279,8 +280,10 @@ class SQLite3TransactionService extends DatabaseService {
       sql.write(' OFFSET $offset');
     }
 
-    final results = txn.select(sql.toString(), whereArgs);
-    return results.map((row) => Map<String, dynamic>.from(row)).toList();
+    final results = await txn.select(sql.toString(), whereArgs ?? []);
+    return results.map<Map<String, dynamic>>(
+      (row) => Map<String, dynamic>.from(row as Map<String, dynamic>),
+    ).toList();
   }
 
   @override
@@ -295,11 +298,11 @@ class SQLite3TransactionService extends DatabaseService {
 
   @override
   Future<int> update(
-      String table,
-      Map<String, dynamic> values, {
-        String? where,
-        List<dynamic>? whereArgs,
-      }) async {
+    String table,
+    Map<String, dynamic> values, {
+    String? where,
+    List<dynamic>? whereArgs,
+  }) async {
     try {
       final sql = StringBuffer('UPDATE $table SET ');
       final args = <dynamic>[];
@@ -319,14 +322,17 @@ class SQLite3TransactionService extends DatabaseService {
         var whereClause = where;
         if (whereArgs != null) {
           whereArgs.asMap().forEach((i, _) {
-            whereClause = whereClause.replaceFirst('?', '\$${args.length + i + 1}');
+            whereClause =
+                whereClause.replaceFirst('?', '\$${args.length + i + 1}');
           });
           args.addAll(whereArgs);
         }
         sql.write(whereClause);
       }
 
-      this.txn.execute(sql.toString(), args);  // Use this.txn instead of just txn
+      this
+          .txn
+          .execute(sql.toString(), args); // Use this.txn instead of just txn
       return this.txn.getUpdatedRows();
     } catch (e) {
       print('Error executing update: ${e.toString()}');
@@ -340,10 +346,10 @@ class SQLite3TransactionService extends DatabaseService {
 
   @override
   Future<int> delete(
-      String table, {
-        String? where,
-        List<dynamic>? whereArgs,
-      }) async {
+    String table, {
+    String? where,
+    List<dynamic>? whereArgs,
+  }) async {
     final sql = StringBuffer('DELETE FROM $table');
     sql.write(where != null ? ' WHERE $where' : '');
     txn.execute(sql.toString(), whereArgs);
@@ -351,7 +357,8 @@ class SQLite3TransactionService extends DatabaseService {
   }
 
   @override
-  Future<T> transaction<T>(Future<T> Function(DatabaseService txn) action) async {
+  Future<T> transaction<T>(
+      Future<T> Function(DatabaseService txn) action) async {
     throw UnsupportedError('Nested transactions are not supported');
   }
 
@@ -365,7 +372,8 @@ class SQLite3TransactionService extends DatabaseService {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> rawQuery(String sql, [List<dynamic>? arguments]) async {
+  Future<List<Map<String, dynamic>>> rawQuery(String sql,
+      [List<dynamic>? arguments]) async {
     final results = txn.select(sql, arguments);
     return results.map((row) => Map<String, dynamic>.from(row)).toList();
   }
