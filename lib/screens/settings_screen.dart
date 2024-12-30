@@ -5,13 +5,14 @@ import 'package:chatforge/widgets/license_dialog.dart';
 import 'package:chatforge/widgets/licenses_dialog.dart';
 import 'package:intl/intl.dart';
 
-import 'package:chatforge/data/storage/storage_service.dart';
+import 'package:chatforge/data/storage/services/storage_service.dart';
 import 'package:chatforge/widgets/ad_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/config.dart';
+import '../core/theme.dart';
 import '../data/model_defaults.dart';
 import '../data/models.dart';
 import '../data/providers.dart';
@@ -120,6 +121,21 @@ class SettingsScreen extends ConsumerWidget {
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => _showThemeDialog(context, ref),
                         ),
+                        ListTile(
+                          title: const Text('Theme Color'),
+                          trailing: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: ref.watch(themeColorProvider),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(context).dividerColor,
+                              ),
+                            ),
+                          ),
+                          onTap: () => _showColorPicker(context, ref),
+                        ),
 
                         // About section
                         ListTile(
@@ -166,6 +182,52 @@ class SettingsScreen extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+
+  void _showColorPicker(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Theme Color'),
+        content: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: AppTheme.seedColors.entries.map((entry) {
+            return InkWell(
+              onTap: () {
+                ref.read(themeColorProvider.notifier).setColor(entry.value);
+                Navigator.pop(context);
+              },
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: entry.value,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                  ),
+                ),
+                child: entry.value == ref.watch(themeColorProvider)
+                    ? Icon(
+                  Icons.check,
+                  color: entry.value.computeLuminance() > 0.5
+                      ? Colors.black
+                      : Colors.white,
+                )
+                    : null,
+              ),
+            );
+          }).toList(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCEL'),
+          ),
+        ],
+      ),
     );
   }
 

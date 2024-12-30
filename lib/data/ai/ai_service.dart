@@ -1,11 +1,15 @@
 // data/ai/ai_service.dart
 
+import 'package:uuid/uuid.dart';
+
 import '../models.dart';
 import 'providers/anthropic_service.dart';
 import 'providers/gemini_service.dart';
 import 'providers/openai_service.dart';
 
 abstract class AIService {
+  ProviderConfig? _provider;
+
   Stream<Map<String, dynamic>> streamCompletion({
     required ProviderConfig provider,
     required ModelConfig model,
@@ -51,6 +55,35 @@ abstract class AIService {
 
     final service = AIService.forProvider(dummyProvider);
     return service.countTokens(text);
+  }
+
+  Future<String> generateSummary(List<Message> messages) async {
+    if (messages.isEmpty || _provider == null) return 'New Chat';
+
+    final prompt = '''Generate a brief, descriptive title (4-6 words) for this conversation based on these messages. 
+      Respond with ONLY the title, no quotes or extra text.
+      Here are the messages:
+
+    ${messages.map((m) => "${m.role}: ${m.content}").join('\n')}''';
+
+    final response = await getCompletion(
+      provider: _provider!,
+      model: _provider!.models.first,
+      settings: ModelSettings(
+        temperature: 1,
+        maxContextTokens: _provider!.models.first.capabilities.maxTokens,
+        systemPrompt: "You are a helpful assistant that creates concise, descriptive titles.",
+      ),
+      messages: [Message(
+        id: const Uuid().v4(),
+        conversationId: '',
+        content: prompt,
+        role: Role.user,
+        timestamp: DateTime.now().toIso8601String(),
+      )],
+    );
+
+    return response.trim();
   }
 }
 

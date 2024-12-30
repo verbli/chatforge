@@ -33,10 +33,12 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _inputController = TextEditingController();
   final _scrollController = ScrollController();
+  // bool _generatingTitle = false;
   bool _isGenerating = false;
   bool _isNearBottom = true;
   StreamSubscription? _messageStream;
   bool _hasScrolledToBottom = false;
+  String? _lastMessageId;
 
   @override
   void initState() {
@@ -54,6 +56,47 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollController.dispose();
     super.dispose();
   }
+
+  // Future<void> _generateTitle(List<Message> messages) async {
+  //   if (_generatingTitle) return;
+  //
+  //   setState(() => _generatingTitle = true);
+  //
+  //   try {
+  //     final conversation = await ref
+  //         .read(chatRepositoryProvider)
+  //         .getConversation(widget.conversationId);
+  //
+  //     final provider = await ref
+  //         .read(providerRepositoryProvider)
+  //         .getProvider(conversation.providerId);
+  //
+  //     final model = provider.models.firstWhere(
+  //       (m) => m.id == conversation.modelId,
+  //     );
+  //
+  //     final aiService = ref.read(aiServiceProvider(provider));
+  //     final newTitle = await aiService.generateSummary(messages);
+  //
+  //     if (newTitle.isNotEmpty && mounted) {
+  //       await ref.read(chatRepositoryProvider).updateConversation(
+  //         conversation.copyWith(
+  //           title: newTitle,
+  //           updatedAt: DateTime.now(),
+  //         ),
+  //       );
+  //       // Force a refresh of the conversation provider
+  //       ref.refresh(conversationProvider(widget.conversationId));
+  //     }
+  //   } catch (e) {
+  //     debugPrint('Error generating title: $e');
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() => _generatingTitle = false);
+  //     }
+  //   }
+  // }
+  //
 
   void _handleMessagesLoaded(List<Message> messages) {
     if (!_hasScrolledToBottom && messages.isNotEmpty) {
@@ -123,38 +166,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final aiService = ref.read(aiServiceProvider(provider));
       String fullResponse = '';
       int tokenCount = 0;
-      bool isStopped = false;
 
       final userTokens = await aiService.countTokens(message);
       await ref.read(chatRepositoryProvider).updateMessage(
             userMessage.copyWith(tokenCount: userTokens),
           );
 
-      final stream = aiService.streamCompletion(
+      _messageStream = aiService.streamCompletion(
         provider: provider,
         model: model,
         settings: conversation.settings,
         messages: ref.read(messagesProvider(widget.conversationId)).value ?? [],
-      );
-
-      _messageStream = stream.listen(
-        (chunk) async {
-          if (isStopped) return; // Don't process more chunks if stopped
+      ).listen(
+            (chunk) {
+          if (!mounted) return;
 
           switch (chunk['type']) {
             case 'text':
             case 'markdown':
             case 'html':
               fullResponse += chunk['content'];
-              tokenCount = await aiService.countTokens(fullResponse);
-
-              // Update the message with current content
-              await ref.read(chatRepositoryProvider).updateMessage(
-                    assistantMessage.copyWith(
-                      content: fullResponse,
-                      tokenCount: tokenCount,
-                    ),
-                  );
+              tokenCount = tokenCount; // Will be updated later
+              ref.read(chatRepositoryProvider).updateMessage(
+                assistantMessage.copyWith(
+                  content: fullResponse,
+                  tokenCount: tokenCount,
+                ),
+              );
 
               if (_isNearBottom) {
                 _scrollToBottom();
@@ -165,40 +203,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           }
         },
         onDone: () async {
-          // Ensure final message state is saved
+          if (!mounted) return;
+          // Update final token count
+          tokenCount = await aiService.countTokens(fullResponse);
           await ref.read(chatRepositoryProvider).updateMessage(
-                assistantMessage.copyWith(
-                  content: fullResponse,
-                  tokenCount: tokenCount,
-                ),
-              );
-
-          if (mounted) {
-            setState(() {
-              _isGenerating = false;
-              _messageStream = null;
-            });
-          }
-
-          if (_isNearBottom) {
-            _scrollToBottom();
-          }
-
-          ref.read(tokenUsageUpdater.notifier).state++;
-        },
-        onError: (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Theme.of(context).colorScheme.error,
+            assistantMessage.copyWith(
+              content: fullResponse,
+              tokenCount: tokenCount,
             ),
           );
-          setState(() {
-            _isGenerating = false;
-            _messageStream = null;
-          });
+          setState(() => _isGenerating = false);
+          _messageStream = null;
         },
-        cancelOnError: true, // Make sure stream cancels on error
+        onError: (error) {
+          debugPrint('Error in stream: $error');
+          setState(() => _isGenerating = false);
+          _messageStream = null;
+        },
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -219,25 +240,35 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final messages = ref.watch(messagesProvider(widget.conversationId));
     final conversation = ref.watch(conversationProvider(widget.conversationId));
 
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         leading: widget.isPanel ? null : const BackButton(),
-        title: Text(conversation.value?.title ?? 'Chat'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: conversation.when(
+                    data: (conv) => Text(conv.title),
+                    loading: () => const Text('Loading...'),
+                    error: (err, stack) => Text('Error: $err'),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  iconSize: 16,
+                  onPressed: () => _showTitleEditDialog(context),
+                ),
+              ],
+            ),
+          ],
+        ),
         actions: [
           PopupMenuButton<String>(
             itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Delete Conversation',
-                        style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
               const PopupMenuItem(
                 value: 'settings',
                 child: Row(
@@ -324,6 +355,50 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ),
       ),
     );
+  }
+
+
+  Future<void> _showTitleEditDialog(BuildContext context) async {
+    final conversation = await ref
+        .read(chatRepositoryProvider)
+        .getConversation(widget.conversationId);
+
+    final controller = TextEditingController(text: conversation.title);
+
+    final newTitle = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Title'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Enter conversation title',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('SAVE'),
+          ),
+        ],
+      ),
+    );
+
+    if (newTitle != null && mounted) {
+      await ref.read(chatRepositoryProvider).updateConversation(
+        conversation.copyWith(
+          title: newTitle,
+          updatedAt: DateTime.now(),
+        ),
+      );
+      // Force a refresh of the conversation provider
+      ref.refresh(conversationProvider(widget.conversationId));
+    }
   }
 
   Future<void> _editMessage(Message message) async {
@@ -680,8 +755,10 @@ class _MessageBubbleState extends State<MessageBubble> {
           margin: const EdgeInsets.symmetric(vertical: 4),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color:
-                isUser ? theme.colorScheme.primary : theme.colorScheme.surface,
+            color: isUser
+                ? theme.colorScheme.primary
+                : theme.colorScheme.surfaceTint
+                    .withValues(alpha: 0.15), // Changed from surface
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -741,7 +818,9 @@ class _MessageInput extends StatelessWidget {
               controller: controller,
               decoration: const InputDecoration(
                 hintText: 'Type a message...',
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(24)),
+                ),
               ),
               maxLines: null,
               enabled: !isGenerating,
@@ -867,14 +946,14 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
               return ListView(
                 shrinkWrap: true,
                 children: [
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(labelText: 'Title'),
-                    validator: (value) =>
-                        value?.isEmpty == true ? 'Required' : null,
-                    textCapitalization: TextCapitalization.sentences,
-                  ),
-                  const SizedBox(height: 16),
+                  // TextFormField(
+                  //   controller: _titleController,
+                  //   decoration: const InputDecoration(labelText: 'Title'),
+                  //   validator: (value) =>
+                  //       value?.isEmpty == true ? 'Required' : null,
+                  //   textCapitalization: TextCapitalization.sentences,
+                  // ),
+                  // const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     value: _selectedProviderId,
                     decoration: const InputDecoration(labelText: 'Provider'),

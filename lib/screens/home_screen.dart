@@ -20,6 +20,15 @@ class HomeScreen extends ConsumerWidget {
     }
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(selectedId == null ? 'ChatForge' : ''),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => Navigator.pushNamed(context, '/settings'),
+          ),
+        ],
+      ),
       body: Row(
         children: [
           const SizedBox(

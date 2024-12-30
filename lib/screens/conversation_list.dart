@@ -1,7 +1,7 @@
 // screens/conversation_list.dart
 
 import 'package:chatforge/core/config.dart';
-import 'package:chatforge/data/storage/storage_service.dart';
+import 'package:chatforge/data/storage/services/storage_service.dart';
 import 'package:chatforge/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,10 +16,12 @@ class ConversationListScreen extends ConsumerStatefulWidget {
   const ConversationListScreen({this.isPanel = false, super.key});
 
   @override
-  ConsumerState<ConversationListScreen> createState() => _ConversationListScreenState();
+  ConsumerState<ConversationListScreen> createState() =>
+      _ConversationListScreenState();
 }
 
-class _ConversationListScreenState extends ConsumerState<ConversationListScreen> {
+class _ConversationListScreenState
+    extends ConsumerState<ConversationListScreen> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
@@ -35,18 +37,23 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
         final providers = ref.watch(providersProvider);
 
         return Scaffold(
-          appBar: widget.isPanel ? null : AppBar(
-            title: const Text('ChatForge'),
-            leading: Image.asset(
-              BuildConfig.isPro ? 'assets/icon/icon_pro.png' : 'assets/icon/icon.png',
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.settings),
-                onPressed: () => Navigator.pushNamed(context, '/settings'),
-              ),
-            ],
-          ),
+          appBar: widget.isPanel
+              ? null
+              : AppBar(
+                  title: const Text('ChatForge'),
+                  leading: Image.asset(
+                    BuildConfig.isPro
+                        ? 'assets/icon/icon_pro.png'
+                        : 'assets/icon/icon.png',
+                  ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.settings),
+                      onPressed: () =>
+                          Navigator.pushNamed(context, '/settings'),
+                    ),
+                  ],
+                ),
           body: Column(
             children: [
               if (!widget.isPanel) const AdBannerWidget(),
@@ -58,17 +65,19 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                       providers: provs,
                       isPanel: widget.isPanel,
                     ),
-                    loading: () => const Center(child: CircularProgressIndicator()),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
                     error: (err, stack) => Center(child: Text('Error: $err')),
                   ),
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (err, stack) => Center(child: Text('Error: $err')),
                 ),
               ),
             ],
           ),
           floatingActionButton: FloatingActionButton(
-            heroTag: 'newChat',  // Add unique tag
+            heroTag: 'newChat', // Add unique tag
             onPressed: () => _showNewChatDialog(context),
             child: const Icon(Icons.add),
           ),
@@ -94,7 +103,7 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
 
       if (result != null && result is Map<String, dynamic> && mounted) {
         final conversation = await ref.read(chatRepositoryProvider).createConversation(
-          title: result['title'] as String,
+          title: result['title'] as String,  // This will be 'New Chat' if empty
           providerId: result['providerId'] as String,
           modelId: result['modelId'] as String,
           settings: result['settings'] as ModelSettings,
@@ -134,6 +143,8 @@ class _ConversationList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final selectedId = ref.watch(selectedConversationProvider);
+
     if (conversations.isEmpty) {
       return const Center(
         child: Text('No conversations yet. Tap + to start chatting!'),
@@ -144,14 +155,14 @@ class _ConversationList extends ConsumerWidget {
       itemCount: conversations.length,
       onReorder: (oldIndex, newIndex) {
         ref.read(chatRepositoryProvider).reorderConversation(
-          conversations[oldIndex].id,
-          newIndex,
-        );
+              conversations[oldIndex].id,
+              newIndex,
+            );
       },
       itemBuilder: (context, index) {
         final conversation = conversations[index];
         final provider = providers.firstWhere(
-              (p) => p.id == conversation.providerId,
+          (p) => p.id == conversation.providerId,
           orElse: () => const ProviderConfig(
             id: 'unknown',
             name: 'Unknown Provider',
@@ -164,7 +175,7 @@ class _ConversationList extends ConsumerWidget {
 
         // Find model with fallback
         final model = provider.models.firstWhere(
-              (m) => m.id == conversation.modelId,
+          (m) => m.id == conversation.modelId,
           orElse: () => const ModelConfig(
             id: 'unknown',
             name: 'Unknown Model',
@@ -193,8 +204,13 @@ class _ConversationList extends ConsumerWidget {
               ],
             ),
           ),
-          onDismissed: (direction) {
-            ref.read(chatRepositoryProvider).deleteConversation(conversation.id);
+          onDismissed: (direction) async {
+            if (conversation.id == selectedId) {
+              ref.read(selectedConversationProvider.notifier).state = null;
+            }
+            await ref
+                .read(chatRepositoryProvider)
+                .deleteConversation(conversation.id);
           },
           background: Container(
             color: Theme.of(context).colorScheme.error,
@@ -235,9 +251,6 @@ class _ConversationList extends ConsumerWidget {
                             ),
                             TextButton(
                               onPressed: () => Navigator.pop(context, true),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Theme.of(context).colorScheme.error,
-                              ),
                               child: const Text('DELETE'),
                             ),
                           ],
@@ -245,7 +258,13 @@ class _ConversationList extends ConsumerWidget {
                       );
 
                       if (confirm == true) {
-                        await ref.read(chatRepositoryProvider)
+                        if (conversation.id == selectedId) {
+                          ref
+                              .read(selectedConversationProvider.notifier)
+                              .state = null;
+                        }
+                        await ref
+                            .read(chatRepositoryProvider)
                             .deleteConversation(conversation.id);
                       }
                     }
@@ -256,9 +275,11 @@ class _ConversationList extends ConsumerWidget {
             ),
             onTap: () {
               if (isPanel) {
-                ref.read(selectedConversationProvider.notifier).state = conversation.id;
+                ref.read(selectedConversationProvider.notifier).state =
+                    conversation.id;
               } else {
-                Navigator.pushNamed(context, '/chat', arguments: conversation.id);
+                Navigator.pushNamed(context, '/chat',
+                    arguments: conversation.id);
               }
             },
           ),

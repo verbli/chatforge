@@ -1,12 +1,11 @@
-// screens/splash_screen.dart
-
 import 'package:chatforge/core/config.dart';
-import 'package:chatforge/data/storage/init_service.dart';
+import 'package:chatforge/data/storage/services/init_service.dart';
 import 'package:chatforge/screens/error_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:restart_app/restart_app.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   final Widget child;
   final Duration fadeOutDuration;
   final Curve progressCurve;
@@ -19,10 +18,10 @@ class SplashScreen extends StatefulWidget {
   });
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerProviderStateMixin {
   bool _initialized = false;
   String _status = 'Initializing...';
   double _targetProgress = 0.0;
@@ -51,28 +50,27 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Future<void> _initialize() async {
     try {
       // Run heavy initialization tasks in parallel
-      await Future.wait([
-        InitService.initialize(
-          onProgress: (status, progress) {
-            if (!mounted) return;
-            setState(() {
-              _status = status;
-              _targetProgress = progress;
-              _progressAnimation = Tween<double>(
-                begin: _progressAnimation.value,
-                end: _targetProgress,
-              ).animate(CurvedAnimation(
-                parent: _progressController,
-                curve: widget.progressCurve,
-              ));
-              _progressController.forward(from: 0);
-            });
-          },
-          onError: (error) {
-            _error_message = error;
-          }
-        ),
-      ]);
+      await InitService.initialize(
+        onProgress: (status, progress) {
+          if (!mounted) return;
+          setState(() {
+            _status = status;
+            _targetProgress = progress;
+            _progressAnimation = Tween<double>(
+              begin: _progressAnimation.value,
+              end: _targetProgress,
+            ).animate(CurvedAnimation(
+              parent: _progressController,
+              curve: widget.progressCurve,
+            ));
+            _progressController.forward(from: 0);
+          });
+        },
+        onError: (error) {
+          _error_message = error;
+        },
+        ref: ref,
+      );
 
       if (_targetProgress >= 1.0) {
         await Future.delayed(const Duration(milliseconds: 100));
