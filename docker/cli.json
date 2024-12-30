@@ -1,0 +1,5 @@
+{
+  "token": "<insert-gotify-token>",
+  "url": "https://<insert-gotify-url>",
+  "defaultPriority": 0
+}
