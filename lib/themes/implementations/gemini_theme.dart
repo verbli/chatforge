@@ -26,17 +26,11 @@ final geminiTheme = ChatTheme(
   widgets: ChatThemeWidgets(
     userMessage: (context, data) => GeminiMessageContainer(
       data: data,
-      child: Text(
-        data.content,
-        style: const TextStyle(color: Colors.white),
-      ),
+      child: GeminiMarkdownBlock(markdown: data.content),
     ),
     assistantMessage: (context, data) => GeminiMessageContainer(
       data: data,
-      child: Text(
-        data.content,
-        style: const TextStyle(color: Colors.white),
-      ),
+      child: GeminiMarkdownBlock(markdown: data.content),
     ),
     messageInput: (context, data) => GeminiMessageInput(data: data),
     sendButton: (context, onPressed, isGenerating) => GeminiSendButton(
@@ -62,7 +56,6 @@ final geminiTheme = ChatTheme(
     showAvatars: true,
   ),
 );
-
 
 class GeminiMessageContainer extends StatelessWidget {
   final MessageData data;
@@ -94,17 +87,18 @@ class GeminiMessageContainer extends StatelessWidget {
                   : geminiTheme.styling.backgroundColor,
               child: data.isUser
                   ? const Icon(Icons.person)
-                  : Image.asset(BuildConfig.isPro
-                  ? 'assets/icon/icon_pro.png'
-                  : 'assets/icon/icon.png',
-              ),
+                  : Image.asset(
+                      BuildConfig.isPro
+                          ? 'assets/icon/icon_pro.png'
+                          : 'assets/icon/icon.png',
+                    ),
             ),
+            const SizedBox(width: 12),
+            Expanded(child: child),
             if (actions != null) ...[
               const Spacer(),
               ...actions!,
             ],
-            const SizedBox(width: 12),
-            child,
           ],
         ),
       ),
@@ -124,7 +118,7 @@ class GeminiUserMessage extends StatelessWidget {
     if (data.onEdit != null || data.onDelete != null) {
       actions.add(
         PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert, color: Colors.grey.shade700),
+          icon: Icon(Icons.more_vert, color: geminiTheme.themeData.colorScheme.onSurface),
           itemBuilder: (context) => [
             if (data.onEdit != null)
               const PopupMenuItem(
@@ -258,7 +252,7 @@ class GeminiMessageInput extends StatelessWidget {
         color: geminiTheme.styling.backgroundColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Colors.grey.shade300,
+          color: geminiTheme.themeData.colorScheme.onSurface.withValues(alpha: 0.5),
         ),
       ),
       child: Row(
@@ -271,7 +265,7 @@ class GeminiMessageInput extends StatelessWidget {
               maxLines: null,
               decoration: InputDecoration(
                 hintText: 'Message',
-                hintStyle: TextStyle(color: Colors.grey.shade500),
+                hintStyle: TextStyle(color: geminiTheme.themeData.colorScheme.onSurface),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 16),
               ),
@@ -333,21 +327,19 @@ class GeminiCodeBlock extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: geminiTheme.themeData.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: geminiTheme.themeData.colorScheme.onSurface),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              border: Border(
-                bottom: BorderSide(color: Colors.grey.shade200),
-              ),
+            decoration: const BoxDecoration(
+              color: Color(0xFF2D2D2D),
+              borderRadius:
+                  BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -399,34 +391,48 @@ class GeminiMarkdownBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MarkdownBody(
-      data: markdown,
-      selectable: true,
-      styleSheet: MarkdownStyleSheet(
-        p: Theme.of(context).textTheme.bodyLarge,
-        h1: Theme.of(context).textTheme.headlineMedium,
-        h2: Theme.of(context).textTheme.titleLarge,
-        h3: Theme.of(context).textTheme.titleMedium,
-        code: TextStyle(
-          backgroundColor: Colors.grey.shade100,
-          fontFamily: 'monospace',
+    try {
+      return MarkdownBody(
+        data: markdown,
+        selectable: true,
+        styleSheet: MarkdownStyleSheet(
+          p: TextStyle(color: geminiTheme.themeData.colorScheme.onSurface),
+          h1: TextStyle(color: geminiTheme.themeData.colorScheme.onSurface),
+          h2: TextStyle(color: geminiTheme.themeData.colorScheme.onSurface),
+          h3: TextStyle(color: geminiTheme.themeData.colorScheme.onSurface),
+          h4: TextStyle(color: geminiTheme.themeData.colorScheme.onSurface),
+          h5: TextStyle(color: geminiTheme.themeData.colorScheme.onSurface),
+          h6: TextStyle(color: geminiTheme.themeData.colorScheme.onSurface),
+          em: TextStyle(color: geminiTheme.themeData.colorScheme.onSurface,
+              fontStyle: FontStyle.italic),
+          strong:
+          TextStyle(color: geminiTheme.themeData.colorScheme.onSurface,
+              fontWeight: FontWeight.bold),
+          code: const TextStyle(
+            backgroundColor: Colors.black,
+            color: Colors.white,
+            fontFamily: 'monospace',
+          ),
+          codeblockDecoration: BoxDecoration(
+            color: const Color(0xFF1E1E1E),
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
-        codeblockDecoration: BoxDecoration(
-          color: Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-      ),
-      builders: {
-        'code': GeminiCodeBlockBuilder(),
-      },
-    );
+        builders: {
+          'code': GeminiCodeBlockBuilder(),
+        },
+      );
+    } catch (e) {
+      debugPrint('Error rendering markdown: $e');
+      return Text(markdown); // Fallback to plain text
+    }
   }
 }
 
 class GeminiCodeBlockBuilder extends MarkdownElementBuilder {
   @override
-  Widget? visitElementAfter(markdown.Element element, TextStyle? preferredStyle) {
+  Widget? visitElementAfter(
+      markdown.Element element, TextStyle? preferredStyle) {
     if (element.tag == 'code') {
       return GeminiCodeBlock(
         code: element.textContent,

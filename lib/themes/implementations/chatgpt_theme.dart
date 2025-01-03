@@ -26,17 +26,11 @@ final chatGPTTheme = ChatTheme(
   widgets: ChatThemeWidgets(
     userMessage: (context, data) => ChatGPTMessageContainer(
       data: data,
-      child: Text(
-        data.content,
-        style: const TextStyle(color: Colors.white),
-      ),
+      child: ChatGPTMarkdownBlock(markdown: data.content),
     ),
     assistantMessage: (context, data) => ChatGPTMessageContainer(
       data: data,
-      child: Text(
-        data.content,
-        style: const TextStyle(color: Colors.white),
-      ),
+      child: ChatGPTMarkdownBlock(markdown: data.content),
     ),
     messageInput: (context, data) => ChatGPTMessageInput(data: data),
     sendButton: (context, onPressed, isGenerating) => ChatGPTSendButton(
@@ -88,13 +82,15 @@ class ChatGPTMessageContainer extends StatelessWidget {
               ? chatGPTTheme.styling.userMessageColor
               : chatGPTTheme.styling.assistantMessageColor,
         ),
-        boxShadow: data.isUser ? [
-          const BoxShadow(
-            color: Colors.black,
-            blurRadius: 5,
-            offset: Offset(0, 2),
-          ),
-        ] : [],
+        boxShadow: data.isUser
+            ? [
+                const BoxShadow(
+                  color: Colors.black,
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
+              ]
+            : [],
       ),
       child: Center(
         child: ConstrainedBox(
@@ -106,17 +102,20 @@ class ChatGPTMessageContainer extends StatelessWidget {
                 width: 30,
                 height: 30,
                 margin: const EdgeInsets.only(right: 16, top: 4),
-                child: data.isUser ? Container() : Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: chatGPTTheme.styling.backgroundColor,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Image.asset(BuildConfig.isPro
-                        ? 'assets/icon/icon_pro.png'
-                        : 'assets/icon/icon.png',
-                    ),
-                  ),
+                child: data.isUser
+                    ? Container()
+                    : Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: chatGPTTheme.styling.backgroundColor,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Image.asset(
+                          BuildConfig.isPro
+                              ? 'assets/icon/icon_pro.png'
+                              : 'assets/icon/icon.png',
+                        ),
+                      ),
               ),
               Expanded(
                 child: Column(
@@ -156,7 +155,8 @@ class ChatGPTUserMessage extends StatelessWidget {
     if (data.onEdit != null) {
       actions.add(
         IconButton(
-          icon: Icon(Icons.edit, color: chatGPTTheme.themeData.colorScheme.onSurface, size: 16),
+          icon: Icon(Icons.edit,
+              color: chatGPTTheme.themeData.colorScheme.onSurface, size: 16),
           onPressed: () => _showEditDialog(context),
           tooltip: 'Edit message',
         ),
@@ -166,7 +166,8 @@ class ChatGPTUserMessage extends StatelessWidget {
     if (data.onDelete != null) {
       actions.add(
         IconButton(
-          icon: Icon(Icons.delete, color: chatGPTTheme.themeData.colorScheme.onSurface, size: 16),
+          icon: Icon(Icons.delete,
+              color: chatGPTTheme.themeData.colorScheme.onSurface, size: 16),
           onPressed: () => _showDeleteDialog(context),
           tooltip: 'Delete message',
         ),
@@ -226,12 +227,15 @@ class ChatGPTUserMessage extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('CANCEL'),
+            style: TextButton.styleFrom(
+                foregroundColor: chatGPTTheme.themeData.colorScheme.onSurface,
+                backgroundColor: chatGPTTheme.themeData.colorScheme.primary),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
+                foregroundColor: chatGPTTheme.themeData.colorScheme.onSurface,
+                backgroundColor: chatGPTTheme.themeData.colorScheme.surface),
             child: const Text('DELETE'),
           ),
         ],
@@ -278,10 +282,13 @@ class ChatGPTMessageInput extends StatelessWidget {
               controller: data.controller,
               focusNode: data.focusNode,
               maxLines: null,
-              style: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
+              style: TextStyle(
+                  color: chatGPTTheme.themeData.colorScheme.onSurface),
               decoration: InputDecoration(
                 hintText: 'Message',
-                hintStyle: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface.withValues(alpha: 0.5)),
+                hintStyle: TextStyle(
+                    color: chatGPTTheme.themeData.colorScheme.onSurface
+                        .withValues(alpha: 0.5)),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.all(12),
               ),
@@ -336,7 +343,9 @@ class ChatGPTCodeBlock extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.copy, size: 16, color: chatGPTTheme.themeData.colorScheme.onSurface),
+                  icon: Icon(Icons.copy,
+                      size: 16,
+                      color: chatGPTTheme.themeData.colorScheme.onSurface),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: code));
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -374,34 +383,42 @@ class ChatGPTMarkdownBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MarkdownBody(
-      data: markdown,
-      selectable: true,
-      styleSheet: MarkdownStyleSheet(
-        p: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
-        h1: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
-        h2: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
-        h3: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
-        h4: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
-        h5: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
-        h6: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
-        em: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface, fontStyle: FontStyle.italic),
-        strong:
-            TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface, fontWeight: FontWeight.bold),
-        code: TextStyle(
-          backgroundColor: Colors.black,
-          color: Colors.white,
-          fontFamily: 'monospace',
+    try {
+      return MarkdownBody(
+        data: markdown,
+        selectable: true,
+        styleSheet: MarkdownStyleSheet(
+          p: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
+          h1: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
+          h2: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
+          h3: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
+          h4: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
+          h5: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
+          h6: TextStyle(color: chatGPTTheme.themeData.colorScheme.onSurface),
+          em: TextStyle(
+              color: chatGPTTheme.themeData.colorScheme.onSurface,
+              fontStyle: FontStyle.italic),
+          strong: TextStyle(
+              color: chatGPTTheme.themeData.colorScheme.onSurface,
+              fontWeight: FontWeight.bold),
+          code: const TextStyle(
+            backgroundColor: Colors.black,
+            color: Colors.white,
+            fontFamily: 'monospace',
+          ),
+          codeblockDecoration: BoxDecoration(
+            color: const Color(0xFF1E1E1E),
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
-        codeblockDecoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E),
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      builders: {
-        'code': ChatGPTCodeBlockBuilder(),
-      },
-    );
+        builders: {
+          'code': ChatGPTCodeBlockBuilder(),
+        },
+      );
+    } catch (e) {
+      debugPrint('Error rendering markdown: $e');
+      return Text(markdown); // Fallback to plain text
+    }
   }
 }
 
@@ -437,7 +454,6 @@ class ChatGPTSendButton extends StatelessWidget {
   }
 }
 
-// Fix the MarkdownElementBuilder by properly extending it:
 class ChatGPTCodeBlockBuilder extends MarkdownElementBuilder {
   @override
   Widget? visitElementAfter(

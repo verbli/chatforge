@@ -26,17 +26,11 @@ final claudeTheme = ChatTheme(
   widgets: ChatThemeWidgets(
     userMessage: (context, data) => ClaudeMessageContainer(
       data: data,
-      child: Text(
-        data.content,
-        style: const TextStyle(color: Colors.white),
-      ),
+      child: ClaudeMarkdownBlock(markdown: data.content),
     ),
     assistantMessage: (context, data) => ClaudeMessageContainer(
       data: data,
-      child: Text(
-        data.content,
-        style: const TextStyle(color: Colors.white),
-      ),
+      child: ClaudeMarkdownBlock(markdown: data.content),
     ),
     messageInput: (context, data) => ClaudeMessageInput(data: data),
     sendButton: (context, onPressed, isGenerating) => ClaudeSendButton(
@@ -97,38 +91,37 @@ class ClaudeMessageContainer extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: const Color(0xFFe5e5e2),
-                radius: 18,
-                child: data.isUser
-                    ? Icon(Icons.person, color: Colors.black, size: 20)
-                    : Image.asset(BuildConfig.isPro
-                      ? 'assets/icon/icon_pro.png'
-                      : 'assets/icon/icon.png',
-                )
-              ),
-              const SizedBox(width: 12),
-              Text(
-                data.isUser ? 'You' : 'Claude',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: claudeTheme.styling.userMessageTextColor,
+          CircleAvatar(
+              backgroundColor: const Color(0xFFe5e5e2),
+              radius: 18,
+              child: data.isUser
+                  ? const Icon(Icons.person, color: Colors.black, size: 20)
+                  : Image.asset(
+                      BuildConfig.isPro
+                          ? 'assets/icon/icon_pro.png'
+                          : 'assets/icon/icon.png',
+                    )),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: child,
                 ),
-              ),
-              if (actions != null) ...[
-                const Spacer(),
-                ...actions!,
+                if (actions != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: actions!,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-          const SizedBox(height: 12),
-          child,
         ],
       ),
     );
@@ -147,7 +140,8 @@ class ClaudeUserMessage extends StatelessWidget {
     if (data.onEdit != null) {
       actions.add(
         IconButton(
-          icon: Icon(Icons.edit, color: Colors.grey.shade600, size: 20),
+          icon: Icon(Icons.edit,
+              color: claudeTheme.themeData.colorScheme.onSurface, size: 20),
           onPressed: () => _showEditDialog(context),
           tooltip: 'Edit message',
         ),
@@ -157,7 +151,8 @@ class ClaudeUserMessage extends StatelessWidget {
     if (data.onDelete != null) {
       actions.add(
         IconButton(
-          icon: Icon(Icons.delete, color: Colors.grey.shade600, size: 20),
+          icon: Icon(Icons.delete,
+              color: claudeTheme.themeData.colorScheme.onSurface, size: 20),
           onPressed: () => _showDeleteDialog(context),
           tooltip: 'Delete message',
         ),
@@ -169,7 +164,10 @@ class ClaudeUserMessage extends StatelessWidget {
       actions: actions,
       child: SelectableText(
         data.content,
-        style: Theme.of(context).textTheme.bodyLarge,
+        style: Theme.of(context)
+            .textTheme
+            .bodyLarge
+            ?.copyWith(color: claudeTheme.themeData.colorScheme.onSurface),
       ),
     );
   }
@@ -215,12 +213,15 @@ class ClaudeUserMessage extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('CANCEL'),
+            style: TextButton.styleFrom(
+                foregroundColor: claudeTheme.themeData.colorScheme.onSurface,
+                backgroundColor: claudeTheme.themeData.colorScheme.primary),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
+                foregroundColor: claudeTheme.themeData.colorScheme.onSurface,
+                backgroundColor: claudeTheme.themeData.colorScheme.surface),
             child: const Text('DELETE'),
           ),
         ],
@@ -256,12 +257,12 @@ class ClaudeMessageInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF3d3d3a),
+        color: claudeTheme.styling.assistantMessageColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFF3e3e3a)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -274,9 +275,13 @@ class ClaudeMessageInput extends StatelessWidget {
               controller: data.controller,
               focusNode: data.focusNode,
               maxLines: null,
+              style:
+                  TextStyle(color: claudeTheme.themeData.colorScheme.onSurface),
               decoration: InputDecoration(
                 hintText: 'Message',
-                hintStyle: TextStyle(color: Colors.grey.shade500),
+                hintStyle: TextStyle(
+                    color: claudeTheme.themeData.colorScheme.onSurface
+                        .withValues(alpha: 0.5)),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.all(16),
               ),
@@ -313,7 +318,7 @@ class ClaudeSendButton extends StatelessWidget {
         icon: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFFDA7756),
+            color: claudeTheme.styling.primaryColor,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(
@@ -338,9 +343,8 @@ class ClaudeCodeBlock extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: const Color(0xFF282c34),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -348,8 +352,9 @@ class ClaudeCodeBlock extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+              color: const Color(0xFF1f1e1d),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(8)),
               border: Border(
                 bottom: BorderSide(color: Colors.grey.shade200),
               ),
@@ -357,10 +362,10 @@ class ClaudeCodeBlock extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                const Text(
                   'Code',
                   style: TextStyle(
-                    color: Colors.grey.shade700,
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -402,31 +407,46 @@ class ClaudeMarkdownBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MarkdownBody(
-      data: markdown,
-      selectable: true,
-      styleSheet: MarkdownStyleSheet(
-        p: Theme.of(context).textTheme.bodyLarge,
-        code: TextStyle(
-          backgroundColor: Colors.grey.shade100,
-          fontFamily: 'monospace',
+    try {
+      return MarkdownBody(
+        data: markdown,
+        selectable: true,
+        styleSheet: MarkdownStyleSheet(
+          p: TextStyle(color: claudeTheme.themeData.colorScheme.onSurface),
+          h1: TextStyle(color: claudeTheme.themeData.colorScheme.onSurface),
+          h2: TextStyle(color: claudeTheme.themeData.colorScheme.onSurface),
+          h3: TextStyle(color: claudeTheme.themeData.colorScheme.onSurface),
+          h4: TextStyle(color: claudeTheme.themeData.colorScheme.onSurface),
+          h5: TextStyle(color: claudeTheme.themeData.colorScheme.onSurface),
+          h6: TextStyle(color: claudeTheme.themeData.colorScheme.onSurface),
+          em: TextStyle(color: claudeTheme.themeData.colorScheme.onSurface),
+          strong: TextStyle(
+              color: claudeTheme.themeData.colorScheme.onSurface,
+              fontStyle: FontStyle.italic),
+          code: const TextStyle(
+            backgroundColor: Color(0xFF282c34),
+            fontFamily: 'monospace',
+          ),
+          codeblockDecoration: BoxDecoration(
+            color: const Color(0xFF282c34),
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
-        codeblockDecoration: BoxDecoration(
-          color: Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-      ),
-      builders: {
-        'code': ClaudeCodeBlockBuilder(),
-      },
-    );
+        builders: {
+          'code': ClaudeCodeBlockBuilder(),
+        },
+      );
+    } catch (e) {
+      debugPrint('Error rendering markdown: $e');
+      return Text(markdown); // Fallback to plain text
+    }
   }
 }
 
 class ClaudeCodeBlockBuilder extends MarkdownElementBuilder {
   @override
-  Widget? visitElementAfter(markdown.Element element, TextStyle? preferredStyle) {
+  Widget? visitElementAfter(
+      markdown.Element element, TextStyle? preferredStyle) {
     if (element.tag == 'code') {
       return ClaudeCodeBlock(
         code: element.textContent,
