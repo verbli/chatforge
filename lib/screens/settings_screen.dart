@@ -17,6 +17,7 @@ import '../data/model_defaults.dart';
 import '../data/models.dart';
 import '../data/providers.dart';
 import '../providers/theme_provider.dart';
+import '../themes/chat_theme.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -116,8 +117,8 @@ class SettingsScreen extends ConsumerWidget {
                          */
 
                         ListTile(
-                          title: const Text('Theme'),
-                          subtitle: Text(themeMode.name),
+                          title: const Text('Appearance'),
+                          subtitle: Text(ref.watch(chatThemeProvider).type.name),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => _showThemeDialog(context, ref),
                         ),
@@ -402,21 +403,136 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _showThemeDialog(BuildContext context, WidgetRef ref) async {
-    final theme = await showDialog<ThemeMode>(
+    final chatTheme = ref.watch(chatThemeProvider);
+    final themeMode = ref.watch(themeModeProvider);
+
+    await showDialog(
       context: context,
-      builder: (context) => SimpleDialog(
-        title: const Text('Choose Theme'),
-        children: ThemeMode.values
-            .map((mode) => SimpleDialogOption(
-                  onPressed: () => Navigator.pop(context, mode),
-                  child: Text(mode.name),
-                ))
-            .toList(),
+      builder: (context) => AlertDialog(
+        title: const Text('Appearance'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Theme Mode', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              RadioListTile<ThemeMode>(
+                title: const Text('System'),
+                value: ThemeMode.system,
+                groupValue: themeMode,
+                onChanged: (value) {
+                  ref.read(themeModeProvider.notifier).setThemeMode(value!);
+                  Navigator.pop(context);
+                },
+              ),
+              RadioListTile<ThemeMode>(
+                title: const Text('Light'),
+                value: ThemeMode.light,
+                groupValue: themeMode,
+                onChanged: (value) {
+                  ref.read(themeModeProvider.notifier).setThemeMode(value!);
+                  Navigator.pop(context);
+                },
+              ),
+              RadioListTile<ThemeMode>(
+                title: const Text('Dark'),
+                value: ThemeMode.dark,
+                groupValue: themeMode,
+                onChanged: (value) {
+                  ref.read(themeModeProvider.notifier).setThemeMode(value!);
+                  Navigator.pop(context);
+                },
+              ),
+              const Divider(),
+              const Text('Chat Style', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              RadioListTile<ChatThemeType>(
+                title: const Text('ChatForge'),
+                subtitle: const Text('Default theme'),
+                value: ChatThemeType.chatforge,
+                groupValue: chatTheme.type,
+                onChanged: (value) {
+                  ref.read(chatThemeProvider.notifier).setTheme(value!);
+                  Navigator.pop(context);
+                },
+              ),
+              RadioListTile<ChatThemeType>(
+                title: const Text('ChatGPT'),
+                subtitle: const Text('OpenAI style'),
+                value: ChatThemeType.chatgpt,
+                groupValue: chatTheme.type,
+                onChanged: (value) {
+                  ref.read(chatThemeProvider.notifier).setTheme(value!);
+                  Navigator.pop(context);
+                },
+              ),
+              RadioListTile<ChatThemeType>(
+                title: const Text('Claude'),
+                subtitle: const Text('Anthropic style'),
+                value: ChatThemeType.claude,
+                groupValue: chatTheme.type,
+                onChanged: (value) {
+                  ref.read(chatThemeProvider.notifier).setTheme(value!);
+                  Navigator.pop(context);
+                },
+              ),
+              RadioListTile<ChatThemeType>(
+                title: const Text('Gemini'),
+                subtitle: const Text('Google style'),
+                value: ChatThemeType.gemini,
+                groupValue: chatTheme.type,
+                onChanged: (value) {
+                  ref.read(chatThemeProvider.notifier).setTheme(value!);
+                  Navigator.pop(context);
+                },
+              ),
+              if (chatTheme.type == ChatThemeType.chatforge) ...[
+                const Divider(),
+                const Text('Theme Color', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: AppTheme.seedColors.entries.map((entry) {
+                    return InkWell(
+                      onTap: () {
+                        ref.read(themeColorProvider.notifier).setColor(entry.value);
+                      },
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: entry.value,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                          ),
+                        ),
+                        child: entry.value == ref.watch(themeColorProvider)
+                            ? Icon(
+                          Icons.check,
+                          color: entry.value.computeLuminance() > 0.5
+                              ? Colors.black
+                              : Colors.white,
+                        )
+                            : null,
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CLOSE'),
+          ),
+        ],
       ),
     );
-    if (theme != null) {
-      ref.read(themeModeProvider.notifier).setThemeMode(theme);
-    }
   }
 
   Future<void> _showAddProviderDialog(
