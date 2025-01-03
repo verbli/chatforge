@@ -24,12 +24,19 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final chatTheme = ref.watch(chatThemeProvider);
+
     return FutureBuilder(
       future: StorageService.initialize(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+          return Theme(
+            data: chatTheme.themeData,
+            child: Scaffold(
+              body: Center(child: CircularProgressIndicator(
+                color: chatTheme.styling.primaryColor,
+              )),
+            ),
           );
         }
 
@@ -37,149 +44,153 @@ class SettingsScreen extends ConsumerWidget {
         final providers = ref.watch(providersProvider);
         final themeMode = ref.watch(themeModeProvider);
 
-        return Scaffold(
-          appBar: AppBar(title: const Text('Settings')),
-          body: Column(
-            children: [
-              const AdBannerWidget(),
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    child: ListView(
-                      children: [
-                        ListTile(
-                          title: Text(
-                            'App Settings',
-                            style: Theme.of(context).textTheme.titleLarge,
+        return Theme(
+          data: chatTheme.themeData,
+          child: Scaffold(
+            backgroundColor: chatTheme.styling.backgroundColor,
+            appBar: AppBar(title: const Text('Settings')),
+            body: Column(
+              children: [
+                const AdBannerWidget(),
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 800),
+                      child: ListView(
+                        children: [
+                          ListTile(
+                            title: Text(
+                              'App Settings',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
                           ),
-                        ),
 
-                        if (!BuildConfig.isPro && !BuildConfig.isEnterprise) ... [
-                          Card(
-                            margin: const EdgeInsets.all(16),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.star, color: Theme.of(context).colorScheme.primary),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Upgrade to Pro for an ad-free experience',
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                          color: Theme.of(context).colorScheme.primary,
-                                          fontWeight: FontWeight.bold,
+                          if (!BuildConfig.isPro && !BuildConfig.isEnterprise) ... [
+                            Card(
+                              margin: const EdgeInsets.all(16),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.star, color: Theme.of(context).colorScheme.primary),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Upgrade to Pro for an ad-free experience',
+                                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                            color: Theme.of(context).colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  FilledButton.icon(
-                                    onPressed: () => _openPlayStore(context, "org.verbli.chatforge.pro"),
-                                    icon: const Icon(Icons.upgrade),
-                                    label: const Text('UPGRADE NOW'),
-                                  ),
-                                ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    FilledButton.icon(
+                                      onPressed: () => _openPlayStore(context, "org.verbli.chatforge.pro"),
+                                      icon: const Icon(Icons.upgrade),
+                                      label: const Text('UPGRADE NOW'),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
+                          ],
+
+                          ListTile(
+                            title: const Text('AI Providers'),
+                            subtitle: const Text('Configure API keys'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => Navigator.pushNamed(context, '/providers'),
+                          ),
+
+                          // TODO: Uncomment when this works
+                          /*
+                          ListTile(
+                            title: Text(
+                              'Usage Statistics',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.refresh),
+                              tooltip: 'Reset Usage Statistics',
+                              onPressed: () => _showResetUsageDialog(context, ref),
+                            ),
+                          ),
+                          tokenUsage.when(
+                            data: (usage) => _UsageStatistics(usage: usage),
+                            loading: () =>
+                                const Center(child: CircularProgressIndicator()),
+                            error: (err, stack) => Center(child: Text('Error: $err')),
+                          ),
+                           */
+
+                          ListTile(
+                            title: const Text('Appearance'),
+                            subtitle: Text('${themeMode.name} - ${chatTheme.type.name}'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => _showThemeDialog(context, ref),
+                          ),
+                          ListTile(
+                            title: const Text('Theme Color'),
+                            trailing: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: ref.watch(themeColorProvider),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Theme.of(context).dividerColor,
+                                ),
+                              ),
+                            ),
+                            onTap: () => _showColorPicker(context, ref),
+                          ),
+
+                          // About section
+                          ListTile(
+                            title: Text(
+                              'About',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+                          ListTile(
+                            title: const Text('License'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => _showLicense(context),
+                          ),
+                          ListTile(
+                            title: const Text('Third Party Libraries'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => _showLicenses(context),
+                          ),
+                          const ListTile(
+                            title: Text('Version'),
+                            subtitle: Text(BuildConfig.appVersion),
+                          ),
+                          ListTile(
+                            title: const Text('Changelog'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => _showChangelog(context),
+                          ),
+                          ListTile(
+                            title: const Text('GitHub Repository'),
+                            trailing: const Icon(Icons.open_in_new),
+                            onTap: () => _openGitHub(context),
+                          ),
+                          ListTile(
+                            title: const Text('Rate ChatForge'),
+                            trailing: const Icon(Icons.star_rate),
+                            onTap: () => _openPlayStore(context, "org.verbli.chatforge${BuildConfig.isPro ? '.pro' : ''}"),
                           ),
                         ],
-
-                        ListTile(
-                          title: const Text('AI Providers'),
-                          subtitle: const Text('Configure API keys'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => Navigator.pushNamed(context, '/providers'),
-                        ),
-
-                        // TODO: Uncomment when this works
-                        /*
-                        ListTile(
-                          title: Text(
-                            'Usage Statistics',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.refresh),
-                            tooltip: 'Reset Usage Statistics',
-                            onPressed: () => _showResetUsageDialog(context, ref),
-                          ),
-                        ),
-                        tokenUsage.when(
-                          data: (usage) => _UsageStatistics(usage: usage),
-                          loading: () =>
-                              const Center(child: CircularProgressIndicator()),
-                          error: (err, stack) => Center(child: Text('Error: $err')),
-                        ),
-                         */
-
-                        ListTile(
-                          title: const Text('Appearance'),
-                          subtitle: Text(ref.watch(chatThemeProvider).type.name),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => _showThemeDialog(context, ref),
-                        ),
-                        ListTile(
-                          title: const Text('Theme Color'),
-                          trailing: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: ref.watch(themeColorProvider),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(context).dividerColor,
-                              ),
-                            ),
-                          ),
-                          onTap: () => _showColorPicker(context, ref),
-                        ),
-
-                        // About section
-                        ListTile(
-                          title: Text(
-                            'About',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                        ),
-                        ListTile(
-                          title: const Text('License'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => _showLicense(context),
-                        ),
-                        ListTile(
-                          title: const Text('Third Party Libraries'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => _showLicenses(context),
-                        ),
-                        const ListTile(
-                          title: Text('Version'),
-                          subtitle: Text(BuildConfig.appVersion),
-                        ),
-                        ListTile(
-                          title: const Text('Changelog'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => _showChangelog(context),
-                        ),
-                        ListTile(
-                          title: const Text('GitHub Repository'),
-                          trailing: const Icon(Icons.open_in_new),
-                          onTap: () => _openGitHub(context),
-                        ),
-                        ListTile(
-                          title: const Text('Rate ChatForge'),
-                          trailing: const Icon(Icons.star_rate),
-                          onTap: () => _openPlayStore(context, "org.verbli.chatforge${BuildConfig.isPro ? '.pro' : ''}"),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

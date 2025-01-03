@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../themes/chat_theme.dart';
+
 class AppTheme {
   static const Map<String, Color> seedColors = {
     'Teal': Colors.teal,
@@ -75,4 +77,11 @@ class AppTheme {
     fontSize: 14,
     color: Colors.grey,
   );
+
+  static ThemeData fromChatTheme(ChatTheme chatTheme, {bool isDark = false}) {
+    if (isDark && chatTheme.type == ChatThemeType.chatforge) {
+      return darkTheme(seedColor: primary);
+    }
+    return chatTheme.themeData;
+  }
 }

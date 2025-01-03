@@ -13,6 +13,8 @@ import 'package:uuid/uuid.dart';
 
 import '../data/models.dart';
 import '../data/providers.dart';
+import '../themes/chat_theme.dart';
+import '../themes/theme_widgets.dart';
 import '../widgets/ad_banner.dart';
 import '../widgets/settings_row.dart';
 
@@ -39,6 +41,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   StreamSubscription? _messageStream;
   bool _hasScrolledToBottom = false;
   String? _lastMessageId;
+  final _focusNode = FocusNode();
 
   @override
   void initState() {
@@ -237,126 +240,154 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = ref.watch(chatThemeProvider);
     final messages = ref.watch(messagesProvider(widget.conversationId));
     final conversation = ref.watch(conversationProvider(widget.conversationId));
 
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        leading: widget.isPanel ? null : const BackButton(),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: conversation.when(
-                    data: (conv) => Text(conv.title),
-                    loading: () => const Text('Loading...'),
-                    error: (err, stack) => Text('Error: $err'),
+    return Theme(
+      data: theme.themeData,
+      child: Scaffold(
+        backgroundColor: theme.styling.backgroundColor,
+        resizeToAvoidBottomInset: true,
+        appBar: _buildAppBar(theme),
+        body: SafeArea(
+          child: Column(
+            children: [
+              const AdBannerWidget(),
+              Expanded(
+                child: Container(
+                  color: theme.styling.backgroundColor,
+                  child: messages.when(
+                    data: (msgs) => _buildMessageList(msgs, theme),
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (err, stack) => Center(child: Text('Error: $err')),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  iconSize: 16,
-                  onPressed: () => _showTitleEditDialog(context),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          PopupMenuButton<String>(
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'settings',
-                child: Row(
-                  children: [
-                    Icon(Icons.settings),
-                    SizedBox(width: 8),
-                    Text('Settings'),
-                  ],
-                ),
               ),
+              _buildInputArea(theme),
             ],
-            onSelected: (value) async {
-              if (value == 'settings') {
-                _showSettings();
-              } else if (value == 'delete') {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Delete Conversation'),
-                    content: const Text('This action cannot be undone.'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('CANCEL'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Theme.of(context).colorScheme.error,
-                        ),
-                        child: const Text('DELETE'),
-                      ),
-                    ],
-                  ),
-                );
-
-                if (confirm == true && context.mounted) {
-                  await ref
-                      .read(chatRepositoryProvider)
-                      .deleteConversation(widget.conversationId);
-                  if (widget.isPanel) {
-                    ref.read(selectedConversationProvider.notifier).state =
-                        null;
-                  } else {
-                    Navigator.pop(context);
-                  }
-                }
-              }
-            },
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const AdBannerWidget(),
-            Expanded(
-              child: messages.when(
-                data: (msgs) {
-                  _handleMessagesLoaded(msgs);
-                  return ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: msgs.length,
-                    itemBuilder: (context, index) => MessageBubble(
-                      message: msgs[index],
-                      onEdit: (message) => _editMessage(message),
-                      onDelete: (message) => _deleteMessage(message),
-                    ),
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => Center(child: Text('Error: $err')),
-              ),
-            ),
-            _MessageInput(
-              controller: _inputController,
-              onSubmit: _sendMessage,
-              onStop: _stopGeneration,
-              onTap: () {},
-              isGenerating: _isGenerating,
-            ),
-          ],
         ),
       ),
     );
   }
 
+  Widget _buildMessageList(List<Message> messages, ChatTheme theme) {
+    return ListView.builder(
+      controller: _scrollController,
+      padding: theme.styling.containerPadding,
+      itemCount: messages.length,
+      itemBuilder: (context, index) {
+        final message = messages[index];
+        final messageData = MessageData(
+          id: message.id,
+          content: message.content,
+          timestamp: message.timestamp,
+          isUser: message.role == Role.user,
+          onEdit: (message.role == Role.user) ?
+              (content) => _editMessage(message.copyWith(content: content)) : null,
+          onDelete: () => _deleteMessage(message),
+        );
+
+        return Align(
+          alignment: message.role == Role.user && theme.styling.alignUserMessagesRight
+              ? Alignment.centerRight
+              : Alignment.centerLeft,
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: theme.styling.maxWidth,
+            ),
+            padding: EdgeInsets.symmetric(
+              vertical: theme.styling.messageSpacing / 2,
+            ),
+            child: message.role == Role.user
+                ? theme.widgets.userMessage(context, messageData)
+                : theme.widgets.assistantMessage(context, messageData),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInputArea(ChatTheme theme) {
+    final inputData = MessageInputData(
+      controller: _inputController,
+      focusNode: _focusNode,
+      isGenerating: _isGenerating,
+      onSubmit: _sendMessage,
+      onStop: _stopGeneration,
+    );
+
+    return Container(
+      color: theme.styling.backgroundColor,
+      padding: theme.styling.containerPadding,
+      child: Row(
+        children: [
+          Expanded(
+            child: theme.widgets.messageInput(context, inputData),
+          ),
+          const SizedBox(width: 8),
+          theme.widgets.sendButton(
+            context,
+            _isGenerating ? _stopGeneration : _sendMessage,
+            _isGenerating,
+          ),
+        ],
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(ChatTheme theme) {
+    return AppBar(
+      leading: widget.isPanel ? null : const BackButton(),
+      backgroundColor: theme.themeData.appBarTheme.backgroundColor,
+      elevation: theme.themeData.appBarTheme.elevation,
+      shadowColor: theme.themeData.appBarTheme.shadowColor,
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: ref.watch(conversationProvider(widget.conversationId)).when(
+                  data: (conv) => Text(conv.title),
+                  loading: () => const Text('Loading...'),
+                  error: (err, stack) => Text('Error: $err'),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit),
+                iconSize: 16,
+                onPressed: () => _showTitleEditDialog(context),
+              ),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        PopupMenuButton<String>(
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'settings',
+              child: Row(
+                children: [
+                  Icon(Icons.settings, color: theme.styling.primaryColor),
+                  const SizedBox(width: 8),
+                  const Text('Settings'),
+                ],
+              ),
+            ),
+          ],
+          onSelected: (value) {
+            if (value == 'settings') {
+              _showSettings();
+            }
+          },
+        ),
+      ],
+    );
+  }
 
   Future<void> _showTitleEditDialog(BuildContext context) async {
     final conversation = await ref

@@ -4,48 +4,60 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as markdown;
+import '../../core/config.dart';
 import '../chat_theme.dart';
 import '../theme_widgets.dart';
 
 final claudeTheme = ChatTheme(
   type: ChatThemeType.claude,
   themeData: ThemeData(
-    primaryColor: const Color(0xFF6B40DB),
-    scaffoldBackgroundColor: Colors.white,
-    colorScheme: ColorScheme.light(
-      primary: const Color(0xFF6B40DB),
-      surface: Colors.grey.shade50,
-      onSurface: Colors.black,
+    primaryColor: const Color(0xFFDA7756),
+    scaffoldBackgroundColor: const Color(0xFF2b2a27),
+    colorScheme: const ColorScheme.dark(
+      primary: Color(0xFFDA7756),
+      surface: Color(0xFF2b2a27),
+      onSurface: Colors.white,
     ),
-    appBarTheme: AppBarTheme(
-      backgroundColor: Colors.white,
-      elevation: 1,
-      shadowColor: Colors.black.withOpacity(0.1),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: const Color(0xFF2b2a27),
+      elevation: 0.5,
     ),
   ),
   widgets: ChatThemeWidgets(
-    userMessage: (context, data) => ClaudeUserMessage(data: data),
-    assistantMessage: (context, data) => ClaudeAssistantMessage(data: data),
+    userMessage: (context, data) => ClaudeMessageContainer(
+      data: data,
+      child: Text(
+        data.content,
+        style: const TextStyle(color: Colors.white),
+      ),
+    ),
+    assistantMessage: (context, data) => ClaudeMessageContainer(
+      data: data,
+      child: Text(
+        data.content,
+        style: const TextStyle(color: Colors.white),
+      ),
+    ),
     messageInput: (context, data) => ClaudeMessageInput(data: data),
-    sendButton: (context, onPressed, isGenerating) =>
-        ClaudeSendButton(onPressed: onPressed, isGenerating: isGenerating),
-    codeBlock: (context, code) => ClaudeCodeBlock(code: code),
-    markdownBlock: (context, markdown) => ClaudeMarkdownBlock(markdown: markdown),
+    sendButton: (context, onPressed, isGenerating) => ClaudeSendButton(
+      onPressed: onPressed,
+      isGenerating: isGenerating,
+    ),
   ),
-  styling: const ChatThemeStyling(
-    primaryColor: Color(0xFF6B40DB),
-    backgroundColor: Colors.white,
-    userMessageColor: Colors.white,
-    assistantMessageColor: Colors.white,
-    userMessageTextColor: Colors.black,
-    assistantMessageTextColor: Colors.black,
-    userMessageStyle: TextStyle(color: Colors.black),
-    assistantMessageStyle: TextStyle(color: Colors.black),
-    messageBorderRadius: BorderRadius.all(Radius.circular(8)),
-    messagePadding: EdgeInsets.all(16),
-    messageSpacing: 24,
-    maxWidth: 800,
-    containerPadding: EdgeInsets.all(16),
+  styling: ChatThemeStyling(
+    primaryColor: const Color(0xFFDA7756),
+    backgroundColor: const Color(0xFF2b2a27),
+    userMessageColor: const Color(0xFF1c1b1a),
+    assistantMessageColor: const Color(0xFF3a3a36),
+    userMessageTextColor: Colors.white,
+    assistantMessageTextColor: Colors.white,
+    userMessageStyle: const TextStyle(color: Colors.white),
+    assistantMessageStyle: const TextStyle(color: Colors.white),
+    messageBorderRadius: BorderRadius.circular(12),
+    messagePadding: const EdgeInsets.all(16),
+    messageSpacing: 16,
+    maxWidth: 600,
+    containerPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     alignUserMessagesRight: false,
     showAvatars: true,
   ),
@@ -68,16 +80,20 @@ class ClaudeMessageContainer extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: data.isUser
+            ? claudeTheme.styling.userMessageColor
+            : claudeTheme.styling.assistantMessageColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.grey.shade200,
+          color: data.isUser
+              ? claudeTheme.styling.userMessageColor
+              : claudeTheme.styling.assistantMessageColor,
         ),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black,
             blurRadius: 5,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -87,24 +103,22 @@ class ClaudeMessageContainer extends StatelessWidget {
           Row(
             children: [
               CircleAvatar(
-                backgroundColor: data.isUser
-                    ? Colors.blue.shade100
-                    : const Color(0xFF6B40DB).withOpacity(0.1),
+                backgroundColor: const Color(0xFFe5e5e2),
                 radius: 18,
-                child: Icon(
-                  data.isUser ? Icons.person : Icons.psychology,
-                  color: data.isUser
-                      ? Colors.blue.shade700
-                      : const Color(0xFF6B40DB),
-                  size: 20,
-                ),
+                child: data.isUser
+                    ? Icon(Icons.person, color: Colors.black, size: 20)
+                    : Image.asset(BuildConfig.isPro
+                      ? 'assets/icon/icon_pro.png'
+                      : 'assets/icon/icon.png',
+                )
               ),
               const SizedBox(width: 12),
               Text(
                 data.isUser ? 'You' : 'Claude',
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
+                  color: claudeTheme.styling.userMessageTextColor,
                 ),
               ),
               if (actions != null) ...[
@@ -242,9 +256,9 @@ class ClaudeMessageInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF3d3d3a),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: const Color(0xFF3e3e3a)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -261,7 +275,7 @@ class ClaudeMessageInput extends StatelessWidget {
               focusNode: data.focusNode,
               maxLines: null,
               decoration: InputDecoration(
-                hintText: 'Message Claude...',
+                hintText: 'Message',
                 hintStyle: TextStyle(color: Colors.grey.shade500),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.all(16),
@@ -299,8 +313,8 @@ class ClaudeSendButton extends StatelessWidget {
         icon: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF6B40DB),
-            borderRadius: BorderRadius.circular(8),
+            color: const Color(0xFFDA7756),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(
             isGenerating ? Icons.stop : Icons.send,

@@ -4,53 +4,65 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as markdown;
+import '../../core/config.dart';
 import '../chat_theme.dart';
 import '../theme_widgets.dart';
 
 final geminiTheme = ChatTheme(
   type: ChatThemeType.gemini,
   themeData: ThemeData(
-    primaryColor: const Color(0xFF1B72E8),
-    scaffoldBackgroundColor: Colors.white,
-    colorScheme: ColorScheme.light(
-      primary: const Color(0xFF1B72E8),
-      secondary: const Color(0xFF4285F4),
-      surface: Colors.grey.shade50,
-      onSurface: Colors.black,
+    primaryColor: const Color(0xFF5087d3),
+    scaffoldBackgroundColor: const Color(0xFF1e1f20),
+    colorScheme: const ColorScheme.dark(
+      primary: Color(0xFF5087d3),
+      surface: Color(0xFF1e1f20),
+      onSurface: Colors.white,
     ),
-    appBarTheme: AppBarTheme(
-      backgroundColor: Colors.white,
-      elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.1),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Color(0xFF282a2c),
+      elevation: 1,
     ),
   ),
   widgets: ChatThemeWidgets(
-    userMessage: (context, data) => GeminiUserMessage(data: data),
-    assistantMessage: (context, data) => GeminiAssistantMessage(data: data),
+    userMessage: (context, data) => GeminiMessageContainer(
+      data: data,
+      child: Text(
+        data.content,
+        style: const TextStyle(color: Colors.white),
+      ),
+    ),
+    assistantMessage: (context, data) => GeminiMessageContainer(
+      data: data,
+      child: Text(
+        data.content,
+        style: const TextStyle(color: Colors.white),
+      ),
+    ),
     messageInput: (context, data) => GeminiMessageInput(data: data),
-    sendButton: (context, onPressed, isGenerating) =>
-        GeminiSendButton(onPressed: onPressed, isGenerating: isGenerating),
-    codeBlock: (context, code) => GeminiCodeBlock(code: code),
-    markdownBlock: (context, markdown) => GeminiMarkdownBlock(markdown: markdown),
+    sendButton: (context, onPressed, isGenerating) => GeminiSendButton(
+      onPressed: onPressed,
+      isGenerating: isGenerating,
+    ),
   ),
-  styling: const ChatThemeStyling(
-    primaryColor: Color(0xFF1B72E8),
-    backgroundColor: Colors.white,
-    userMessageColor: Colors.white,
-    assistantMessageColor: Colors.white,
-    userMessageTextColor: Colors.black,
-    assistantMessageTextColor: Colors.black,
-    userMessageStyle: TextStyle(color: Colors.black),
-    assistantMessageStyle: TextStyle(color: Colors.black),
-    messageBorderRadius: BorderRadius.all(Radius.circular(12)),
-    messagePadding: EdgeInsets.all(16),
+  styling: ChatThemeStyling(
+    primaryColor: const Color(0xFF5087d3),
+    backgroundColor: const Color(0xFF1e1f20),
+    userMessageColor: const Color(0xFF1e1f20),
+    assistantMessageColor: const Color(0xFF1e1f20),
+    userMessageTextColor: Colors.white,
+    assistantMessageTextColor: Colors.white,
+    userMessageStyle: const TextStyle(color: Colors.white),
+    assistantMessageStyle: const TextStyle(color: Colors.white),
+    messageBorderRadius: BorderRadius.circular(12),
+    messagePadding: const EdgeInsets.all(16),
     messageSpacing: 16,
-    maxWidth: 800,
-    containerPadding: EdgeInsets.all(16),
+    maxWidth: 600,
+    containerPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     alignUserMessagesRight: false,
     showAvatars: true,
   ),
 );
+
 
 class GeminiMessageContainer extends StatelessWidget {
   final MessageData data;
@@ -68,47 +80,30 @@ class GeminiMessageContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: data.isUser ? Colors.blue.shade50 : Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Colors.grey.shade200,
-          width: 1,
-        ),
-      ),
+      color: data.isUser
+          ? geminiTheme.styling.userMessageColor
+          : geminiTheme.styling.assistantMessageColor,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: data.isUser
-                      ? Colors.blue.shade100
-                      : Colors.deepPurple.shade50,
-                  child: Icon(
-                    data.isUser ? Icons.person : Icons.auto_awesome,
-                    color: data.isUser
-                        ? const Color(0xFF1B72E8)
-                        : Colors.deepPurple,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  data.isUser ? 'You' : 'Gemini',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 16,
-                  ),
-                ),
-                if (actions != null) ...[
-                  const Spacer(),
-                  ...actions!,
-                ],
-              ],
+            CircleAvatar(
+              backgroundColor: data.isUser
+                  ? geminiTheme.styling.primaryColor
+                  : geminiTheme.styling.backgroundColor,
+              child: data.isUser
+                  ? const Icon(Icons.person)
+                  : Image.asset(BuildConfig.isPro
+                  ? 'assets/icon/icon_pro.png'
+                  : 'assets/icon/icon.png',
+              ),
             ),
-            const SizedBox(height: 12),
+            if (actions != null) ...[
+              const Spacer(),
+              ...actions!,
+            ],
+            const SizedBox(width: 12),
             child,
           ],
         ),
@@ -260,18 +255,11 @@ class GeminiMessageInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: geminiTheme.styling.backgroundColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: Colors.grey.shade300,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -282,7 +270,7 @@ class GeminiMessageInput extends StatelessWidget {
               focusNode: data.focusNode,
               maxLines: null,
               decoration: InputDecoration(
-                hintText: 'Message Gemini...',
+                hintText: 'Message',
                 hintStyle: TextStyle(color: Colors.grey.shade500),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 16),
@@ -316,7 +304,7 @@ class GeminiSendButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 4),
       child: Material(
-        color: const Color(0xFF1B72E8),
+        color: geminiTheme.styling.primaryColor,
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           onTap: onPressed,

@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models.dart';
 import '../data/model_defaults.dart';
 import '../data/providers.dart';
+import '../themes/chat_theme.dart';
 
 class ProvidersScreen extends ConsumerWidget {
   const ProvidersScreen({super.key});
@@ -15,29 +16,34 @@ class ProvidersScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final providers = ref.watch(providersProvider);
+    final theme = ref.watch(chatThemeProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('AI Providers'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showAddProviderDialog(context, ref),
-          ),
-        ],
-      ),
-      body: providers.when(
-        data: (providerList) => ListView.builder(
-          itemCount: providerList.length,
-          itemBuilder: (context, index) => _ProviderListItem(
-            provider: providerList[index],
-            onEdit: () => _editProvider(context, ref, providerList[index]),
-            onDelete: () => _deleteProvider(context, ref, providerList[index]),
-            onTest: () => _testProvider(context, ref, providerList[index]),
-          ),
+    return Theme(
+      data: theme.themeData,
+      child: Scaffold(
+        backgroundColor: theme.styling.backgroundColor,
+        appBar: AppBar(
+          title: const Text('AI Providers'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => _showAddProviderDialog(context, ref),
+            ),
+          ],
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+        body: providers.when(
+          data: (providerList) => ListView.builder(
+            itemCount: providerList.length,
+            itemBuilder: (context, index) => _ProviderListItem(
+              provider: providerList[index],
+              onEdit: () => _editProvider(context, ref, providerList[index]),
+              onDelete: () => _deleteProvider(context, ref, providerList[index]),
+              onTest: () => _testProvider(context, ref, providerList[index]),
+            ),
+          ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(child: Text('Error: $err')),
+        ),
       ),
     );
   }
