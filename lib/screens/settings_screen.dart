@@ -9,6 +9,8 @@ import 'package:chatforge/data/storage/services/storage_service.dart';
 import 'package:chatforge/widgets/ad_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:restart_app/restart_app.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/config.dart';
@@ -17,18 +19,32 @@ import '../data/model_defaults.dart';
 import '../data/models.dart';
 import '../data/providers.dart';
 import '../providers/theme_provider.dart';
+import '../themes/chat_theme.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  @override
+  Widget build(BuildContext context) {
+    final chatTheme = ref.watch(chatThemeProvider);
+
     return FutureBuilder(
       future: StorageService.initialize(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+          return Theme(
+            data: chatTheme.themeData,
+            child: Scaffold(
+              body: Center(
+                  child: CircularProgressIndicator(
+                color: chatTheme.styling.primaryColor,
+              )),
+            ),
           );
         }
 
@@ -36,197 +52,323 @@ class SettingsScreen extends ConsumerWidget {
         final providers = ref.watch(providersProvider);
         final themeMode = ref.watch(themeModeProvider);
 
-        return Scaffold(
-          appBar: AppBar(title: const Text('Settings')),
-          body: Column(
-            children: [
-              const AdBannerWidget(),
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    child: ListView(
-                      children: [
-                        ListTile(
-                          title: Text(
-                            'App Settings',
-                            style: Theme.of(context).textTheme.titleLarge,
+        return Theme(
+          data: chatTheme.themeData,
+          child: Scaffold(
+            backgroundColor: chatTheme.styling.backgroundColor,
+            appBar: AppBar(title: const Text('Settings')),
+            body: Column(
+              children: [
+                const AdBannerWidget(),
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 800),
+                      child: ListView(
+                        children: [
+                          ListTile(
+                            title: Text(
+                              'App Settings',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
                           ),
-                        ),
 
-                        if (!BuildConfig.isPro && !BuildConfig.isEnterprise) ... [
-                          Card(
-                            margin: const EdgeInsets.all(16),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.star, color: Theme.of(context).colorScheme.primary),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Upgrade to Pro for an ad-free experience',
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                          color: Theme.of(context).colorScheme.primary,
-                                          fontWeight: FontWeight.bold,
+                          if (!BuildConfig.isPro &&
+                              !BuildConfig.isEnterprise) ...[
+                            Card(
+                              margin: const EdgeInsets.all(16),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.star,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Upgrade to Pro for an ad-free experience',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  FilledButton.icon(
-                                    onPressed: () => _openPlayStore(context, "org.verbli.chatforge.pro"),
-                                    icon: const Icon(Icons.upgrade),
-                                    label: const Text('UPGRADE NOW'),
-                                  ),
-                                ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    FilledButton.icon(
+                                      onPressed: () => _openPlayStore(
+                                          context, "org.verbli.chatforge.pro"),
+                                      icon: const Icon(Icons.upgrade),
+                                      label: const Text('UPGRADE NOW'),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
+                          ],
+
+                          ListTile(
+                            title: const Text('AI Providers'),
+                            subtitle: const Text('Configure API keys'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () =>
+                                Navigator.pushNamed(context, '/providers'),
+                          ),
+
+                          // TODO: Uncomment when this works
+                          /*
+                          ListTile(
+                            title: Text(
+                              'Usage Statistics',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.refresh),
+                              tooltip: 'Reset Usage Statistics',
+                              onPressed: () => _showResetUsageDialog(context, ref),
+                            ),
+                          ),
+                          tokenUsage.when(
+                            data: (usage) => _UsageStatistics(usage: usage),
+                            loading: () =>
+                                const Center(child: CircularProgressIndicator()),
+                            error: (err, stack) => Center(child: Text('Error: $err')),
+                          ),
+                           */
+
+                          ListTile(
+                            title: const Text('Appearance'),
+                            subtitle: Text(
+                                '${themeMode.name} - ${chatTheme.type.name}'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => _showThemeDialog(context, ref),
+                          ),
+
+                          // About section
+                          ListTile(
+                            title: Text(
+                              'About',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+                          ListTile(
+                            title: const Text('License'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => _showLicense(context),
+                          ),
+                          ListTile(
+                            title: const Text('Third Party Libraries'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => _showLicenses(context),
+                          ),
+                          const ListTile(
+                            title: Text('Version'),
+                            subtitle: Text(BuildConfig.appVersion),
+                          ),
+                          ListTile(
+                            title: const Text('Changelog'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => _showChangelog(context),
+                          ),
+                          ListTile(
+                            title: const Text('GitHub Repository'),
+                            trailing: const Icon(Icons.open_in_new),
+                            onTap: () => _openGitHub(context),
+                          ),
+                          ListTile(
+                            title: const Text('Rate ChatForge'),
+                            trailing: const Icon(Icons.star_rate),
+                            onTap: () => _openPlayStore(context,
+                                "org.verbli.chatforge${BuildConfig.isPro ? '.pro' : ''}"),
+                          ),
+                          ListTile(
+                            title: Text(
+                              'Data Management',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+                          ListTile(
+                            title: const Text('Clear App Data'),
+                            subtitle: const Text('Delete saved data and settings'),
+                            leading: const Icon(Icons.delete_outline, color: Colors.red),
+                            onTap: () => _showClearDataDialog(context, ref),
                           ),
                         ],
-
-                        ListTile(
-                          title: const Text('AI Providers'),
-                          subtitle: const Text('Configure API keys'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => Navigator.pushNamed(context, '/providers'),
-                        ),
-
-                        // TODO: Uncomment when this works
-                        /*
-                        ListTile(
-                          title: Text(
-                            'Usage Statistics',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.refresh),
-                            tooltip: 'Reset Usage Statistics',
-                            onPressed: () => _showResetUsageDialog(context, ref),
-                          ),
-                        ),
-                        tokenUsage.when(
-                          data: (usage) => _UsageStatistics(usage: usage),
-                          loading: () =>
-                              const Center(child: CircularProgressIndicator()),
-                          error: (err, stack) => Center(child: Text('Error: $err')),
-                        ),
-                         */
-
-                        ListTile(
-                          title: const Text('Theme'),
-                          subtitle: Text(themeMode.name),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => _showThemeDialog(context, ref),
-                        ),
-                        ListTile(
-                          title: const Text('Theme Color'),
-                          trailing: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: ref.watch(themeColorProvider),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(context).dividerColor,
-                              ),
-                            ),
-                          ),
-                          onTap: () => _showColorPicker(context, ref),
-                        ),
-
-                        // About section
-                        ListTile(
-                          title: Text(
-                            'About',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                        ),
-                        ListTile(
-                          title: const Text('License'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => _showLicense(context),
-                        ),
-                        ListTile(
-                          title: const Text('Third Party Libraries'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => _showLicenses(context),
-                        ),
-                        const ListTile(
-                          title: Text('Version'),
-                          subtitle: Text(BuildConfig.appVersion),
-                        ),
-                        ListTile(
-                          title: const Text('Changelog'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => _showChangelog(context),
-                        ),
-                        ListTile(
-                          title: const Text('GitHub Repository'),
-                          trailing: const Icon(Icons.open_in_new),
-                          onTap: () => _openGitHub(context),
-                        ),
-                        ListTile(
-                          title: const Text('Rate ChatForge'),
-                          trailing: const Icon(Icons.star_rate),
-                          onTap: () => _openPlayStore(context, "org.verbli.chatforge${BuildConfig.isPro ? '.pro' : ''}"),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  void _showColorPicker(BuildContext context, WidgetRef ref) {
+
+  void _showClearDataDialog(BuildContext context, WidgetRef ref) {
+    // Track which data types to clear
+    final selectedData = <String, bool>{
+      'API Keys & Providers': false,
+      'Messages & Conversations': false,
+      'Theme Settings': false,
+      //'Token Usage Statistics': false,
+    };
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Theme Color'),
-        content: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: AppTheme.seedColors.entries.map((entry) {
-            return InkWell(
-              onTap: () {
-                ref.read(themeColorProvider.notifier).setColor(entry.value);
-                Navigator.pop(context);
-              },
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: entry.value,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Theme.of(context).dividerColor,
-                  ),
-                ),
-                child: entry.value == ref.watch(themeColorProvider)
-                    ? Icon(
-                  Icons.check,
-                  color: entry.value.computeLuminance() > 0.5
-                      ? Colors.black
-                      : Colors.white,
-                )
-                    : null,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Clear App Data'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Select which data to clear:',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
-            );
-          }).toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('CANCEL'),
+              const SizedBox(height: 8),
+              ...selectedData.entries.map(
+                    (entry) => CheckboxListTile(
+                  title: Text(entry.key),
+                  value: entry.value,
+                  onChanged: (value) {
+                    setState(() {
+                      selectedData[entry.key] = value ?? false;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Warning: This action cannot be undone!',
+                style: TextStyle(color: Colors.red),
+              ),
+            ],
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('CANCEL'),
+            ),
+            FilledButton(
+              onPressed: selectedData.values.any((selected) => selected)
+                  ? () async {
+                // Show loading dialog
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const AlertDialog(
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Clearing data...'),
+                      ],
+                    ),
+                  ),
+                );
+
+                try {
+                  final prefs = await SharedPreferences.getInstance();
+
+                  // Clear API Keys & Providers
+                  if (selectedData['API Keys & Providers'] == true) {
+                    await prefs.remove('providers');
+                  }
+
+                  // Clear Messages & Conversations
+                  if (selectedData['Messages & Conversations'] == true) {
+                    final dbService = ref.read(databaseServiceProvider);
+                    await dbService.execute('DELETE FROM messages');
+                    await dbService.execute('DELETE FROM conversations');
+                  }
+
+                  // Clear Theme Settings
+                  if (selectedData['Theme Settings'] == true) {
+                    await prefs.remove('theme_mode');
+                    await prefs.remove('theme_color');
+                    await prefs.remove('chat_theme_type');
+                  }
+
+                  // Clear Token Usage
+                  if (selectedData['Token Usage Statistics'] == true) {
+                    final dbService = ref.read(databaseServiceProvider);
+                    await dbService.execute('UPDATE messages SET token_count = 0');
+                    await dbService.execute('UPDATE conversations SET total_tokens = 0');
+                  }
+
+                  if (mounted) {
+                    // Remove loading dialog
+                    Navigator.pop(context);
+                    // Remove clear data dialog
+                    Navigator.pop(context);
+
+                    // Show success message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Data cleared successfully'),
+                      ),
+                    );
+
+                    // If we cleared anything that requires a restart
+                    if (selectedData['API Keys & Providers'] == true ||
+                        selectedData['Theme Settings'] == true) {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Restart Required'),
+                          content: const Text(
+                            'Some changes require the app to restart. '
+                                'The app will restart now.',
+                          ),
+                          actions: [
+                            FilledButton(
+                              onPressed: () {
+                                Restart.restartApp();
+                              },
+                              child: const Text('RESTART NOW'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    // Remove loading dialog
+                    Navigator.pop(context);
+                    // Remove clear data dialog
+                    Navigator.pop(context);
+
+                    // Show error message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error clearing data: $e'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                  }
+                }
+              }
+                  : null,
+              child: const Text('CLEAR'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -245,7 +387,8 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showResetUsageDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showResetUsageDialog(
+      BuildContext context, WidgetRef ref) async {
     final usage = ref.read(tokenUsageProvider).value ?? {};
     final modelKeys = usage.keys
         .map((key) => key.split('/').take(2).join('/'))
@@ -266,18 +409,18 @@ class SettingsScreen extends ConsumerWidget {
               const Text('Select models to reset:'),
               const SizedBox(height: 8),
               ...modelKeys.map((model) => CheckboxListTile(
-                title: Text(model),
-                value: selectedModels.contains(model),
-                onChanged: (selected) {
-                  setState(() {
-                    if (selected == true) {
-                      selectedModels.add(model);
-                    } else {
-                      selectedModels.remove(model);
-                    }
-                  });
-                },
-              )),
+                    title: Text(model),
+                    value: selectedModels.contains(model),
+                    onChanged: (selected) {
+                      setState(() {
+                        if (selected == true) {
+                          selectedModels.add(model);
+                        } else {
+                          selectedModels.remove(model);
+                        }
+                      });
+                    },
+                  )),
             ],
           ),
           actions: [
@@ -298,7 +441,9 @@ class SettingsScreen extends ConsumerWidget {
 
     if (result == true && context.mounted) {
       await ref.read(chatRepositoryProvider).resetTokenUsage(selectedModels);
-      ref.read(tokenUsageUpdater.notifier).state++; // Handle provider update here
+      ref
+          .read(tokenUsageUpdater.notifier)
+          .state++; // Handle provider update here
     }
   }
 
@@ -314,22 +459,18 @@ class SettingsScreen extends ConsumerWidget {
               Text('Version 1.0.1',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
-              Text(
-                '• Improved launch speed\n'
-                '• Added animated splash screen\n'
-              ),
+              Text('• Improved launch speed\n'
+                  '• Added animated splash screen\n'),
               Text('Version 1.0.0',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
 
-              Text(
-                  '• Initial release\n'
+              Text('• Initial release\n'
                   '• Local Storage with SQLite\n'
                   '• Multiple Conversations\n'
                   '• Conversation Rewind\n'
                   '• Custom System Prompts and Model Settings\n'
-                  '• OpenAI Integration\n'
-              ),
+                  '• OpenAI Integration\n'),
               // Add more versions as needed
             ],
           ),
@@ -372,7 +513,6 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-
   void _openGitHub(BuildContext context) async {
     final uri = Uri.parse('https://github.com/verbli/chatforge');
     try {
@@ -402,21 +542,239 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _showThemeDialog(BuildContext context, WidgetRef ref) async {
-    final theme = await showDialog<ThemeMode>(
+    await showDialog(
       context: context,
-      builder: (context) => SimpleDialog(
-        title: const Text('Choose Theme'),
-        children: ThemeMode.values
-            .map((mode) => SimpleDialogOption(
-                  onPressed: () => Navigator.pop(context, mode),
-                  child: Text(mode.name),
-                ))
-            .toList(),
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final chatTheme = ref.watch(chatThemeProvider);
+          final themeMode = ref.watch(themeModeProvider);
+          final currentColor = ref.watch(themeColorProvider);
+
+          return Dialog(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 600,
+                maxHeight: 800,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Appearance',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Theme Mode',
+                                style: TextStyle(fontWeight: FontWeight.bold)
+                            ),
+                            const SizedBox(height: 8),
+                            RadioListTile<ThemeMode>(
+                              title: const Text('System'),
+                              value: ThemeMode.system,
+                              groupValue: themeMode,
+                              onChanged: (value) {
+                                if (value != null) {
+                                  ref.read(themeModeProvider.notifier).setThemeMode(value);
+                                }
+                              },
+                            ),
+                            RadioListTile<ThemeMode>(
+                              title: const Text('Light'),
+                              value: ThemeMode.light,
+                              groupValue: themeMode,
+                              onChanged: (value) {
+                                if (value != null) {
+                                  ref.read(themeModeProvider.notifier).setThemeMode(value);
+                                }
+                              },
+                            ),
+                            RadioListTile<ThemeMode>(
+                              title: const Text('Dark'),
+                              value: ThemeMode.dark,
+                              groupValue: themeMode,
+                              onChanged: (value) {
+                                if (value != null) {
+                                  ref.read(themeModeProvider.notifier).setThemeMode(value);
+                                }
+                              },
+                            ),
+
+                            const Divider(),
+                            const Text('Chat Style',
+                                style: TextStyle(fontWeight: FontWeight.bold)
+                            ),
+                            const SizedBox(height: 8),
+                            RadioListTile<ChatThemeType>(
+                              title: const Text('ChatForge'),
+                              subtitle: const Text('Default theme'),
+                              value: ChatThemeType.chatforge,
+                              groupValue: chatTheme.type,
+                              onChanged: (value) {
+                                ref.read(chatThemeProvider.notifier)
+                                    .setTheme(value!);
+                              },
+                            ),
+                            RadioListTile<ChatThemeType>(
+                              title: const Text('ChatGPT'),
+                              subtitle: const Text('OpenAI style'),
+                              value: ChatThemeType.chatgpt,
+                              groupValue: chatTheme.type,
+                              onChanged: (value) {
+                                ref.read(chatThemeProvider.notifier)
+                                    .setTheme(value!);
+                              },
+                            ),
+                            RadioListTile<ChatThemeType>(
+                              title: const Text('Claude'),
+                              subtitle: const Text('Anthropic style'),
+                              value: ChatThemeType.claude,
+                              groupValue: chatTheme.type,
+                              onChanged: (value) {
+                                ref.read(chatThemeProvider.notifier)
+                                    .setTheme(value!);
+                              },
+                            ),
+                            RadioListTile<ChatThemeType>(
+                              title: const Text('Gemini'),
+                              subtitle: const Text('Google style'),
+                              value: ChatThemeType.gemini,
+                              groupValue: chatTheme.type,
+                              onChanged: (value) {
+                                ref.read(chatThemeProvider.notifier)
+                                    .setTheme(value!);
+                              },
+                            ),
+
+                            if (chatTheme.type == ChatThemeType.chatforge) ...[
+                              const Divider(),
+                              const Text('Theme Color',
+                                  style: TextStyle(fontWeight: FontWeight.bold)
+                              ),
+                              const SizedBox(height: 16),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: currentColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: currentColor),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Selected Color',
+                                      style: TextStyle(
+                                        color: currentColor,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        color: currentColor,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return GridView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 5,
+                                      mainAxisSpacing: 8,
+                                      crossAxisSpacing: 8,
+                                      childAspectRatio: 1,
+                                    ),
+                                    itemCount: AppTheme.seedColors.length,
+                                    itemBuilder: (context, index) {
+                                      final entry = AppTheme.seedColors.entries
+                                          .elementAt(index);
+                                      return Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: () {
+                                            ref.read(themeColorProvider.notifier)
+                                                .setColor(entry.value);
+                                            ref.read(chatThemeProvider.notifier)
+                                                .setColor(entry.value);
+                                          },
+                                          borderRadius: BorderRadius.circular(50),
+                                          child: AnimatedContainer(
+                                            duration:
+                                            const Duration(milliseconds: 200),
+                                            decoration: BoxDecoration(
+                                              color: entry.value,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: entry.value == currentColor
+                                                    ? Theme.of(context)
+                                                    .colorScheme
+                                                    .primary
+                                                    : Theme.of(context).dividerColor,
+                                                width: entry.value == currentColor
+                                                    ? 3
+                                                    : 1,
+                                              ),
+                                            ),
+                                            child: entry.value == currentColor
+                                                ? Icon(
+                                              Icons.check,
+                                              color: entry.value
+                                                  .computeLuminance() >
+                                                  0.5
+                                                  ? Colors.black
+                                                  : Colors.white,
+                                            )
+                                                : null,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
-    if (theme != null) {
-      ref.read(themeModeProvider.notifier).setThemeMode(theme);
-    }
   }
 
   Future<void> _showAddProviderDialog(
@@ -572,19 +930,19 @@ class _UsageStatistics extends StatelessWidget {
       modelUsage[modelKey]![type] = entry.value;
     }
 
-    final maxUsage = modelUsage.values
-        .expand((v) => v.values)
-        .reduce(max)
-        .toDouble();
+    final maxUsage =
+        modelUsage.values.expand((v) => v.values).reduce(max).toDouble();
 
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: modelUsage.entries.map((entry) {
-          final inputProgress = maxUsage > 0 ?
-          (entry.value['input']! / maxUsage).clamp(0.0, 1.0) : 0.0;
-          final outputProgress = maxUsage > 0 ?
-          (entry.value['output']! / maxUsage).clamp(0.0, 1.0) : 0.0;
+          final inputProgress = maxUsage > 0
+              ? (entry.value['input']! / maxUsage).clamp(0.0, 1.0)
+              : 0.0;
+          final outputProgress = maxUsage > 0
+              ? (entry.value['output']! / maxUsage).clamp(0.0, 1.0)
+              : 0.0;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -682,8 +1040,10 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
               decoration: InputDecoration(
                 labelText: 'API Key',
                 suffixIcon: IconButton(
-                  icon: Icon(_obscureApiKey ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setState(() => _obscureApiKey = !_obscureApiKey),
+                  icon: Icon(
+                      _obscureApiKey ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () =>
+                      setState(() => _obscureApiKey = !_obscureApiKey),
                 ),
               ),
               validator: (value) => value?.isEmpty == true ? 'Required' : null,

@@ -11,6 +11,7 @@ import 'core/config.dart';
 import 'core/theme.dart';
 import 'providers/theme_provider.dart';
 import 'router.dart';
+import 'themes/chat_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,14 +32,14 @@ class ChatForgeApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
-    final themeColor = ref.watch(themeColorProvider);
+    final chatTheme = ref.watch(chatThemeProvider);
 
     return MaterialApp(
       title: "${BuildConfig.appName}${BuildConfig.isPro ? " Pro" : ""}",
-      theme: AppTheme.lightTheme(seedColor: themeColor),
-      darkTheme: AppTheme.darkTheme(seedColor: themeColor),
-      debugShowCheckedModeBanner: false,
+      theme: AppTheme.fromChatTheme(chatTheme),
+      darkTheme: AppTheme.fromChatTheme(chatTheme, isDark: true),
       themeMode: themeMode,
+      debugShowCheckedModeBanner: false,
       initialRoute: AppRouter.home,
       onGenerateRoute: AppRouter.generateRoute,
       home: Builder(

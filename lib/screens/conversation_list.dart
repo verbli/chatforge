@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/models.dart';
 import '../data/providers.dart';
+import '../providers/theme_provider.dart';
+import '../themes/chat_theme.dart';
 import '../widgets/ad_banner.dart';
 
 class ConversationListScreen extends ConsumerStatefulWidget {
@@ -24,62 +26,78 @@ class _ConversationListScreenState
     extends ConsumerState<ConversationListScreen> {
   @override
   Widget build(BuildContext context) {
+    final chatTheme = ref.watch(chatThemeProvider);
+
     return FutureBuilder(
       future: StorageService.initialize(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+          return Theme(
+            data: chatTheme.themeData,
+            child: Scaffold(
+              body: Center(child: CircularProgressIndicator(
+                color: chatTheme.styling.primaryColor,
+              )),
+            ),
           );
         }
 
         final conversations = ref.watch(conversationsProvider);
         final providers = ref.watch(providersProvider);
 
-        return Scaffold(
-          appBar: widget.isPanel
-              ? null
-              : AppBar(
-                  title: const Text('ChatForge'),
-                  leading: Image.asset(
-                    BuildConfig.isPro
-                        ? 'assets/icon/icon_pro.png'
-                        : 'assets/icon/icon.png',
-                  ),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.settings),
-                      onPressed: () =>
-                          Navigator.pushNamed(context, '/settings'),
+        return Theme(
+          data: chatTheme.themeData,
+          child: Scaffold(
+            backgroundColor: chatTheme.styling.backgroundColor,
+            appBar: widget.isPanel
+                ? null
+                : AppBar(
+                    title: const Text('ChatForge'),
+                    leading: Image.asset(
+                      BuildConfig.isPro
+                          ? 'assets/icon/icon_pro.png'
+                          : 'assets/icon/icon.png',
                     ),
-                  ],
-                ),
-          body: Column(
-            children: [
-              if (!widget.isPanel) const AdBannerWidget(),
-              Expanded(
-                child: conversations.when(
-                  data: (convos) => providers.when(
-                    data: (provs) => _ConversationList(
-                      conversations: convos,
-                      providers: provs,
-                      isPanel: widget.isPanel,
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.settings),
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/settings'),
+                      ),
+                    ],
+                  ),
+            body: Column(
+              children: [
+                if (!widget.isPanel) const AdBannerWidget(),
+                Expanded(
+                  child: conversations.when(
+                    data: (convos) => providers.when(
+                      data: (provs) => _ConversationList(
+                        conversations: convos,
+                        providers: provs,
+                        isPanel: widget.isPanel,
+                      ),
+                      loading: () =>
+                          Center(child: CircularProgressIndicator(
+                            color: chatTheme.styling.primaryColor,
+                          )),
+                      error: (err, stack) => Center(child: Text('Error: $err')),
                     ),
                     loading: () =>
-                        const Center(child: CircularProgressIndicator()),
+                        Center(child: CircularProgressIndicator(
+                          color: chatTheme.styling.primaryColor,
+                        )),
                     error: (err, stack) => Center(child: Text('Error: $err')),
                   ),
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (err, stack) => Center(child: Text('Error: $err')),
                 ),
-              ),
-            ],
-          ),
-          floatingActionButton: FloatingActionButton(
-            heroTag: 'newChat', // Add unique tag
-            onPressed: () => _showNewChatDialog(context),
-            child: const Icon(Icons.add),
+              ],
+            ),
+            floatingActionButton: FloatingActionButton(
+              heroTag: 'newChat',
+              backgroundColor: chatTheme.styling.primaryColor,
+              onPressed: () => _showNewChatDialog(context),
+              child: const Icon(Icons.add),
+            ),
           ),
         );
       },

@@ -90,6 +90,7 @@ class ModelSettings with _$ModelSettings {
     @Default(4096) int maxResponseTokens,
     @Default(true) bool alwaysKeepSystemPrompt,
     @Default(false) bool keepFirstMessage,
+    @Default(true) bool renderMarkdown,
   }) = _ModelSettings;
 
   factory ModelSettings.fromJson(Map<String, dynamic> json) =>
