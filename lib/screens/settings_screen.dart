@@ -33,7 +33,8 @@ class SettingsScreen extends ConsumerWidget {
           return Theme(
             data: chatTheme.themeData,
             child: Scaffold(
-              body: Center(child: CircularProgressIndicator(
+              body: Center(
+                  child: CircularProgressIndicator(
                 color: chatTheme.styling.primaryColor,
               )),
             ),
@@ -65,7 +66,8 @@ class SettingsScreen extends ConsumerWidget {
                             ),
                           ),
 
-                          if (!BuildConfig.isPro && !BuildConfig.isEnterprise) ... [
+                          if (!BuildConfig.isPro &&
+                              !BuildConfig.isEnterprise) ...[
                             Card(
                               margin: const EdgeInsets.all(16),
                               child: Padding(
@@ -75,20 +77,29 @@ class SettingsScreen extends ConsumerWidget {
                                   children: [
                                     Row(
                                       children: [
-                                        Icon(Icons.star, color: Theme.of(context).colorScheme.primary),
+                                        Icon(Icons.star,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary),
                                         const SizedBox(width: 8),
                                         Text(
                                           'Upgrade to Pro for an ad-free experience',
-                                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                            color: Theme.of(context).colorScheme.primary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                         ),
                                       ],
                                     ),
                                     const SizedBox(height: 12),
                                     FilledButton.icon(
-                                      onPressed: () => _openPlayStore(context, "org.verbli.chatforge.pro"),
+                                      onPressed: () => _openPlayStore(
+                                          context, "org.verbli.chatforge.pro"),
                                       icon: const Icon(Icons.upgrade),
                                       label: const Text('UPGRADE NOW'),
                                     ),
@@ -102,7 +113,8 @@ class SettingsScreen extends ConsumerWidget {
                             title: const Text('AI Providers'),
                             subtitle: const Text('Configure API keys'),
                             trailing: const Icon(Icons.chevron_right),
-                            onTap: () => Navigator.pushNamed(context, '/providers'),
+                            onTap: () =>
+                                Navigator.pushNamed(context, '/providers'),
                           ),
 
                           // TODO: Uncomment when this works
@@ -128,7 +140,8 @@ class SettingsScreen extends ConsumerWidget {
 
                           ListTile(
                             title: const Text('Appearance'),
-                            subtitle: Text('${themeMode.name} - ${chatTheme.type.name}'),
+                            subtitle: Text(
+                                '${themeMode.name} - ${chatTheme.type.name}'),
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () => _showThemeDialog(context, ref),
                           ),
@@ -167,7 +180,8 @@ class SettingsScreen extends ConsumerWidget {
                           ListTile(
                             title: const Text('Rate ChatForge'),
                             trailing: const Icon(Icons.star_rate),
-                            onTap: () => _openPlayStore(context, "org.verbli.chatforge${BuildConfig.isPro ? '.pro' : ''}"),
+                            onTap: () => _openPlayStore(context,
+                                "org.verbli.chatforge${BuildConfig.isPro ? '.pro' : ''}"),
                           ),
                         ],
                       ),
@@ -194,6 +208,7 @@ class SettingsScreen extends ConsumerWidget {
             return InkWell(
               onTap: () {
                 ref.read(themeColorProvider.notifier).setColor(entry.value);
+                ref.read(chatThemeProvider.notifier).setColor(entry.value);
                 Navigator.pop(context);
               },
               child: Container(
@@ -208,11 +223,11 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 child: entry.value == ref.watch(themeColorProvider)
                     ? Icon(
-                  Icons.check,
-                  color: entry.value.computeLuminance() > 0.5
-                      ? Colors.black
-                      : Colors.white,
-                )
+                        Icons.check,
+                        color: entry.value.computeLuminance() > 0.5
+                            ? Colors.black
+                            : Colors.white,
+                      )
                     : null,
               ),
             );
@@ -242,7 +257,8 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showResetUsageDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showResetUsageDialog(
+      BuildContext context, WidgetRef ref) async {
     final usage = ref.read(tokenUsageProvider).value ?? {};
     final modelKeys = usage.keys
         .map((key) => key.split('/').take(2).join('/'))
@@ -263,18 +279,18 @@ class SettingsScreen extends ConsumerWidget {
               const Text('Select models to reset:'),
               const SizedBox(height: 8),
               ...modelKeys.map((model) => CheckboxListTile(
-                title: Text(model),
-                value: selectedModels.contains(model),
-                onChanged: (selected) {
-                  setState(() {
-                    if (selected == true) {
-                      selectedModels.add(model);
-                    } else {
-                      selectedModels.remove(model);
-                    }
-                  });
-                },
-              )),
+                    title: Text(model),
+                    value: selectedModels.contains(model),
+                    onChanged: (selected) {
+                      setState(() {
+                        if (selected == true) {
+                          selectedModels.add(model);
+                        } else {
+                          selectedModels.remove(model);
+                        }
+                      });
+                    },
+                  )),
             ],
           ),
           actions: [
@@ -295,7 +311,9 @@ class SettingsScreen extends ConsumerWidget {
 
     if (result == true && context.mounted) {
       await ref.read(chatRepositoryProvider).resetTokenUsage(selectedModels);
-      ref.read(tokenUsageUpdater.notifier).state++; // Handle provider update here
+      ref
+          .read(tokenUsageUpdater.notifier)
+          .state++; // Handle provider update here
     }
   }
 
@@ -311,22 +329,18 @@ class SettingsScreen extends ConsumerWidget {
               Text('Version 1.0.1',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
-              Text(
-                '• Improved launch speed\n'
-                '• Added animated splash screen\n'
-              ),
+              Text('• Improved launch speed\n'
+                  '• Added animated splash screen\n'),
               Text('Version 1.0.0',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
 
-              Text(
-                  '• Initial release\n'
+              Text('• Initial release\n'
                   '• Local Storage with SQLite\n'
                   '• Multiple Conversations\n'
                   '• Conversation Rewind\n'
                   '• Custom System Prompts and Model Settings\n'
-                  '• OpenAI Integration\n'
-              ),
+                  '• OpenAI Integration\n'),
               // Add more versions as needed
             ],
           ),
@@ -369,7 +383,6 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-
   void _openGitHub(BuildContext context) async {
     final uri = Uri.parse('https://github.com/verbli/chatforge');
     try {
@@ -399,134 +412,234 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _showThemeDialog(BuildContext context, WidgetRef ref) async {
-    final chatTheme = ref.watch(chatThemeProvider);
-    final themeMode = ref.watch(themeModeProvider);
-
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Appearance'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Theme Mode', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              RadioListTile<ThemeMode>(
-                title: const Text('System'),
-                value: ThemeMode.system,
-                groupValue: themeMode,
-                onChanged: (value) {
-                  ref.read(themeModeProvider.notifier).setThemeMode(value!);
-                  Navigator.pop(context);
-                },
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final chatTheme = ref.watch(chatThemeProvider);
+          final themeMode = ref.watch(themeModeProvider);
+          final currentColor = ref.watch(themeColorProvider);
+
+          return Dialog(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 600,
+                maxHeight: 800,
               ),
-              RadioListTile<ThemeMode>(
-                title: const Text('Light'),
-                value: ThemeMode.light,
-                groupValue: themeMode,
-                onChanged: (value) {
-                  ref.read(themeModeProvider.notifier).setThemeMode(value!);
-                  Navigator.pop(context);
-                },
-              ),
-              RadioListTile<ThemeMode>(
-                title: const Text('Dark'),
-                value: ThemeMode.dark,
-                groupValue: themeMode,
-                onChanged: (value) {
-                  ref.read(themeModeProvider.notifier).setThemeMode(value!);
-                  Navigator.pop(context);
-                },
-              ),
-              const Divider(),
-              const Text('Chat Style', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              RadioListTile<ChatThemeType>(
-                title: const Text('ChatForge'),
-                subtitle: const Text('Default theme'),
-                value: ChatThemeType.chatforge,
-                groupValue: chatTheme.type,
-                onChanged: (value) {
-                  ref.read(chatThemeProvider.notifier).setTheme(value!);
-                  Navigator.pop(context);
-                },
-              ),
-              RadioListTile<ChatThemeType>(
-                title: const Text('ChatGPT'),
-                subtitle: const Text('OpenAI style'),
-                value: ChatThemeType.chatgpt,
-                groupValue: chatTheme.type,
-                onChanged: (value) {
-                  ref.read(chatThemeProvider.notifier).setTheme(value!);
-                  Navigator.pop(context);
-                },
-              ),
-              RadioListTile<ChatThemeType>(
-                title: const Text('Claude'),
-                subtitle: const Text('Anthropic style'),
-                value: ChatThemeType.claude,
-                groupValue: chatTheme.type,
-                onChanged: (value) {
-                  ref.read(chatThemeProvider.notifier).setTheme(value!);
-                  Navigator.pop(context);
-                },
-              ),
-              RadioListTile<ChatThemeType>(
-                title: const Text('Gemini'),
-                subtitle: const Text('Google style'),
-                value: ChatThemeType.gemini,
-                groupValue: chatTheme.type,
-                onChanged: (value) {
-                  ref.read(chatThemeProvider.notifier).setTheme(value!);
-                  Navigator.pop(context);
-                },
-              ),
-              if (chatTheme.type == ChatThemeType.chatforge) ...[
-                const Divider(),
-                const Text('Theme Color', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: AppTheme.seedColors.entries.map((entry) {
-                    return InkWell(
-                      onTap: () {
-                        ref.read(themeColorProvider.notifier).setColor(entry.value);
-                      },
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: entry.value,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Theme.of(context).dividerColor,
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Appearance',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        child: entry.value == ref.watch(themeColorProvider)
-                            ? Icon(
-                          Icons.check,
-                          color: entry.value.computeLuminance() > 0.5
-                              ? Colors.black
-                              : Colors.white,
-                        )
-                            : null,
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Theme Mode',
+                                style: TextStyle(fontWeight: FontWeight.bold)
+                            ),
+                            const SizedBox(height: 8),
+                            RadioListTile<ThemeMode>(
+                              title: const Text('System'),
+                              value: ThemeMode.system,
+                              groupValue: themeMode,
+                              onChanged: (value) {
+                                ref.read(themeModeProvider.notifier)
+                                    .setThemeMode(value!);
+                              },
+                            ),
+                            RadioListTile<ThemeMode>(
+                              title: const Text('Light'),
+                              value: ThemeMode.light,
+                              groupValue: themeMode,
+                              onChanged: (value) {
+                                ref.read(themeModeProvider.notifier)
+                                    .setThemeMode(value!);
+                              },
+                            ),
+                            RadioListTile<ThemeMode>(
+                              title: const Text('Dark'),
+                              value: ThemeMode.dark,
+                              groupValue: themeMode,
+                              onChanged: (value) {
+                                ref.read(themeModeProvider.notifier)
+                                    .setThemeMode(value!);
+                              },
+                            ),
+
+                            const Divider(),
+                            const Text('Chat Style',
+                                style: TextStyle(fontWeight: FontWeight.bold)
+                            ),
+                            const SizedBox(height: 8),
+                            RadioListTile<ChatThemeType>(
+                              title: const Text('ChatForge'),
+                              subtitle: const Text('Default theme'),
+                              value: ChatThemeType.chatforge,
+                              groupValue: chatTheme.type,
+                              onChanged: (value) {
+                                ref.read(chatThemeProvider.notifier)
+                                    .setTheme(value!);
+                              },
+                            ),
+                            RadioListTile<ChatThemeType>(
+                              title: const Text('ChatGPT'),
+                              subtitle: const Text('OpenAI style'),
+                              value: ChatThemeType.chatgpt,
+                              groupValue: chatTheme.type,
+                              onChanged: (value) {
+                                ref.read(chatThemeProvider.notifier)
+                                    .setTheme(value!);
+                              },
+                            ),
+                            RadioListTile<ChatThemeType>(
+                              title: const Text('Claude'),
+                              subtitle: const Text('Anthropic style'),
+                              value: ChatThemeType.claude,
+                              groupValue: chatTheme.type,
+                              onChanged: (value) {
+                                ref.read(chatThemeProvider.notifier)
+                                    .setTheme(value!);
+                              },
+                            ),
+                            RadioListTile<ChatThemeType>(
+                              title: const Text('Gemini'),
+                              subtitle: const Text('Google style'),
+                              value: ChatThemeType.gemini,
+                              groupValue: chatTheme.type,
+                              onChanged: (value) {
+                                ref.read(chatThemeProvider.notifier)
+                                    .setTheme(value!);
+                              },
+                            ),
+
+                            if (chatTheme.type == ChatThemeType.chatforge) ...[
+                              const Divider(),
+                              const Text('Theme Color',
+                                  style: TextStyle(fontWeight: FontWeight.bold)
+                              ),
+                              const SizedBox(height: 16),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: currentColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: currentColor),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Selected Color',
+                                      style: TextStyle(
+                                        color: currentColor,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        color: currentColor,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return GridView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 5,
+                                      mainAxisSpacing: 8,
+                                      crossAxisSpacing: 8,
+                                      childAspectRatio: 1,
+                                    ),
+                                    itemCount: AppTheme.seedColors.length,
+                                    itemBuilder: (context, index) {
+                                      final entry = AppTheme.seedColors.entries
+                                          .elementAt(index);
+                                      return Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: () {
+                                            ref.read(themeColorProvider.notifier)
+                                                .setColor(entry.value);
+                                            ref.read(chatThemeProvider.notifier)
+                                                .setColor(entry.value);
+                                          },
+                                          borderRadius: BorderRadius.circular(50),
+                                          child: AnimatedContainer(
+                                            duration:
+                                            const Duration(milliseconds: 200),
+                                            decoration: BoxDecoration(
+                                              color: entry.value,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: entry.value == currentColor
+                                                    ? Theme.of(context)
+                                                    .colorScheme
+                                                    .primary
+                                                    : Theme.of(context).dividerColor,
+                                                width: entry.value == currentColor
+                                                    ? 3
+                                                    : 1,
+                                              ),
+                                            ),
+                                            child: entry.value == currentColor
+                                                ? Icon(
+                                              Icons.check,
+                                              color: entry.value
+                                                  .computeLuminance() >
+                                                  0.5
+                                                  ? Colors.black
+                                                  : Colors.white,
+                                            )
+                                                : null,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                    );
-                  }).toList(),
+                    ),
+                  ],
                 ),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('CLOSE'),
-          ),
-        ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -684,19 +797,19 @@ class _UsageStatistics extends StatelessWidget {
       modelUsage[modelKey]![type] = entry.value;
     }
 
-    final maxUsage = modelUsage.values
-        .expand((v) => v.values)
-        .reduce(max)
-        .toDouble();
+    final maxUsage =
+        modelUsage.values.expand((v) => v.values).reduce(max).toDouble();
 
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: modelUsage.entries.map((entry) {
-          final inputProgress = maxUsage > 0 ?
-          (entry.value['input']! / maxUsage).clamp(0.0, 1.0) : 0.0;
-          final outputProgress = maxUsage > 0 ?
-          (entry.value['output']! / maxUsage).clamp(0.0, 1.0) : 0.0;
+          final inputProgress = maxUsage > 0
+              ? (entry.value['input']! / maxUsage).clamp(0.0, 1.0)
+              : 0.0;
+          final outputProgress = maxUsage > 0
+              ? (entry.value['output']! / maxUsage).clamp(0.0, 1.0)
+              : 0.0;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -794,8 +907,10 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
               decoration: InputDecoration(
                 labelText: 'API Key',
                 suffixIcon: IconButton(
-                  icon: Icon(_obscureApiKey ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setState(() => _obscureApiKey = !_obscureApiKey),
+                  icon: Icon(
+                      _obscureApiKey ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () =>
+                      setState(() => _obscureApiKey = !_obscureApiKey),
                 ),
               ),
               validator: (value) => value?.isEmpty == true ? 'Required' : null,

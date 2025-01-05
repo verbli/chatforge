@@ -280,7 +280,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       itemBuilder: (context, index) {
         final message = messages[index];
         final messageData = MessageData(
-          id: message.id,
+          id: "${widget.conversationId}/${message.id}",
           content: message.content,
           timestamp: message.timestamp,
           isUser: message.role == Role.user,

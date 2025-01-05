@@ -8,6 +8,7 @@ import 'package:markdown/markdown.dart' as markdown;
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../data/providers.dart';
 import 'implementations/chatgpt_theme.dart';
 import 'implementations/claude_theme.dart';
 import 'implementations/gemini_theme.dart';
@@ -34,6 +35,139 @@ class ChatTheme {
     required this.widgets,
     required this.styling,
   });
+
+  factory ChatTheme.withColor(ChatThemeType type, Color color, {bool dark = false}) {
+    switch (type) {
+      case ChatThemeType.chatforge:
+        return ChatTheme(
+          type: ChatThemeType.chatforge,
+          themeData: ThemeData(
+            primaryColor: color,
+            scaffoldBackgroundColor: dark ? Colors.black : Colors.white,
+            colorScheme: dark
+              ? ColorScheme.dark(
+                primary: color,
+                secondary: color.withValues(alpha: 0.7),
+                surface: Colors.black,
+                onSurface: Colors.grey.shade50,)
+              : ColorScheme.light(
+                primary: color,
+                secondary: color.withValues(alpha: 0.7),
+                surface: Colors.grey.shade50,
+                onSurface: Colors.black,),
+            appBarTheme: dark
+                ? AppBarTheme(
+                    backgroundColor: Colors.black,
+                    elevation: 1,
+                    shadowColor: Colors.grey.shade50,)
+                : AppBarTheme(
+                    backgroundColor: Colors.white,
+                    elevation: 1,
+                    shadowColor: Colors.black.withValues(alpha: 0.1),),
+          ),
+          widgets: ChatThemeWidgets(
+            userMessage: (context, data) => DefaultMessageWidget(
+              data: data,
+              isUser: true,
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final conversationId = data.id.split('/')[0];
+                  final conversationAsync = ref.watch(conversationProvider(conversationId));
+
+                  return conversationAsync.when(
+                    data: (conversation) {
+                      // Use plain text if markdown is disabled
+                      if (!conversation.settings.renderMarkdown) {
+                        return SelectableText(
+                          data.content,
+                          style: const TextStyle(color: Colors.white),
+                        );
+                      }
+
+                      return DefaultMarkdownBlock(
+                        markdown: data.content,
+                        textStyle: const TextStyle(color: Colors.white),
+                      );
+                    },
+                    loading: () => DefaultMarkdownBlock(
+                      markdown: data.content,
+                      textStyle: const TextStyle(color: Colors.white),
+                    ),
+                    error: (_, __) => DefaultMarkdownBlock(
+                      markdown: data.content,
+                      textStyle: const TextStyle(color: Colors.white),
+                    ),
+                  );
+                },
+              ),
+            ),
+            assistantMessage: (context, data) => DefaultMessageWidget(
+              data: data,
+              isUser: false,
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final conversationId = data.id.split('/')[0];
+                  final conversationAsync = ref.watch(conversationProvider(conversationId));
+
+                  return conversationAsync.when(
+                    data: (conversation) {
+                      // Use plain text if markdown is disabled
+                      if (!conversation.settings.renderMarkdown) {
+                        return SelectableText(
+                          data.content,
+                          style: const TextStyle(color: Colors.black),
+                        );
+                      }
+
+                      return DefaultMarkdownBlock(
+                        markdown: data.content,
+                      );
+                    },
+                    loading: () => DefaultMarkdownBlock(
+                      markdown: data.content,
+                    ),
+                    error: (_, __) => DefaultMarkdownBlock(
+                      markdown: data.content,
+                    ),
+                  );
+                },
+              ),
+            ),
+            messageInput: (context, data) => DefaultMessageInput(data: data),
+            sendButton: (context, onPressed, isGenerating) =>
+                DefaultSendButton(onPressed: onPressed, isGenerating: isGenerating),
+            codeBlock: (context, code) => DefaultCodeBlock(code: code),
+            markdownBlock: (context, markdown) =>
+                DefaultMarkdownBlock(markdown: markdown),
+          ),
+          styling: ChatThemeStyling(
+            primaryColor: color,
+            backgroundColor: dark ? Colors.black : Colors.white,
+            userMessageColor: color,
+            assistantMessageColor: color.withValues(alpha: 0.7),
+            userMessageTextColor: Colors.white,
+            assistantMessageTextColor: Colors.black,
+            userMessageStyle: const TextStyle(color: Colors.white),
+            assistantMessageStyle: const TextStyle(color: Colors.black),
+            messageBorderRadius: const BorderRadius.all(Radius.circular(12)),
+            messagePadding: const EdgeInsets.all(16),
+            messageSpacing: 8,
+            maxWidth: 800,
+            containerPadding: const EdgeInsets.all(16),
+            alignUserMessagesRight: true,
+            showAvatars: false,
+          ),
+        );
+      case ChatThemeType.chatgpt:
+        return chatGPTTheme;
+      case ChatThemeType.claude:
+        return claudeTheme;
+      case ChatThemeType.gemini:
+        return geminiTheme;
+      case ChatThemeType.custom:
+        return customTheme;
+    }
+  }
 }
 
 /// Defines all customizable widgets used in the chat UI
@@ -113,25 +247,7 @@ class ChatThemeNotifier extends StateNotifier<ChatTheme> {
     _loadTheme();
   }
 
-  Future<void> _loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    final themeName = prefs.getString(_key);
-    if (themeName != null) {
-      final type = ChatThemeType.values.firstWhere(
-        (t) => t.toString() == themeName,
-        orElse: () => ChatThemeType.chatforge,
-      );
-      state = getTheme(type);
-    }
-  }
-
-  Future<void> setTheme(ChatThemeType type) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, type.toString());
-    state = getTheme(type);
-  }
-
-  static ChatTheme getTheme(ChatThemeType type) {
+  ChatTheme _getTheme(ChatThemeType type) {
     switch (type) {
       case ChatThemeType.chatgpt:
         return chatGPTTheme;
@@ -145,7 +261,51 @@ class ChatThemeNotifier extends StateNotifier<ChatTheme> {
         return defaultTheme;
     }
   }
+
+  Future<void> _loadTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    final themeName = prefs.getString(_key);
+    if (themeName != null) {
+      final type = ChatThemeType.values.firstWhere(
+            (t) => t.toString() == themeName,
+        orElse: () => ChatThemeType.chatforge,
+      );
+
+      // If it's the default theme, use the saved color
+      if (type == ChatThemeType.chatforge) {
+        final color = prefs.getInt('theme_color') ?? Colors.teal.value;
+        state = ChatTheme.withColor(type, Color(color));
+      } else {
+        state = _getTheme(type);
+      }
+    }
+  }
+
+  Future<void> setTheme(ChatThemeType type) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, type.toString());
+
+    // If setting to ChatForge theme, use the current theme color
+    if (type == ChatThemeType.chatforge) {
+      final color = prefs.getInt('theme_color') ?? Colors.teal.value;
+      state = ChatTheme.withColor(type, Color(color));
+    } else {
+      state = _getTheme(type);
+    }
+  }
+
+  Future<void> setColor(Color color) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('theme_color', color.value);
+
+    // Only update if we're using the ChatForge theme
+    if (state.type == ChatThemeType.chatforge) {
+      state = ChatTheme.withColor(ChatThemeType.chatforge, color);
+    }
+  }
 }
+
+
 
 final defaultTheme = ChatTheme(
   type: ChatThemeType.chatforge,
@@ -408,7 +568,7 @@ class DefaultMarkdownBlock extends StatelessWidget {
           h2: Theme.of(context).textTheme.titleLarge,
           h3: Theme.of(context).textTheme.titleMedium,
           code: TextStyle(
-            backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
             fontFamily: 'monospace',
             fontSize: 14,
           ),
@@ -416,7 +576,7 @@ class DefaultMarkdownBlock extends StatelessWidget {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
         ),
