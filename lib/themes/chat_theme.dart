@@ -9,6 +9,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/providers.dart';
+import '../providers/theme_provider.dart';
 import 'base_theme.dart';
 import 'implementations/chatforge_theme.dart';
 import 'implementations/chatgpt_theme.dart';
@@ -46,9 +47,9 @@ class ChatTheme {
       case ChatThemeType.chatgpt:
         baseTheme = ChatGPTTheme(isDark: dark);
       case ChatThemeType.claude:
-        return claudeTheme;
+        baseTheme = ClaudeTheme(isDark: dark);
       case ChatThemeType.gemini:
-        return geminiTheme;
+        baseTheme = GeminiTheme(isDark: dark);
     }
 
     return ChatTheme(
@@ -245,25 +246,23 @@ class ChatThemeStyling {
   });
 }
 
-final chatThemeProvider = StateNotifierProvider<ChatThemeNotifier, ChatTheme>((ref) {
-  return ChatThemeNotifier();
-});
 
 class ChatThemeNotifier extends StateNotifier<ChatTheme> {
   static const _themeTypeKey = 'chat_theme_type';
-  static const _themeColorKey = 'theme_color';
+  static const themeColorKey = 'theme_color';
   static const _themeModeKey = 'theme_mode';
+  final Ref ref;
 
-  ChatThemeNotifier() : super(_createInitialTheme()) {
+  ChatThemeNotifier(this.ref) : super(_createInitialTheme(false)) {
     _loadTheme();
   }
 
   // Create initial theme with default values
-  static ChatTheme _createInitialTheme() {
+  static ChatTheme _createInitialTheme(bool isDark) {
     return ChatTheme.withColor(
       ChatThemeType.chatforge,
       Colors.teal,
-      dark: false,
+      dark: isDark,
     );
   }
 
@@ -279,12 +278,12 @@ class ChatThemeNotifier extends StateNotifier<ChatTheme> {
     )
         : ChatThemeType.chatforge;
 
-    // Load theme color (only applies to ChatForge theme)
-    final colorValue = prefs.getInt(_themeColorKey) ?? Colors.teal.value;
+    // Load theme color
+    final colorValue = prefs.getInt(themeColorKey) ?? Colors.teal.value;
     final color = Color(colorValue);
 
-    // Load dark mode preference
-    final isDark = prefs.getBool(_themeModeKey) ?? false;
+    // Get dark mode from provider
+    final isDark = ref.read(isDarkModeProvider);
 
     state = ChatTheme.withColor(type, color, dark: isDark);
   }
@@ -293,37 +292,39 @@ class ChatThemeNotifier extends StateNotifier<ChatTheme> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_themeTypeKey, type.toString());
 
-    // Preserve current dark mode setting
-    final isDark = prefs.getBool(_themeModeKey) ?? false;
+    // Get dark mode from provider
+    final isDark = ref.read(isDarkModeProvider);
 
     // If setting to ChatForge theme, use the saved color
     if (type == ChatThemeType.chatforge) {
-      final colorValue = prefs.getInt(_themeColorKey) ?? Colors.teal.value;
+      final colorValue = prefs.getInt(themeColorKey) ?? Colors.teal.value;
       state = ChatTheme.withColor(type, Color(colorValue), dark: isDark);
     } else {
-      state = ChatTheme.withColor(type, Colors.teal, dark: isDark); // Color doesn't matter for other themes
+      state = ChatTheme.withColor(type, Colors.teal, dark: isDark);
     }
   }
 
   Future<void> setColor(Color color) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_themeColorKey, color.value);
+    await prefs.setInt(themeColorKey, color.value);
 
     // Only update if we're using the ChatForge theme
     if (state.type == ChatThemeType.chatforge) {
-      // Preserve current dark mode setting
-      final isDark = prefs.getBool(_themeModeKey) ?? false;
+      // Get dark mode from provider
+      final isDark = ref.read(isDarkModeProvider);
       state = ChatTheme.withColor(ChatThemeType.chatforge, color, dark: isDark);
     }
   }
 
   Future<void> setDarkMode(bool isDark) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_themeModeKey, isDark);
+    // Store the appropriate ThemeMode index
+    final modeIndex = isDark ? ThemeMode.dark.index : ThemeMode.light.index;
+    await prefs.setInt(_themeModeKey, modeIndex);
 
     // Recreate current theme with new dark mode setting
     if (state.type == ChatThemeType.chatforge) {
-      final colorValue = prefs.getInt(_themeColorKey) ?? Colors.teal.value;
+      final colorValue = prefs.getInt(themeColorKey) ?? Colors.teal.value;
       state = ChatTheme.withColor(state.type, Color(colorValue), dark: isDark);
     } else {
       state = ChatTheme.withColor(state.type, Colors.teal, dark: isDark);
@@ -400,7 +401,7 @@ final defaultTheme = ChatTheme(
 
  */
 
-class DefaultMessageWidget extends StatelessWidget {
+class DefaultMessageWidget extends ConsumerWidget {
   final MessageData data;
   final bool isUser;
   final Widget child;
@@ -413,18 +414,24 @@ class DefaultMessageWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: isUser ? Theme.of(context).primaryColor : Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: child,
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Get the theme colors from the current ChatTheme
+    final chatTheme = ref.read(chatThemeProvider);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isUser
+            ? chatTheme.styling.userMessageColor
+            : chatTheme.styling.assistantMessageColor,
+        borderRadius: chatTheme.styling.messageBorderRadius,
       ),
+      padding: chatTheme.styling.messagePadding,
+      child: child,
     );
   }
 }
 
-class DefaultMessageInput extends StatelessWidget {
+class DefaultMessageInput extends ConsumerWidget {
   final MessageInputData data;
   final Color backgroundColor;
   final Color borderColor;
@@ -439,14 +446,19 @@ class DefaultMessageInput extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Get the theme colors
+    final chatTheme = ref.read(chatThemeProvider);
+
     return TextField(
       controller: data.controller,
       focusNode: data.focusNode,
-      style: TextStyle(color: textColor),
+      style: TextStyle(color: chatTheme.styling.userMessageTextColor),
       decoration: InputDecoration(
         hintText: 'Type a message...',
-        hintStyle: TextStyle(color: textColor.withOpacity(0.6)),
+        hintStyle: TextStyle(
+            color: chatTheme.styling.userMessageTextColor.withOpacity(0.6)
+        ),
         filled: true,
         fillColor: backgroundColor,
         border: OutlineInputBorder(
@@ -459,7 +471,7 @@ class DefaultMessageInput extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(24),
-          borderSide: BorderSide(color: borderColor.withOpacity(0.8)),
+          borderSide: BorderSide(color: chatTheme.styling.primaryColor),
         ),
       ),
       enabled: !data.isGenerating,
@@ -468,7 +480,7 @@ class DefaultMessageInput extends StatelessWidget {
   }
 }
 
-class DefaultSendButton extends StatelessWidget {
+class DefaultSendButton extends ConsumerWidget {
   final VoidCallback onPressed;
   final bool isGenerating;
   final Color color;
@@ -483,18 +495,20 @@ class DefaultSendButton extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chatTheme = ref.read(chatThemeProvider);
+
     return IconButton(
       onPressed: onPressed,
       icon: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: color,
+          color: chatTheme.styling.primaryColor,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Icon(
           isGenerating ? Icons.stop : Icons.send,
-          color: iconColor,
+          color: Colors.white,
           size: 20,
         ),
       ),
@@ -502,7 +516,7 @@ class DefaultSendButton extends StatelessWidget {
   }
 }
 
-class DefaultCodeBlock extends StatelessWidget {
+class DefaultCodeBlock extends ConsumerWidget {
   final String code;
   final String? language;
   final Color backgroundColor;
@@ -519,14 +533,16 @@ class DefaultCodeBlock extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chatTheme = ref.watch(chatThemeProvider);
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: chatTheme.styling.backgroundColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: headerColor.withOpacity(0.2),
+          color: chatTheme.styling.primaryColor.withOpacity(0.2),
         ),
       ),
       child: Column(
@@ -535,7 +551,7 @@ class DefaultCodeBlock extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: headerColor,
+              color: chatTheme.styling.primaryColor.withOpacity(0.1),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
             ),
             child: Row(
@@ -545,7 +561,7 @@ class DefaultCodeBlock extends StatelessWidget {
                   Text(
                     language!,
                     style: TextStyle(
-                      color: textColor,
+                      color: chatTheme.styling.assistantMessageTextColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -553,7 +569,7 @@ class DefaultCodeBlock extends StatelessWidget {
                   icon: Icon(
                     Icons.copy,
                     size: 16,
-                    color: textColor,
+                    color: chatTheme.styling.assistantMessageTextColor,
                   ),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: code));
@@ -578,7 +594,7 @@ class DefaultCodeBlock extends StatelessWidget {
                 textStyle: TextStyle(
                   fontFamily: 'monospace',
                   fontSize: 14,
-                  color: textColor,
+                  color: chatTheme.styling.assistantMessageTextColor,
                 ),
               ),
             ),

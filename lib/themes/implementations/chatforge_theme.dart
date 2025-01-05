@@ -8,8 +8,8 @@ class ChatForgeTheme extends BaseTheme {
 
   ChatForgeTheme({
     required this.themeColor,
-    bool isDark = false,
-  }) : super(isDark: isDark);
+    super.isDark,
+  });
 
   @override
   Color get primaryColor => themeColor;

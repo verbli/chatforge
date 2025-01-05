@@ -32,7 +32,6 @@ class ChatForgeApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
-    final themeColor = ref.watch(themeColorProvider);
     final chatTheme = ref.watch(chatThemeProvider);
 
     return MaterialApp(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/theme.dart';
+import '../themes/chat_theme.dart';
 
 final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
   return ThemeModeNotifier();
@@ -54,3 +55,34 @@ class ThemeColorNotifier extends StateNotifier<Color> {
     state = color;
   }
 }
+
+final isDarkModeProvider = Provider<bool>((ref) {
+  final themeMode = ref.watch(themeModeProvider);
+  final platformBrightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+
+  return switch (themeMode) {
+    ThemeMode.system => platformBrightness == Brightness.dark,
+    ThemeMode.light => false,
+    ThemeMode.dark => true,
+  };
+});
+
+final chatThemeProvider = StateNotifierProvider<ChatThemeNotifier, ChatTheme>((ref) {
+  // Watch isDarkModeProvider to rebuild when theme mode changes
+  final isDark = ref.watch(isDarkModeProvider);
+  final notifier = ChatThemeNotifier(ref);
+
+  // Update theme when dark mode changes using addPostFrameCallback
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    SharedPreferences.getInstance().then((prefs) {
+      final colorValue = prefs.getInt(ChatThemeNotifier.themeColorKey) ?? Colors.teal.value;
+      notifier.state = ChatTheme.withColor(
+        notifier.state.type,
+        Color(colorValue),
+        dark: isDark,
+      );
+    });
+  });
+
+  return notifier;
+});

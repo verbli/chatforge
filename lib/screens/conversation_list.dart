@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/models.dart';
 import '../data/providers.dart';
+import '../providers/theme_provider.dart';
 import '../themes/chat_theme.dart';
 import '../widgets/ad_banner.dart';
 

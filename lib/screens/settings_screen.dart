@@ -222,7 +222,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       'API Keys & Providers': false,
       'Messages & Conversations': false,
       'Theme Settings': false,
-      'Token Usage Statistics': false,
+      //'Token Usage Statistics': false,
     };
 
     showDialog(
@@ -594,8 +594,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               value: ThemeMode.system,
                               groupValue: themeMode,
                               onChanged: (value) {
-                                ref.read(themeModeProvider.notifier)
-                                    .setThemeMode(value!);
+                                if (value != null) {
+                                  ref.read(themeModeProvider.notifier).setThemeMode(value);
+                                }
                               },
                             ),
                             RadioListTile<ThemeMode>(
@@ -603,8 +604,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               value: ThemeMode.light,
                               groupValue: themeMode,
                               onChanged: (value) {
-                                ref.read(themeModeProvider.notifier)
-                                    .setThemeMode(value!);
+                                if (value != null) {
+                                  ref.read(themeModeProvider.notifier).setThemeMode(value);
+                                }
                               },
                             ),
                             RadioListTile<ThemeMode>(
@@ -612,8 +614,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               value: ThemeMode.dark,
                               groupValue: themeMode,
                               onChanged: (value) {
-                                ref.read(themeModeProvider.notifier)
-                                    .setThemeMode(value!);
+                                if (value != null) {
+                                  ref.read(themeModeProvider.notifier).setThemeMode(value);
+                                }
                               },
                             ),
 
