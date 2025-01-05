@@ -9,6 +9,8 @@ import 'package:chatforge/data/storage/services/storage_service.dart';
 import 'package:chatforge/widgets/ad_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:restart_app/restart_app.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/config.dart';
@@ -19,11 +21,16 @@ import '../data/providers.dart';
 import '../providers/theme_provider.dart';
 import '../themes/chat_theme.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  @override
+  Widget build(BuildContext context) {
     final chatTheme = ref.watch(chatThemeProvider);
 
     return FutureBuilder(
@@ -183,6 +190,18 @@ class SettingsScreen extends ConsumerWidget {
                             onTap: () => _openPlayStore(context,
                                 "org.verbli.chatforge${BuildConfig.isPro ? '.pro' : ''}"),
                           ),
+                          ListTile(
+                            title: Text(
+                              'Data Management',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+                          ListTile(
+                            title: const Text('Clear App Data'),
+                            subtitle: const Text('Delete saved data and settings'),
+                            leading: const Icon(Icons.delete_outline, color: Colors.red),
+                            onTap: () => _showClearDataDialog(context, ref),
+                          ),
                         ],
                       ),
                     ),
@@ -196,49 +215,160 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  void _showColorPicker(BuildContext context, WidgetRef ref) {
+
+  void _showClearDataDialog(BuildContext context, WidgetRef ref) {
+    // Track which data types to clear
+    final selectedData = <String, bool>{
+      'API Keys & Providers': false,
+      'Messages & Conversations': false,
+      'Theme Settings': false,
+      'Token Usage Statistics': false,
+    };
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Theme Color'),
-        content: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: AppTheme.seedColors.entries.map((entry) {
-            return InkWell(
-              onTap: () {
-                ref.read(themeColorProvider.notifier).setColor(entry.value);
-                ref.read(chatThemeProvider.notifier).setColor(entry.value);
-                Navigator.pop(context);
-              },
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: entry.value,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Theme.of(context).dividerColor,
-                  ),
-                ),
-                child: entry.value == ref.watch(themeColorProvider)
-                    ? Icon(
-                        Icons.check,
-                        color: entry.value.computeLuminance() > 0.5
-                            ? Colors.black
-                            : Colors.white,
-                      )
-                    : null,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Clear App Data'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Select which data to clear:',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
-            );
-          }).toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('CANCEL'),
+              const SizedBox(height: 8),
+              ...selectedData.entries.map(
+                    (entry) => CheckboxListTile(
+                  title: Text(entry.key),
+                  value: entry.value,
+                  onChanged: (value) {
+                    setState(() {
+                      selectedData[entry.key] = value ?? false;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Warning: This action cannot be undone!',
+                style: TextStyle(color: Colors.red),
+              ),
+            ],
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('CANCEL'),
+            ),
+            FilledButton(
+              onPressed: selectedData.values.any((selected) => selected)
+                  ? () async {
+                // Show loading dialog
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const AlertDialog(
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Clearing data...'),
+                      ],
+                    ),
+                  ),
+                );
+
+                try {
+                  final prefs = await SharedPreferences.getInstance();
+
+                  // Clear API Keys & Providers
+                  if (selectedData['API Keys & Providers'] == true) {
+                    await prefs.remove('providers');
+                  }
+
+                  // Clear Messages & Conversations
+                  if (selectedData['Messages & Conversations'] == true) {
+                    final dbService = ref.read(databaseServiceProvider);
+                    await dbService.execute('DELETE FROM messages');
+                    await dbService.execute('DELETE FROM conversations');
+                  }
+
+                  // Clear Theme Settings
+                  if (selectedData['Theme Settings'] == true) {
+                    await prefs.remove('theme_mode');
+                    await prefs.remove('theme_color');
+                    await prefs.remove('chat_theme_type');
+                  }
+
+                  // Clear Token Usage
+                  if (selectedData['Token Usage Statistics'] == true) {
+                    final dbService = ref.read(databaseServiceProvider);
+                    await dbService.execute('UPDATE messages SET token_count = 0');
+                    await dbService.execute('UPDATE conversations SET total_tokens = 0');
+                  }
+
+                  if (mounted) {
+                    // Remove loading dialog
+                    Navigator.pop(context);
+                    // Remove clear data dialog
+                    Navigator.pop(context);
+
+                    // Show success message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Data cleared successfully'),
+                      ),
+                    );
+
+                    // If we cleared anything that requires a restart
+                    if (selectedData['API Keys & Providers'] == true ||
+                        selectedData['Theme Settings'] == true) {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Restart Required'),
+                          content: const Text(
+                            'Some changes require the app to restart. '
+                                'The app will restart now.',
+                          ),
+                          actions: [
+                            FilledButton(
+                              onPressed: () {
+                                Restart.restartApp();
+                              },
+                              child: const Text('RESTART NOW'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    // Remove loading dialog
+                    Navigator.pop(context);
+                    // Remove clear data dialog
+                    Navigator.pop(context);
+
+                    // Show error message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error clearing data: $e'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                  }
+                }
+              }
+                  : null,
+              child: const Text('CLEAR'),
+            ),
+          ],
+        ),
       ),
     );
   }

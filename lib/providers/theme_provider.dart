@@ -21,25 +21,22 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
 
   Future<void> _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    final themeName = prefs.getString(_key);
-    if (themeName != null) {
-      state = ThemeMode.values.firstWhere(
-            (mode) => mode.toString() == themeName,
-        orElse: () => ThemeMode.system,
-      );
+    final themeIndex = prefs.getInt(_key);
+    if (themeIndex != null) {
+      state = ThemeMode.values[themeIndex];
     }
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, mode.toString());
+    await prefs.setInt(_key, mode.index);
     state = mode;
   }
 }
 
 class ThemeColorNotifier extends StateNotifier<Color> {
   static const _key = 'theme_color';
-  ThemeColorNotifier() : super(AppTheme.primary) {
+  ThemeColorNotifier() : super(Colors.teal) {
     _loadColor();
   }
 
