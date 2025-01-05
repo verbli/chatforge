@@ -1,6 +1,11 @@
 // lib/themes/chat_theme.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_highlighter/flutter_highlighter.dart';
+import 'package:flutter_highlighter/themes/github.dart';
+import 'package:markdown/markdown.dart' as markdown;
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'implementations/chatgpt_theme.dart';
@@ -9,7 +14,7 @@ import 'implementations/gemini_theme.dart';
 import 'theme_widgets.dart';
 
 enum ChatThemeType {
-  chatforge,  // Default theme
+  chatforge, // Default theme
   chatgpt,
   claude,
   gemini,
@@ -34,9 +39,13 @@ class ChatTheme {
 /// Defines all customizable widgets used in the chat UI
 class ChatThemeWidgets {
   final Widget Function(BuildContext context, MessageData data) userMessage;
-  final Widget Function(BuildContext context, MessageData data) assistantMessage;
-  final Widget Function(BuildContext context, MessageInputData data) messageInput;
-  final Widget Function(BuildContext context, VoidCallback onPressed, bool isGenerating) sendButton;
+  final Widget Function(BuildContext context, MessageData data)
+      assistantMessage;
+  final Widget Function(BuildContext context, MessageInputData data)
+      messageInput;
+  final Widget Function(
+          BuildContext context, VoidCallback onPressed, bool isGenerating)
+      sendButton;
   final Widget Function(BuildContext context, String code)? codeBlock;
   final Widget Function(BuildContext context, String markdown)? markdownBlock;
 
@@ -92,7 +101,8 @@ class ChatThemeStyling {
 }
 
 // Theme provider
-final chatThemeProvider = StateNotifierProvider<ChatThemeNotifier, ChatTheme>((ref) {
+final chatThemeProvider =
+    StateNotifierProvider<ChatThemeNotifier, ChatTheme>((ref) {
   return ChatThemeNotifier();
 });
 
@@ -108,7 +118,7 @@ class ChatThemeNotifier extends StateNotifier<ChatTheme> {
     final themeName = prefs.getString(_key);
     if (themeName != null) {
       final type = ChatThemeType.values.firstWhere(
-            (t) => t.toString() == themeName,
+        (t) => t.toString() == themeName,
         orElse: () => ChatThemeType.chatforge,
       );
       state = getTheme(type);
@@ -136,6 +146,7 @@ class ChatThemeNotifier extends StateNotifier<ChatTheme> {
     }
   }
 }
+
 final defaultTheme = ChatTheme(
   type: ChatThemeType.chatforge,
   themeData: ThemeData(
@@ -154,11 +165,27 @@ final defaultTheme = ChatTheme(
     ),
   ),
   widgets: ChatThemeWidgets(
-    userMessage: (context, data) => DefaultMessageWidget(data: data, isUser: true),
-    assistantMessage: (context, data) => DefaultMessageWidget(data: data, isUser: false),
+    userMessage: (context, data) => DefaultMessageWidget(
+      data: data,
+      child: DefaultMarkdownBlock(
+        markdown: data.content,
+        textStyle: TextStyle(color: Colors.white),
+      ),
+      isUser: true,
+    ),
+    assistantMessage: (context, data) => DefaultMessageWidget(
+      data: data,
+      child: DefaultMarkdownBlock(
+        markdown: data.content,
+      ),
+      isUser: false,
+    ),
     messageInput: (context, data) => DefaultMessageInput(data: data),
     sendButton: (context, onPressed, isGenerating) =>
         DefaultSendButton(onPressed: onPressed, isGenerating: isGenerating),
+    codeBlock: (context, code) => DefaultCodeBlock(code: code),
+    markdownBlock: (context, markdown) =>
+        DefaultMarkdownBlock(markdown: markdown),
   ),
   styling: const ChatThemeStyling(
     primaryColor: Colors.teal,
@@ -182,11 +209,13 @@ final defaultTheme = ChatTheme(
 class DefaultMessageWidget extends StatelessWidget {
   final MessageData data;
   final bool isUser;
+  final Widget child;
 
   const DefaultMessageWidget({
     super.key,
     required this.data,
     required this.isUser,
+    required this.child,
   });
 
   @override
@@ -195,12 +224,7 @@ class DefaultMessageWidget extends StatelessWidget {
       color: isUser ? Theme.of(context).primaryColor : Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Text(
-          data.content,
-          style: TextStyle(
-            color: isUser ? Colors.white : Colors.black,
-          ),
-        ),
+        child: child,
       ),
     );
   }
@@ -250,6 +274,162 @@ class DefaultSendButton extends StatelessWidget {
         color: Theme.of(context).primaryColor,
       ),
     );
+  }
+}
+
+class DefaultCodeBlock extends StatelessWidget {
+  final String code;
+  final String? language;
+
+  const DefaultCodeBlock({
+    super.key,
+    required this.code,
+    this.language,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceVariant,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(8)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (language != null)
+                  Text(
+                    language!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                IconButton(
+                  icon: Icon(
+                    Icons.copy,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: code));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Code copied to clipboard')),
+                    );
+                  },
+                  tooltip: 'Copy code',
+                ),
+              ],
+            ),
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: HighlightView(
+                code,
+                language: language ?? 'plaintext',
+                theme: githubTheme,
+                padding: EdgeInsets.zero,
+                textStyle: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DefaultCodeBlockBuilder extends MarkdownElementBuilder {
+  @override
+  Widget? visitElementAfter(
+      markdown.Element element, TextStyle? preferredStyle) {
+    if (element.tag == 'code') {
+      String? language;
+      if (element.attributes['class'] != null) {
+        language = element.attributes['class']!.replaceAll('language-', '');
+      }
+
+      return DefaultCodeBlock(
+        code: element.textContent,
+        language: language,
+      );
+    }
+    return null;
+  }
+}
+
+class DefaultMarkdownBlock extends StatelessWidget {
+  final String markdown;
+  final TextStyle? textStyle;
+  final bool renderMarkdown;
+
+  const DefaultMarkdownBlock({
+    super.key,
+    required this.markdown,
+    this.textStyle,
+    this.renderMarkdown = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (!renderMarkdown) {
+      return SelectableText(
+        markdown,
+        style: textStyle ?? Theme.of(context).textTheme.bodyLarge,
+      );
+    }
+
+    try {
+      return MarkdownBody(
+        data: markdown,
+        selectable: true,
+        styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+          p: textStyle ?? Theme.of(context).textTheme.bodyLarge,
+          h1: Theme.of(context).textTheme.headlineMedium,
+          h2: Theme.of(context).textTheme.titleLarge,
+          h3: Theme.of(context).textTheme.titleMedium,
+          code: TextStyle(
+            backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+            fontFamily: 'monospace',
+            fontSize: 14,
+          ),
+          codeblockDecoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            ),
+          ),
+        ),
+        builders: {
+          'code': DefaultCodeBlockBuilder(),
+        },
+      );
+    } catch (e) {
+      return SelectableText(
+        markdown,
+        style: textStyle ?? Theme.of(context).textTheme.bodyLarge,
+      );
+    }
   }
 }
 

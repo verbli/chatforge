@@ -132,21 +132,6 @@ class SettingsScreen extends ConsumerWidget {
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () => _showThemeDialog(context, ref),
                           ),
-                          ListTile(
-                            title: const Text('Theme Color'),
-                            trailing: Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: ref.watch(themeColorProvider),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Theme.of(context).dividerColor,
-                                ),
-                              ),
-                            ),
-                            onTap: () => _showColorPicker(context, ref),
-                          ),
 
                           // About section
                           ListTile(

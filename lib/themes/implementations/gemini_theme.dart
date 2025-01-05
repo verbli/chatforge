@@ -37,6 +37,8 @@ final geminiTheme = ChatTheme(
       onPressed: onPressed,
       isGenerating: isGenerating,
     ),
+    codeBlock: (context, code) => GeminiCodeBlock(code: code),
+    markdownBlock: (context, markdown) => GeminiMarkdownBlock(markdown: markdown),
   ),
   styling: ChatThemeStyling(
     primaryColor: const Color(0xFF5087d3),
@@ -325,7 +327,6 @@ class GeminiCodeBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: geminiTheme.themeData.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
@@ -423,8 +424,10 @@ class GeminiMarkdownBlock extends StatelessWidget {
         },
       );
     } catch (e) {
-      debugPrint('Error rendering markdown: $e');
-      return Text(markdown); // Fallback to plain text
+      return SelectableText(
+        markdown,
+        style: TextStyle(color: geminiTheme.themeData.colorScheme.onSurface),
+      );
     }
   }
 }

@@ -90,6 +90,7 @@ _$ModelSettingsImpl _$$ModelSettingsImplFromJson(Map<String, dynamic> json) =>
       maxResponseTokens: (json['maxResponseTokens'] as num?)?.toInt() ?? 4096,
       alwaysKeepSystemPrompt: json['alwaysKeepSystemPrompt'] as bool? ?? true,
       keepFirstMessage: json['keepFirstMessage'] as bool? ?? false,
+      renderMarkdown: json['renderMarkdown'] as bool? ?? true,
     );
 
 Map<String, dynamic> _$$ModelSettingsImplToJson(_$ModelSettingsImpl instance) =>
@@ -105,6 +106,7 @@ Map<String, dynamic> _$$ModelSettingsImplToJson(_$ModelSettingsImpl instance) =>
       'maxResponseTokens': instance.maxResponseTokens,
       'alwaysKeepSystemPrompt': instance.alwaysKeepSystemPrompt,
       'keepFirstMessage': instance.keepFirstMessage,
+      'renderMarkdown': instance.renderMarkdown,
     };
 
 const _$TruncationStrategyEnumMap = {

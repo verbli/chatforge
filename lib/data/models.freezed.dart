@@ -843,6 +843,7 @@ mixin _$ModelSettings {
   int get maxResponseTokens => throw _privateConstructorUsedError;
   bool get alwaysKeepSystemPrompt => throw _privateConstructorUsedError;
   bool get keepFirstMessage => throw _privateConstructorUsedError;
+  bool get renderMarkdown => throw _privateConstructorUsedError;
 
   /// Serializes this ModelSettings to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -870,7 +871,8 @@ abstract class $ModelSettingsCopyWith<$Res> {
       TruncationStrategy truncationStrategy,
       int maxResponseTokens,
       bool alwaysKeepSystemPrompt,
-      bool keepFirstMessage});
+      bool keepFirstMessage,
+      bool renderMarkdown});
 }
 
 /// @nodoc
@@ -898,6 +900,7 @@ class _$ModelSettingsCopyWithImpl<$Res, $Val extends ModelSettings>
     Object? maxResponseTokens = null,
     Object? alwaysKeepSystemPrompt = null,
     Object? keepFirstMessage = null,
+    Object? renderMarkdown = null,
   }) {
     return _then(_value.copyWith(
       temperature: null == temperature
@@ -940,6 +943,10 @@ class _$ModelSettingsCopyWithImpl<$Res, $Val extends ModelSettings>
           ? _value.keepFirstMessage
           : keepFirstMessage // ignore: cast_nullable_to_non_nullable
               as bool,
+      renderMarkdown: null == renderMarkdown
+          ? _value.renderMarkdown
+          : renderMarkdown // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -962,7 +969,8 @@ abstract class _$$ModelSettingsImplCopyWith<$Res>
       TruncationStrategy truncationStrategy,
       int maxResponseTokens,
       bool alwaysKeepSystemPrompt,
-      bool keepFirstMessage});
+      bool keepFirstMessage,
+      bool renderMarkdown});
 }
 
 /// @nodoc
@@ -988,6 +996,7 @@ class __$$ModelSettingsImplCopyWithImpl<$Res>
     Object? maxResponseTokens = null,
     Object? alwaysKeepSystemPrompt = null,
     Object? keepFirstMessage = null,
+    Object? renderMarkdown = null,
   }) {
     return _then(_$ModelSettingsImpl(
       temperature: null == temperature
@@ -1030,6 +1039,10 @@ class __$$ModelSettingsImplCopyWithImpl<$Res>
           ? _value.keepFirstMessage
           : keepFirstMessage // ignore: cast_nullable_to_non_nullable
               as bool,
+      renderMarkdown: null == renderMarkdown
+          ? _value.renderMarkdown
+          : renderMarkdown // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -1049,7 +1062,8 @@ class _$ModelSettingsImpl
       this.truncationStrategy = TruncationStrategy.keepSystemPrompt,
       this.maxResponseTokens = 4096,
       this.alwaysKeepSystemPrompt = true,
-      this.keepFirstMessage = false});
+      this.keepFirstMessage = false,
+      this.renderMarkdown = true});
 
   factory _$ModelSettingsImpl.fromJson(Map<String, dynamic> json) =>
       _$$ModelSettingsImplFromJson(json);
@@ -1083,10 +1097,13 @@ class _$ModelSettingsImpl
   @override
   @JsonKey()
   final bool keepFirstMessage;
+  @override
+  @JsonKey()
+  final bool renderMarkdown;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'ModelSettings(temperature: $temperature, topP: $topP, presencePenalty: $presencePenalty, frequencyPenalty: $frequencyPenalty, systemPrompt: $systemPrompt, maxContextTokens: $maxContextTokens, truncationStrategy: $truncationStrategy, maxResponseTokens: $maxResponseTokens, alwaysKeepSystemPrompt: $alwaysKeepSystemPrompt, keepFirstMessage: $keepFirstMessage)';
+    return 'ModelSettings(temperature: $temperature, topP: $topP, presencePenalty: $presencePenalty, frequencyPenalty: $frequencyPenalty, systemPrompt: $systemPrompt, maxContextTokens: $maxContextTokens, truncationStrategy: $truncationStrategy, maxResponseTokens: $maxResponseTokens, alwaysKeepSystemPrompt: $alwaysKeepSystemPrompt, keepFirstMessage: $keepFirstMessage, renderMarkdown: $renderMarkdown)';
   }
 
   @override
@@ -1104,7 +1121,8 @@ class _$ModelSettingsImpl
       ..add(DiagnosticsProperty('maxResponseTokens', maxResponseTokens))
       ..add(
           DiagnosticsProperty('alwaysKeepSystemPrompt', alwaysKeepSystemPrompt))
-      ..add(DiagnosticsProperty('keepFirstMessage', keepFirstMessage));
+      ..add(DiagnosticsProperty('keepFirstMessage', keepFirstMessage))
+      ..add(DiagnosticsProperty('renderMarkdown', renderMarkdown));
   }
 
   @override
@@ -1130,7 +1148,9 @@ class _$ModelSettingsImpl
             (identical(other.alwaysKeepSystemPrompt, alwaysKeepSystemPrompt) ||
                 other.alwaysKeepSystemPrompt == alwaysKeepSystemPrompt) &&
             (identical(other.keepFirstMessage, keepFirstMessage) ||
-                other.keepFirstMessage == keepFirstMessage));
+                other.keepFirstMessage == keepFirstMessage) &&
+            (identical(other.renderMarkdown, renderMarkdown) ||
+                other.renderMarkdown == renderMarkdown));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1146,7 +1166,8 @@ class _$ModelSettingsImpl
       truncationStrategy,
       maxResponseTokens,
       alwaysKeepSystemPrompt,
-      keepFirstMessage);
+      keepFirstMessage,
+      renderMarkdown);
 
   /// Create a copy of ModelSettings
   /// with the given fields replaced by the non-null parameter values.
@@ -1175,7 +1196,8 @@ abstract class _ModelSettings implements ModelSettings {
       final TruncationStrategy truncationStrategy,
       final int maxResponseTokens,
       final bool alwaysKeepSystemPrompt,
-      final bool keepFirstMessage}) = _$ModelSettingsImpl;
+      final bool keepFirstMessage,
+      final bool renderMarkdown}) = _$ModelSettingsImpl;
 
   factory _ModelSettings.fromJson(Map<String, dynamic> json) =
       _$ModelSettingsImpl.fromJson;
@@ -1200,6 +1222,8 @@ abstract class _ModelSettings implements ModelSettings {
   bool get alwaysKeepSystemPrompt;
   @override
   bool get keepFirstMessage;
+  @override
+  bool get renderMarkdown;
 
   /// Create a copy of ModelSettings
   /// with the given fields replaced by the non-null parameter values.

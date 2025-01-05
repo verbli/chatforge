@@ -37,6 +37,8 @@ final claudeTheme = ChatTheme(
       onPressed: onPressed,
       isGenerating: isGenerating,
     ),
+    codeBlock: (context, code) => ClaudeCodeBlock(code: code),
+    markdownBlock: (context, markdown) => ClaudeMarkdownBlock(markdown: markdown),
   ),
   styling: ChatThemeStyling(
     primaryColor: const Color(0xFFDA7756),
@@ -341,7 +343,6 @@ class ClaudeCodeBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFF282c34),
         borderRadius: BorderRadius.circular(8),

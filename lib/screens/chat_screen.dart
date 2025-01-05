@@ -244,7 +244,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final messages = ref.watch(messagesProvider(widget.conversationId));
     final conversation = ref.watch(conversationProvider(widget.conversationId));
 
-
     return Theme(
       data: theme.themeData,
       child: Scaffold(
@@ -326,12 +325,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         children: [
           Expanded(
             child: theme.widgets.messageInput(context, inputData),
-          ),
-          const SizedBox(width: 8),
-          theme.widgets.sendButton(
-            context,
-            _isGenerating ? _stopGeneration : _sendMessage,
-            _isGenerating,
           ),
         ],
       ),
@@ -1010,7 +1003,7 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                                   .firstWhere((m) => m.id == _selectedModelId,
                                       orElse: () => provider.models.first)
                                   .settings
-                              : ModelSettings(
+                              : const ModelSettings(
                                   temperature: 1.0,
                                   topP: 1.0,
                                   frequencyPenalty: 0.0,
@@ -1215,6 +1208,16 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                                   'Sets the behavior, tone, and role of the AI, ensuring its responses align with the desired context or task. For example, it can instruct the model to act as a technical expert or a friendly assistant.',
                             ),
                           ],
+                        ),
+                        SwitchListTile(
+                          title: const Text('Render Markdown'),
+                          subtitle: const Text('Format messages with markdown styling'),
+                          value: _settings.renderMarkdown,
+                          onChanged: (value) {
+                            setState(() {
+                              _settings = _settings.copyWith(renderMarkdown: value);
+                            });
+                          },
                         ),
                       ],
                     ),

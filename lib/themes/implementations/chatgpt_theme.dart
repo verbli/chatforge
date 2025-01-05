@@ -37,6 +37,8 @@ final chatGPTTheme = ChatTheme(
       onPressed: onPressed,
       isGenerating: isGenerating,
     ),
+    codeBlock: (context, code) => ChatGPTCodeBlock(code: code),
+    markdownBlock: (context, markdown) => ChatGPTMarkdownBlock(markdown: markdown),
   ),
   styling: ChatThemeStyling(
     primaryColor: const Color(0xFFb4b4b4),
@@ -318,7 +320,6 @@ class ChatGPTCodeBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(8),
