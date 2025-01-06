@@ -30,13 +30,6 @@ class LicensesDialog extends StatelessWidget {
           shrinkWrap: true,
           children: [
             ListTile(
-              title: const Text('sqflite'),
-              subtitle: const Text('BSD-2-Clause'),
-              onTap: () => _showLicenseDetails(
-                  context, 'sqflite', LicenseType.bsd2Clause,
-                  copyright: "Copyright (c) 2019, Alexandre Roux Tekartik"),
-            ),
-            ListTile(
               title: const Text('go_router'),
               subtitle: const Text('BSD-3-Clause'),
               onTap: () => _showLicenseDetails(
@@ -98,6 +91,13 @@ class LicensesDialog extends StatelessWidget {
               onTap: () => _showLicenseDetails(
                   context, 'flutter_gemini', LicenseType.bsd3Clause,
                   copyright: "Copyright (c) 2023, Babak Gahremanzadeh (BabakCode)"),
+            ),
+            ListTile(
+              title: const Text('collection'),
+              subtitle: const Text('BSD-3-Clause'),
+              onTap: () => _showLicenseDetails(
+                  context, 'collection', LicenseType.bsd3Clause,
+                  copyright: "Copyright 2015, the Dart project authors."),
             ),
             ListTile(
               title: const Text('google_mobile_ads'),

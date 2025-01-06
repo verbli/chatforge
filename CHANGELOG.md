@@ -1,5 +1,23 @@
 # Change Log
 
+## [1.1.0] - 2024-01-05
+
+Improved AI provider support, expanded model settings, and revamed various UIs.
+
+### Added
+
+- Support for Gemini and Anthropic
+- AI model fetching to dynamically retrieve available models
+- Additional model settings for supported providers: presence and frequency penalties
+- Support for Linux
+- More themes to mimic popular apps (ChatGPT, Claude, and Gemini)
+- Feature to clear stored data
+
+### Improved
+
+- Enhanced chat creation UI
+- Improved AI provider UI
+
 ## [1.0.1] - 2024-11-29
 
 Improved app launch time (6 seconds to 2 seconds in test environment).

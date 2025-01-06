@@ -14,6 +14,18 @@ class ChangelogDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            const Text('Version 1.1.0',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text(
+                '• Added support for Gemini and Anthropic\n'
+                '• Added AI model fetching to retrieve available models\n'
+                '• Added conversation settings: presence and frequency penalty\n'
+                '• Linux support\n'
+                '• More themes to mimic ChatGPT, Claude, and Gemini colors\n'
+                '• Enhanced chat creation UI\n'
+                '• Improved AI providers UI\n'
+            ),
             const Text('Version 1.0.1',
                 style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
