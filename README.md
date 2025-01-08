@@ -5,7 +5,9 @@ ChatForge is a versatile, privacy-focused chat application that enables seamless
 ## Support
 If you find ChatForge useful and want to support its development, consider buying me a coffee! Your support helps keep this project alive and growing.
 
+
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/yellow_img.png)](https://www.buymeacoffee.com/eshipman)
+
 
 ## Features
 
@@ -77,7 +79,9 @@ See the [LICENSE](LICENSE.md) file for details.
 ## Support
 If you find ChatForge useful and want to support its development, consider buying me a coffee! Your support helps keep this project alive and growing.
 
+
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/yellow_img.png)](https://www.buymeacoffee.com/eshipman)
+
 
 ### Perks for Members and Supporters
 - Access to pro APK
