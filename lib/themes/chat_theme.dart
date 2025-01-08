@@ -141,13 +141,10 @@ class ChatTheme {
           backgroundColor: baseTheme.inputBackgroundColor,
           borderColor: baseTheme.inputBorderColor,
           textColor: baseTheme.textColor,
+          onPressed: data.onSubmit,
+          isGenerating: data.isGenerating,
         ),
-        sendButton: (context, onPressed, isGenerating) => DefaultSendButton(
-          onPressed: onPressed,
-          isGenerating: isGenerating,
-          color: baseTheme.buttonColor,
-          iconColor: baseTheme.buttonTextColor,
-        ),
+        sendButton: (context, onPressed, isGenerating) => const SizedBox.shrink(),
         codeBlock: (context, code) => DefaultCodeBlock(
           code: code,
           backgroundColor: baseTheme.codeBlockBackgroundColor,
@@ -162,6 +159,8 @@ class ChatTheme {
         ),
       ),
       styling: ChatThemeStyling(
+        baseTheme.buttonColor,
+        baseTheme.buttonTextColor,
         primaryColor: baseTheme.primaryColor,
         backgroundColor: baseTheme.backgroundColor,
         userMessageColor: baseTheme.userMessageColor,
@@ -213,6 +212,8 @@ class ChatThemeStyling {
   final Color assistantMessageColor;
   final Color userMessageTextColor;
   final Color assistantMessageTextColor;
+  final Color buttonColor;
+  final Color buttonTextColor;
 
   final TextStyle userMessageStyle;
   final TextStyle assistantMessageStyle;
@@ -227,7 +228,7 @@ class ChatThemeStyling {
   final bool alignUserMessagesRight;
   final bool showAvatars;
 
-  const ChatThemeStyling({
+  const ChatThemeStyling(this.buttonColor, this.buttonTextColor, {
     required this.primaryColor,
     required this.backgroundColor,
     required this.userMessageColor,
@@ -387,6 +388,8 @@ final defaultTheme = ChatTheme(
     assistantMessageColor: Colors.white,
     userMessageTextColor: Colors.white,
     assistantMessageTextColor: Colors.black,
+    buttonColor: Colors.teal,
+    buttonTextColor: Colors.white,
     userMessageStyle: TextStyle(color: Colors.white),
     assistantMessageStyle: TextStyle(color: Colors.black),
     messageBorderRadius: BorderRadius.all(Radius.circular(12)),
@@ -436,6 +439,8 @@ class DefaultMessageInput extends ConsumerWidget {
   final Color backgroundColor;
   final Color borderColor;
   final Color textColor;
+  final VoidCallback onPressed;
+  final bool isGenerating;
 
   const DefaultMessageInput({
     super.key,
@@ -443,6 +448,8 @@ class DefaultMessageInput extends ConsumerWidget {
     required this.backgroundColor,
     required this.borderColor,
     required this.textColor,
+    required this.onPressed,
+    required this.isGenerating,
   });
 
   @override
@@ -472,6 +479,15 @@ class DefaultMessageInput extends ConsumerWidget {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(24),
           borderSide: BorderSide(color: chatTheme.styling.primaryColor),
+        ),
+        suffixIcon: Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: DefaultSendButton(
+            onPressed: onPressed,
+            isGenerating: isGenerating,
+            color: chatTheme.styling.buttonColor,
+            iconColor: chatTheme.styling.buttonTextColor,
+          ),
         ),
       ),
       enabled: !data.isGenerating,

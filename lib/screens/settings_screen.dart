@@ -456,6 +456,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text('Version 1.1.0',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text(
+                  '• Added support for Gemini and Anthropic\n'
+                  '• Added AI model fetching to retrieve available models\n'
+                  '• Added conversation settings: presence and frequency penalty\n'
+                  '• Linux support\n'
+                  '• More themes to mimic ChatGPT, Claude, and Gemini colors\n'
+                  '• Enhanced chat creation UI\n'
+                  '• Improved AI providers UI\n'
+              ),
               Text('Version 1.0.1',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
