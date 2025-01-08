@@ -18,12 +18,12 @@ If you find ChatForge useful and want to support its development, consider buyin
 - **Multiple Conversations**: Manage and organize multiple chat sessions simultaneously
 - **Conversation Rewind**: Edit previous messages and regenerate responses from any point
 - **Custom Prompts & Settings**: Personalize system prompts and fine-tune model parameters
-- **OpenAI Integration**: Seamless access to OpenAI's powerful language models
+- **Multiple LLM Integrations**: Seamless access to powerful language models from OpenAI, Anthropic, & Gemini
+- **Linux Desktop**: Run ChatForge on Linux!
 
 ### Coming Soon
-- Additional LLM Provider Support (Anthropic, Gemini, etc.)
 - Detailed Usage Statistics and Analytics
-- Cross-Platform Support (Web, Windows, Linux)
+- Cross-Platform Support (Web, Windows)
 - External Backend Options (Supabase, Firebase, Appwrite, PocketBase)
 
 ## Installation
