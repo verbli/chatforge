@@ -456,6 +456,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text('Version 1.1.1',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text(
+                  '• Fixed broken UI\n'
+              ),
               Text('Version 1.1.0',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),

@@ -14,6 +14,12 @@ class ChangelogDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            const Text('Version 1.1.1',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text(
+                '• Fixed broken UI\n'
+            ),
             const Text('Version 1.1.0',
                 style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),

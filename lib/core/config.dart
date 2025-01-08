@@ -44,7 +44,7 @@ class BuildConfig {
 
   static const String appVersion = String.fromEnvironment(
     'APP_VERSION',
-    defaultValue: '1.1.0',
+    defaultValue: '1.1.1',
   );
 
   static const bool isPro = bool.fromEnvironment(
