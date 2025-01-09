@@ -339,71 +339,6 @@ class ChatThemeNotifier extends StateNotifier<ChatTheme> {
   }
 }
 
-
-/*
-final defaultTheme = ChatTheme(
-  type: ChatThemeType.chatforge,
-  themeData: ThemeData(
-    primaryColor: Colors.teal,
-    scaffoldBackgroundColor: Colors.white,
-    colorScheme: ColorScheme.light(
-      primary: Colors.teal,
-      secondary: Colors.tealAccent,
-      surface: Colors.grey.shade50,
-      onSurface: Colors.black,
-    ),
-    appBarTheme: AppBarTheme(
-      backgroundColor: Colors.white,
-      elevation: 1,
-      shadowColor: Colors.black.withOpacity(0.1),
-    ),
-  ),
-  widgets: ChatThemeWidgets(
-    userMessage: (context, data) => DefaultMessageWidget(
-      data: data,
-      child: DefaultMarkdownBlock(
-        markdown: data.content,
-        textStyle: TextStyle(color: Colors.white),
-      ),
-      isUser: true,
-    ),
-    assistantMessage: (context, data) => DefaultMessageWidget(
-      data: data,
-      child: DefaultMarkdownBlock(
-        markdown: data.content,
-      ),
-      isUser: false,
-    ),
-    messageInput: (context, data) => DefaultMessageInput(data: data),
-    sendButton: (context, onPressed, isGenerating) =>
-        DefaultSendButton(onPressed: onPressed, isGenerating: isGenerating),
-    codeBlock: (context, code) => DefaultCodeBlock(code: code),
-    markdownBlock: (context, markdown) =>
-        DefaultMarkdownBlock(markdown: markdown),
-  ),
-  styling: const ChatThemeStyling(
-    primaryColor: Colors.teal,
-    backgroundColor: Colors.white,
-    userMessageColor: Colors.teal,
-    assistantMessageColor: Colors.white,
-    userMessageTextColor: Colors.white,
-    assistantMessageTextColor: Colors.black,
-    buttonColor: Colors.teal,
-    buttonTextColor: Colors.white,
-    userMessageStyle: TextStyle(color: Colors.white),
-    assistantMessageStyle: TextStyle(color: Colors.black),
-    messageBorderRadius: BorderRadius.all(Radius.circular(12)),
-    messagePadding: EdgeInsets.all(16),
-    messageSpacing: 8,
-    maxWidth: 800,
-    containerPadding: EdgeInsets.all(16),
-    alignUserMessagesRight: true,
-    showAvatars: false,
-  ),
-);
-
- */
-
 class DefaultMessageWidget extends ConsumerWidget {
   final MessageData data;
   final bool isUser;
@@ -492,6 +427,9 @@ class DefaultMessageInput extends ConsumerWidget {
       ),
       enabled: !data.isGenerating,
       onSubmitted: (_) => data.onSubmit(),
+      keyboardType: TextInputType.multiline,
+      maxLines: 6,
+      minLines: 1,
     );
   }
 }
