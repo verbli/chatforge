@@ -56,85 +56,19 @@ class ChatTheme {
       type: type,
       themeData: baseTheme.themeData,
       widgets: ChatThemeWidgets(
-        userMessage: (context, data) => DefaultMessageWidget(
+        userMessage: (context, data) => DefaultMessageBubble(
           data: data,
-          isUser: true,
-          child: Consumer(
-            builder: (context, ref, _) {
-              final conversationId = data.id.split('/')[0];
-              final conversationAsync = ref.watch(conversationProvider(conversationId));
-
-              return conversationAsync.when(
-                data: (conversation) {
-                  if (!conversation.settings.renderMarkdown) {
-                    return SelectableText(
-                      data.content,
-                      style: TextStyle(color: baseTheme.userMessageTextColor),
-                    );
-                  }
-
-                  return DefaultMarkdownBlock(
-                    markdown: data.content,
-                    textStyle: TextStyle(color: baseTheme.userMessageTextColor),
-                    codeBackgroundColor: baseTheme.codeBlockBackgroundColor,
-                    codeTextColor: baseTheme.userMessageTextColor,
-                  );
-                },
-                loading: () => DefaultMarkdownBlock(
-                  markdown: data.content,
-                  textStyle: TextStyle(color: baseTheme.userMessageTextColor),
-                  codeBackgroundColor: baseTheme.codeBlockBackgroundColor,
-                  codeTextColor: baseTheme.userMessageTextColor,
-                ),
-                error: (_, __) => DefaultMarkdownBlock(
-                  markdown: data.content,
-                  textStyle: TextStyle(color: baseTheme.userMessageTextColor),
-                  codeBackgroundColor: baseTheme.codeBlockBackgroundColor,
-                  codeTextColor: baseTheme.userMessageTextColor,
-                ),
-              );
-            },
-          ),
+          backgroundColor: baseTheme.userMessageColor,
+          textColor: baseTheme.userMessageTextColor,
+          borderRadius: baseTheme.messageBorderRadius,
+          padding: baseTheme.messagePadding,
         ),
-        assistantMessage: (context, data) => DefaultMessageWidget(
+        assistantMessage: (context, data) => DefaultMessageBubble(
           data: data,
-          isUser: false,
-          child: Consumer(
-            builder: (context, ref, _) {
-              final conversationId = data.id.split('/')[0];
-              final conversationAsync = ref.watch(conversationProvider(conversationId));
-
-              return conversationAsync.when(
-                data: (conversation) {
-                  if (!conversation.settings.renderMarkdown) {
-                    return SelectableText(
-                      data.content,
-                      style: TextStyle(color: baseTheme.assistantMessageTextColor),
-                    );
-                  }
-
-                  return DefaultMarkdownBlock(
-                    markdown: data.content,
-                    textStyle: TextStyle(color: baseTheme.assistantMessageTextColor),
-                    codeBackgroundColor: baseTheme.codeBlockBackgroundColor,
-                    codeTextColor: baseTheme.assistantMessageTextColor,
-                  );
-                },
-                loading: () => DefaultMarkdownBlock(
-                  markdown: data.content,
-                  textStyle: TextStyle(color: baseTheme.assistantMessageTextColor),
-                  codeBackgroundColor: baseTheme.codeBlockBackgroundColor,
-                  codeTextColor: baseTheme.assistantMessageTextColor,
-                ),
-                error: (_, __) => DefaultMarkdownBlock(
-                  markdown: data.content,
-                  textStyle: TextStyle(color: baseTheme.assistantMessageTextColor),
-                  codeBackgroundColor: baseTheme.codeBlockBackgroundColor,
-                  codeTextColor: baseTheme.assistantMessageTextColor,
-                ),
-              );
-            },
-          ),
+          backgroundColor: baseTheme.assistantMessageColor,
+          textColor: baseTheme.assistantMessageTextColor,
+          borderRadius: baseTheme.messageBorderRadius,
+          padding: baseTheme.messagePadding,
         ),
         messageInput: (context, data) => DefaultMessageInput(
           data: data,
