@@ -592,8 +592,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               providerId: newProviderId,
               modelId: newModelId,
               settings: newSettings,
+              updatedAt: DateTime.now(),
             ),
           );
+      // force a refresh of the conversation
+      ref.invalidate(conversationProvider(widget.conversationId));
     }
   }
 

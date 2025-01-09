@@ -249,7 +249,14 @@ class LocalChatRepository extends ChatRepository {
       where: 'id = ?',
       whereArgs: [conversation.id],
     );
+
+    // Immediately broadcast the update
     _broadcastConversations();
+
+    // Also notify any specific conversation watchers
+    if (_messageControllers.containsKey(conversation.id)) {
+      _broadcastMessages(conversation.id);
+    }
   }
 
   @override
