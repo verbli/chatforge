@@ -20,6 +20,7 @@ import '../data/models.dart';
 import '../data/providers.dart';
 import '../providers/theme_provider.dart';
 import '../themes/chat_theme.dart';
+import 'home_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -222,7 +223,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       'API Keys & Providers': false,
       'Messages & Conversations': false,
       'Theme Settings': false,
-      //'Token Usage Statistics': false,
     };
 
     showDialog(
@@ -287,6 +287,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   // Clear API Keys & Providers
                   if (selectedData['API Keys & Providers'] == true) {
                     await prefs.remove('providers');
+                    // Clear provider state
+                    ref.invalidate(providersProvider);
                   }
 
                   // Clear Messages & Conversations
@@ -294,6 +296,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     final dbService = ref.read(databaseServiceProvider);
                     await dbService.execute('DELETE FROM messages');
                     await dbService.execute('DELETE FROM conversations');
+                    // Clear conversation and message states
+                    ref.invalidate(conversationsProvider);
+                    ref.invalidate(selectedConversationProvider);
                   }
 
                   // Clear Theme Settings
@@ -301,13 +306,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     await prefs.remove('theme_mode');
                     await prefs.remove('theme_color');
                     await prefs.remove('chat_theme_type');
-                  }
-
-                  // Clear Token Usage
-                  if (selectedData['Token Usage Statistics'] == true) {
-                    final dbService = ref.read(databaseServiceProvider);
-                    await dbService.execute('UPDATE messages SET token_count = 0');
-                    await dbService.execute('UPDATE conversations SET total_tokens = 0');
+                    // Reset theme states
+                    ref.invalidate(themeModeProvider);
+                    ref.invalidate(themeColorProvider);
+                    ref.invalidate(chatThemeProvider);
                   }
 
                   if (mounted) {

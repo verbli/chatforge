@@ -93,7 +93,7 @@ class _ConversationListScreenState
               ],
             ),
             floatingActionButton: FloatingActionButton(
-              heroTag: 'newChat',
+              heroTag: widget.isPanel ? 'newChat_panel' : 'newChat_main',
               backgroundColor: chatTheme.styling.primaryColor,
               onPressed: () => _showNewChatDialog(context),
               child: const Icon(Icons.add),
