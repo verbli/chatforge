@@ -201,6 +201,9 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
     _type = provider?.type ?? ProviderType.openAI;
 
     // Only set base URL if it differs from default
+    if (provider == null) {
+      _nameController.text = ModelDefaults.getDefaultProvider(_type)?.name ?? '';
+    }
     final defaultUrl = ModelDefaults.getDefaultProvider(_type)?.baseUrl;
     _baseUrlController = TextEditingController(
         text: provider?.baseUrl != defaultUrl ? provider?.baseUrl : ''
@@ -232,6 +235,7 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
                     setState(() {
                       _type = type;
                       _baseUrlController.text = preset?.baseUrl ?? '';
+                      _nameController.text = preset?.name ?? '';
                     });
                   }
                 },
