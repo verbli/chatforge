@@ -305,60 +305,67 @@ class LocalChatRepository extends ChatRepository {
   }
 
   @override
+  // Regular transactional update
   Future<void> updateMessage(Message message) async {
+    await databaseService.transaction((txn) async {
+      await _updateMessageImpl(message, txn);
+    });
+    _broadcastMessages(message.conversationId);
+    _broadcastConversations();
+  }
+
+  @override
+  // Non-transactional update for streaming
+  Future<void> updateMessageContent(Message message) async {
     try {
-      await databaseService.transaction((txn) async {
-        // Get the old message to calculate token difference
-        final oldMessages = await txn.query(
-          'messages',
-          where: 'id = ?',
-          whereArgs: [message.id],
-        );
-
-        if (oldMessages.isEmpty) {
-          throw Exception('Message not found: ${message.id}');
-        }
-
-        final oldTokenCount = oldMessages.first['token_count'] as int;
-        final tokenDiff = message.tokenCount - oldTokenCount;
-
-        // Update the message
-        await txn.update(
-          'messages',
-          {
-            'content': message.content,
-            'token_count': message.tokenCount,
-          },
-          where: 'id = ?',
-          whereArgs: [message.id],
-        );
-
-        if (tokenDiff != 0) {
-          final List<Map<String, dynamic>> currentTokens = await txn.query(
-            'conversations',
-            columns: ['total_tokens'],
-            where: 'id = ?',
-            whereArgs: [message.conversationId],
-          );
-
-          if (currentTokens.isNotEmpty) {
-            final currentTotal = currentTokens.first['total_tokens'] as int;
-            await txn.update(
-              'conversations',
-              {'total_tokens': currentTotal + tokenDiff},
-              where: 'id = ?',
-              whereArgs: [message.conversationId],
-            );
-          }
-        }
-      });
-
+      await databaseService.update(
+        'messages',
+        {
+          'content': message.content,
+          'token_count': message.tokenCount,
+        },
+        where: 'id = ?',
+        whereArgs: [message.id],
+      );
       _broadcastMessages(message.conversationId);
-      _broadcastConversations();
-    } catch (e, st) {
-      debugPrint('Error updating message: $e');
-      debugPrintStack(stackTrace: st);
+    } catch (e) {
+      debugPrint('Error updating message content: $e');
       rethrow;
+    }
+  }
+
+  // Helper method used by both update methods
+  Future<void> _updateMessageImpl(Message message, DatabaseService db) async {
+    final oldMessages = await db.query(
+      'messages',
+      where: 'id = ?',
+      whereArgs: [message.id],
+    );
+
+    if (oldMessages.isEmpty) {
+      throw Exception('Message not found: ${message.id}');
+    }
+
+    final oldTokenCount = oldMessages.first['token_count'] as int;
+    final tokenDiff = message.tokenCount - oldTokenCount;
+
+    // Update the message
+    await db.update(
+      'messages',
+      {
+        'content': message.content,
+        'token_count': message.tokenCount,
+      },
+      where: 'id = ?',
+      whereArgs: [message.id],
+    );
+
+    if (tokenDiff != 0) {
+      await db.rawUpdate('''
+      UPDATE conversations 
+      SET total_tokens = total_tokens + ?
+      WHERE id = ?
+    ''', [tokenDiff, message.conversationId]);
     }
   }
 

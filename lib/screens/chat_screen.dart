@@ -132,8 +132,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final provider = await ref
         .read(providerRepositoryProvider)
         .getProvider(conversation.providerId);
-    final model =
-        provider.models.firstWhere((m) => m.id == conversation.modelId);
+    final model = provider.models.firstWhere((m) => m.id == conversation.modelId);
 
     setState(() => _isGenerating = true);
     _inputController.clear();
@@ -173,8 +172,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
       final userTokens = await aiService.countTokens(message);
       await ref.read(chatRepositoryProvider).updateMessage(
-            userMessage.copyWith(tokenCount: userTokens),
-          );
+        userMessage.copyWith(tokenCount: userTokens),
+      );
 
       _messageStream = aiService.streamCompletion(
         provider: provider,
@@ -190,8 +189,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             case 'markdown':
             case 'html':
               fullResponse += chunk['content'];
-              tokenCount = tokenCount; // Will be updated later
-              ref.read(chatRepositoryProvider).updateMessage(
+              ref.read(chatRepositoryProvider).updateMessageContent(
                 assistantMessage.copyWith(
                   content: fullResponse,
                   tokenCount: tokenCount,
@@ -208,7 +206,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         },
         onDone: () async {
           if (!mounted) return;
-          // Update final token count
           tokenCount = await aiService.countTokens(fullResponse);
           await ref.read(chatRepositoryProvider).updateMessage(
             assistantMessage.copyWith(

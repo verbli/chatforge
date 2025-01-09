@@ -32,6 +32,7 @@ abstract class ChatRepository extends BaseRepository {
   Stream<List<Message>> watchMessages(String conversationId);
   Future<Message> addMessage(Message message);
   Future<void> updateMessage(Message message);
+  Future<void> updateMessageContent(Message message);
   Future<void> deleteMessage(String id);
 
   Future<Map<String, int>> getTokenUsageByModel();

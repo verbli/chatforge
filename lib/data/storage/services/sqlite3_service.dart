@@ -12,6 +12,7 @@ class SQLite3Service extends DatabaseService {
   final DatabaseDriver driver;
   static const String dbName = 'chatforge.db';
   static const int _currentVersion = 3;
+  bool _inTransaction = false;
 
   SQLite3Service(this.driver);
 
@@ -194,12 +195,21 @@ class SQLite3Service extends DatabaseService {
   }
 
   @override
-  Future<T> transaction<T>(
-      Future<T> Function(DatabaseService txn) action) async {
-    return driver.transaction<T>((txn) async {
-      final transactionService = SQLite3TransactionService(txn);
-      return await action(transactionService);
-    });
+  Future<T> transaction<T>(Future<T> Function(DatabaseService txn) action) async {
+    // Add guard against nested transactions
+    if (_inTransaction) {
+      throw StateError('Nested transactions are not supported');
+    }
+    _inTransaction = true;
+
+    try {
+      return await driver.transaction((txn) async {
+        final transactionService = SQLite3TransactionService(txn);
+        return await action(transactionService);
+      });
+    } finally {
+      _inTransaction = false;
+    }
   }
 
   @override
