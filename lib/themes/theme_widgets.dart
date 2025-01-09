@@ -218,11 +218,11 @@ class _DefaultMessageBubbleState extends State<DefaultMessageBubble> {
         )
             : Consumer(
           builder: (context, ref, _) {
+            // Watch the conversation to rebuild when settings change
             final conversationId = widget.data.id.split('/')[0];
-            final conversationAsync =
-            ref.watch(conversationProvider(conversationId));
+            final conversation = ref.watch(conversationProvider(conversationId));
 
-            return conversationAsync.when(
+            return conversation.when(
               data: (conversation) {
                 if (!conversation.settings.renderMarkdown) {
                   return SelectableText(
@@ -234,14 +234,12 @@ class _DefaultMessageBubbleState extends State<DefaultMessageBubble> {
                 return DefaultMarkdownBlock(
                   markdown: widget.data.content,
                   textStyle: TextStyle(color: widget.textColor),
+                  renderMarkdown: conversation.settings.renderMarkdown,
                   codeBackgroundColor: widget.backgroundColor,
                   codeTextColor: widget.textColor,
                 );
               },
-              loading: () => Text(
-                widget.data.content,
-                style: TextStyle(color: widget.textColor),
-              ),
+              loading: () => const CircularProgressIndicator(),
               error: (_, __) => Text(
                 widget.data.content,
                 style: TextStyle(color: widget.textColor),

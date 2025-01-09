@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:chatforge/data/storage/drivers/sqlite3_driver.dart';
 import 'package:chatforge/data/storage/services/sqlite3_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,11 +40,33 @@ StreamProvider<List<Conversation>>((ref) {
   return ref.watch(chatRepositoryProvider).watchConversations();
 });
 
-final conversationProvider =
-StreamProvider.family<Conversation, String>((ref, id) async* {
-  final conversation =
-  await ref.read(chatRepositoryProvider).getConversation(id);
-  yield conversation;
+final conversationProvider = StreamProvider.family<Conversation, String>((ref, id) {
+  final repository = ref.watch(chatRepositoryProvider);
+
+  // Create a stream that emits whenever the conversation is updated
+  final controller = StreamController<Conversation>();
+
+  // Initial load
+  repository.getConversation(id).then((conversation) {
+    if (controller.hasListener) {
+      controller.add(conversation);
+    }
+  });
+
+  // Watch for updates
+  final subscription = repository.watchConversations().listen((conversations) {
+    final conversation = conversations.firstWhere((c) => c.id == id);
+    if (controller.hasListener) {
+      controller.add(conversation);
+    }
+  });
+
+  ref.onDispose(() {
+    subscription.cancel();
+    controller.close();
+  });
+
+  return controller.stream;
 });
 
 final messagesProvider =
