@@ -427,37 +427,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _editMessage(Message message) async {
-    // Show warning dialog first
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Message'),
-        content: const Text(
-            'Editing this message will remove all subsequent messages and generate a new response. Do you want to continue?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('CONTINUE'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    final newContent = await showDialog<String>(
-      context: context,
-      builder: (context) => _EditMessageDialog(message: message),
-    );
-
-    if (newContent != null && newContent != message.content) {
+    try {
       // Get all messages
-      final messages =
-          ref.read(messagesProvider(widget.conversationId)).value ?? [];
+      final messages = ref.read(messagesProvider(widget.conversationId)).value ?? [];
       final messageIndex = messages.indexWhere((m) => m.id == message.id);
 
       // Delete all subsequent messages
@@ -467,25 +439,35 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         }
       }
 
-      // Update the edited message
-      await ref.read(chatRepositoryProvider).updateMessage(
-            message.copyWith(content: newContent),
-          );
+      // Calculate new token count before updating
+      final aiService = ref.read(aiServiceProvider(
+        await ref.read(providerRepositoryProvider).getProvider(
+          (await ref.read(chatRepositoryProvider).getConversation(widget.conversationId)).providerId,
+        ),
+      ));
 
-      // Get current conversation settings
-      final conversation = await ref
-          .read(chatRepositoryProvider)
-          .getConversation(widget.conversationId);
-      final provider = await ref
-          .read(providerRepositoryProvider)
-          .getProvider(conversation.providerId);
-      final model = provider.models.firstWhere(
-        (m) => m.id == conversation.modelId,
+      final tokenCount = await aiService.countTokens(message.content);
+
+      // Update the edited message with new token count
+      await ref.read(chatRepositoryProvider).updateMessage(
+        message.copyWith(tokenCount: tokenCount),
       );
 
-      // Generate new response
-      setState(() => _isGenerating = true);
-      try {
+      if (message.role == Role.user && mounted) {
+        // Get current conversation settings
+        final conversation = await ref
+            .read(chatRepositoryProvider)
+            .getConversation(widget.conversationId);
+        final provider = await ref
+            .read(providerRepositoryProvider)
+            .getProvider(conversation.providerId);
+        final model = provider.models.firstWhere(
+              (m) => m.id == conversation.modelId,
+        );
+
+        // Generate new response
+        setState(() => _isGenerating = true);
+
         final assistantMessage = Message(
           id: const Uuid().v4(),
           conversationId: widget.conversationId,
@@ -498,44 +480,57 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
         final aiService = ref.read(aiServiceProvider(provider));
         String fullResponse = '';
-        int tokenCount = 0; // Add token counter
+        int tokenCount = 0;
 
-        await for (final chunk in aiService.streamCompletion(
+        _messageStream = aiService
+            .streamCompletion(
           provider: provider,
           model: model,
           settings: conversation.settings,
           messages:
-              ref.read(messagesProvider(widget.conversationId)).value ?? [],
-        )) {
-          // Add the content based on type
-          switch (chunk['type']) {
-            case 'text':
-            case 'markdown':
-            case 'html':
-              fullResponse += chunk['content'];
-              tokenCount = await aiService.countTokens(fullResponse);
-              await ref.read(chatRepositoryProvider).updateMessage(
-                    assistantMessage.copyWith(
-                      content: fullResponse,
-                      tokenCount: tokenCount,
-                    ),
-                  );
-              break;
-            default:
-              debugPrint('Unknown chunk type: ${chunk['type']}');
-          }
-        }
-      } catch (e) {
+          ref.read(messagesProvider(widget.conversationId)).value ?? [],
+        )
+            .listen(
+              (chunk) async {
+            if (!mounted) return;
+
+            switch (chunk['type']) {
+              case 'text':
+              case 'markdown':
+              case 'html':
+                fullResponse += chunk['content'];
+                tokenCount = await aiService.countTokens(fullResponse);
+                await ref.read(chatRepositoryProvider).updateMessage(
+                  assistantMessage.copyWith(
+                    content: fullResponse,
+                    tokenCount: tokenCount,
+                  ),
+                );
+                break;
+              default:
+                debugPrint('Unknown chunk type: ${chunk['type']}');
+            }
+          },
+          onDone: () async {
+            if (!mounted) return;
+            setState(() => _isGenerating = false);
+            _messageStream = null;
+          },
+          onError: (error) {
+            debugPrint('Error in stream: $error');
+            setState(() => _isGenerating = false);
+            _messageStream = null;
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
-      } finally {
-        setState(() => _isGenerating = false);
-        // Force refresh of usage statistics
-        ref.read(tokenUsageUpdater.notifier).state++;
       }
     }
   }
