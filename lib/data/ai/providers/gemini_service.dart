@@ -2,6 +2,7 @@
 
 import 'package:flutter_gemini/flutter_gemini.dart';
 
+import '../../../utils/word_streamer.dart';
 import '../../models.dart';
 import '../ai_service.dart';
 
@@ -99,14 +100,10 @@ class GeminiService extends AIService {
       }
 
       // Make the streaming request
-      // Create generation config with safety settings
       final config = GenerationConfig(
         temperature: settings.temperature,
         topP: settings.topP,
         maxOutputTokens: settings.maxResponseTokens,
-        // Library does not support these at the moment
-        //presencePenalty: settings.presencePenalty,
-        //frequencyPenalty: settings.frequencyPenalty,
       );
 
       final response = Gemini.instance.streamChat(history,
@@ -130,17 +127,6 @@ class GeminiService extends AIService {
           // Handle code blocks
           if (content.contains('```')) {
             if (!isCodeBlock) {
-              // Starting a code block - yield accumulated text first
-              if (accumulatedText.isNotEmpty) {
-                await for (final chunk in processStreamingChunk(
-                  content: accumulatedText,
-                  enableWordByWordStreaming: settings.enableWordByWordStreaming,
-                  streamingWordDelay: settings.streamingWordDelay,
-                )) {
-                  yield chunk;
-                }
-                accumulatedText = '';
-              }
               isCodeBlock = true;
               currentBlock = content;
             } else {
@@ -157,16 +143,6 @@ class GeminiService extends AIService {
 
           // Handle HTML blocks
           if (!isHtmlBlock && content.contains('<') && content.contains('>')) {
-            if (accumulatedText.isNotEmpty) {
-              await for (final chunk in processStreamingChunk(
-                content: accumulatedText,
-                enableWordByWordStreaming: settings.enableWordByWordStreaming,
-                streamingWordDelay: settings.streamingWordDelay,
-              )) {
-                yield chunk;
-              }
-              accumulatedText = '';
-            }
             isHtmlBlock = true;
             currentBlock = content;
             continue;
@@ -183,17 +159,25 @@ class GeminiService extends AIService {
             continue;
           }
 
-          // Accumulate blocks or regular text
+          // Accumulate blocks or stream text
           if (isCodeBlock || isHtmlBlock) {
             currentBlock += content;
           } else {
-            // For regular text, stream word by word
-            await for (final chunk in processStreamingChunk(
-              content: content,
-              enableWordByWordStreaming: settings.enableWordByWordStreaming,
-              streamingWordDelay: settings.streamingWordDelay,
-            )) {
-              yield chunk;
+            if (settings.enableWordByWordStreaming) {
+              await for (final word in WordStreamer.streamWords(
+                content,
+                settings.streamingWordDelay,
+              )) {
+                yield {
+                  'type': 'text',
+                  'content': word,
+                };
+              }
+            } else {
+              yield {
+                'type': 'text',
+                'content': content,
+              };
             }
           }
         } catch (e) {
@@ -204,16 +188,7 @@ class GeminiService extends AIService {
         }
       }
 
-      // Handle any remaining content
-      if (accumulatedText.isNotEmpty) {
-        await for (final chunk in processStreamingChunk(
-          content: accumulatedText,
-          enableWordByWordStreaming: settings.enableWordByWordStreaming,
-          streamingWordDelay: settings.streamingWordDelay,
-        )) {
-          yield chunk;
-        }
-      }
+      // Handle any remaining block content
       if (currentBlock.isNotEmpty) {
         yield {
           'type': isCodeBlock ? 'markdown' : (isHtmlBlock ? 'html' : 'text'),
