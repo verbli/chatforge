@@ -1064,24 +1064,16 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                         setState(() {
                           _selectedProviderId = id;
                           _selectedModelId = provider.models.isNotEmpty
-                              ? provider.models
-                                  .firstWhere((m) => m.isEnabled,
-                                      orElse: () => provider.models.first)
-                                  .id
+                              ? provider.models.firstWhere((m) => m.isEnabled,
+                              orElse: () => provider.models.first).id
                               : null;
-                          _settings = provider.models.isNotEmpty
-                              ? provider.models
-                                  .firstWhere((m) => m.id == _selectedModelId,
-                                      orElse: () => provider.models.first)
-                                  .settings
-                              : const ModelSettings(
-                                  temperature: 1.0,
-                                  topP: 1.0,
-                                  frequencyPenalty: 0.0,
-                                  presencePenalty: 0.0,
-                                  systemPrompt: '',
-                                  maxContextTokens: 0,
-                                );
+                          if (_selectedModelId != null) {
+                            final model = provider.models.firstWhere((m) => m.id == _selectedModelId);
+                            // Preserve system prompt while updating other settings
+                            _settings = model.settings.copyWith(
+                              systemPrompt: _settings.systemPrompt,
+                            );
+                          }
                         });
                       }
                     },
@@ -1113,7 +1105,9 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                               provider.models.firstWhere((m) => m.id == id);
                           setState(() {
                             _selectedModelId = id;
-                            _settings = model.settings;
+                            _settings = model.settings.copyWith(
+                              systemPrompt: _settings.systemPrompt,
+                            );
                           });
                         }
                       },
