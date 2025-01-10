@@ -91,6 +91,8 @@ class ModelSettings with _$ModelSettings {
     @Default(true) bool alwaysKeepSystemPrompt,
     @Default(false) bool keepFirstMessage,
     @Default(true) bool renderMarkdown,
+    @Default(true) bool enableWordByWordStreaming,
+    @Default(10) int streamingWordDelay,
   }) = _ModelSettings;
 
   factory ModelSettings.fromJson(Map<String, dynamic> json) =>

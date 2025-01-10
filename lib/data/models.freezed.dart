@@ -844,6 +844,8 @@ mixin _$ModelSettings {
   bool get alwaysKeepSystemPrompt => throw _privateConstructorUsedError;
   bool get keepFirstMessage => throw _privateConstructorUsedError;
   bool get renderMarkdown => throw _privateConstructorUsedError;
+  bool get enableWordByWordStreaming => throw _privateConstructorUsedError;
+  int get streamingWordDelay => throw _privateConstructorUsedError;
 
   /// Serializes this ModelSettings to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -872,7 +874,9 @@ abstract class $ModelSettingsCopyWith<$Res> {
       int maxResponseTokens,
       bool alwaysKeepSystemPrompt,
       bool keepFirstMessage,
-      bool renderMarkdown});
+      bool renderMarkdown,
+      bool enableWordByWordStreaming,
+      int streamingWordDelay});
 }
 
 /// @nodoc
@@ -901,6 +905,8 @@ class _$ModelSettingsCopyWithImpl<$Res, $Val extends ModelSettings>
     Object? alwaysKeepSystemPrompt = null,
     Object? keepFirstMessage = null,
     Object? renderMarkdown = null,
+    Object? enableWordByWordStreaming = null,
+    Object? streamingWordDelay = null,
   }) {
     return _then(_value.copyWith(
       temperature: null == temperature
@@ -947,6 +953,14 @@ class _$ModelSettingsCopyWithImpl<$Res, $Val extends ModelSettings>
           ? _value.renderMarkdown
           : renderMarkdown // ignore: cast_nullable_to_non_nullable
               as bool,
+      enableWordByWordStreaming: null == enableWordByWordStreaming
+          ? _value.enableWordByWordStreaming
+          : enableWordByWordStreaming // ignore: cast_nullable_to_non_nullable
+              as bool,
+      streamingWordDelay: null == streamingWordDelay
+          ? _value.streamingWordDelay
+          : streamingWordDelay // ignore: cast_nullable_to_non_nullable
+              as int,
     ) as $Val);
   }
 }
@@ -970,7 +984,9 @@ abstract class _$$ModelSettingsImplCopyWith<$Res>
       int maxResponseTokens,
       bool alwaysKeepSystemPrompt,
       bool keepFirstMessage,
-      bool renderMarkdown});
+      bool renderMarkdown,
+      bool enableWordByWordStreaming,
+      int streamingWordDelay});
 }
 
 /// @nodoc
@@ -997,6 +1013,8 @@ class __$$ModelSettingsImplCopyWithImpl<$Res>
     Object? alwaysKeepSystemPrompt = null,
     Object? keepFirstMessage = null,
     Object? renderMarkdown = null,
+    Object? enableWordByWordStreaming = null,
+    Object? streamingWordDelay = null,
   }) {
     return _then(_$ModelSettingsImpl(
       temperature: null == temperature
@@ -1043,6 +1061,14 @@ class __$$ModelSettingsImplCopyWithImpl<$Res>
           ? _value.renderMarkdown
           : renderMarkdown // ignore: cast_nullable_to_non_nullable
               as bool,
+      enableWordByWordStreaming: null == enableWordByWordStreaming
+          ? _value.enableWordByWordStreaming
+          : enableWordByWordStreaming // ignore: cast_nullable_to_non_nullable
+              as bool,
+      streamingWordDelay: null == streamingWordDelay
+          ? _value.streamingWordDelay
+          : streamingWordDelay // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -1063,7 +1089,9 @@ class _$ModelSettingsImpl
       this.maxResponseTokens = 4096,
       this.alwaysKeepSystemPrompt = true,
       this.keepFirstMessage = false,
-      this.renderMarkdown = true});
+      this.renderMarkdown = true,
+      this.enableWordByWordStreaming = true,
+      this.streamingWordDelay = 50});
 
   factory _$ModelSettingsImpl.fromJson(Map<String, dynamic> json) =>
       _$$ModelSettingsImplFromJson(json);
@@ -1100,10 +1128,16 @@ class _$ModelSettingsImpl
   @override
   @JsonKey()
   final bool renderMarkdown;
+  @override
+  @JsonKey()
+  final bool enableWordByWordStreaming;
+  @override
+  @JsonKey()
+  final int streamingWordDelay;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'ModelSettings(temperature: $temperature, topP: $topP, presencePenalty: $presencePenalty, frequencyPenalty: $frequencyPenalty, systemPrompt: $systemPrompt, maxContextTokens: $maxContextTokens, truncationStrategy: $truncationStrategy, maxResponseTokens: $maxResponseTokens, alwaysKeepSystemPrompt: $alwaysKeepSystemPrompt, keepFirstMessage: $keepFirstMessage, renderMarkdown: $renderMarkdown)';
+    return 'ModelSettings(temperature: $temperature, topP: $topP, presencePenalty: $presencePenalty, frequencyPenalty: $frequencyPenalty, systemPrompt: $systemPrompt, maxContextTokens: $maxContextTokens, truncationStrategy: $truncationStrategy, maxResponseTokens: $maxResponseTokens, alwaysKeepSystemPrompt: $alwaysKeepSystemPrompt, keepFirstMessage: $keepFirstMessage, renderMarkdown: $renderMarkdown, enableWordByWordStreaming: $enableWordByWordStreaming, streamingWordDelay: $streamingWordDelay)';
   }
 
   @override
@@ -1122,7 +1156,10 @@ class _$ModelSettingsImpl
       ..add(
           DiagnosticsProperty('alwaysKeepSystemPrompt', alwaysKeepSystemPrompt))
       ..add(DiagnosticsProperty('keepFirstMessage', keepFirstMessage))
-      ..add(DiagnosticsProperty('renderMarkdown', renderMarkdown));
+      ..add(DiagnosticsProperty('renderMarkdown', renderMarkdown))
+      ..add(DiagnosticsProperty(
+          'enableWordByWordStreaming', enableWordByWordStreaming))
+      ..add(DiagnosticsProperty('streamingWordDelay', streamingWordDelay));
   }
 
   @override
@@ -1150,7 +1187,12 @@ class _$ModelSettingsImpl
             (identical(other.keepFirstMessage, keepFirstMessage) ||
                 other.keepFirstMessage == keepFirstMessage) &&
             (identical(other.renderMarkdown, renderMarkdown) ||
-                other.renderMarkdown == renderMarkdown));
+                other.renderMarkdown == renderMarkdown) &&
+            (identical(other.enableWordByWordStreaming,
+                    enableWordByWordStreaming) ||
+                other.enableWordByWordStreaming == enableWordByWordStreaming) &&
+            (identical(other.streamingWordDelay, streamingWordDelay) ||
+                other.streamingWordDelay == streamingWordDelay));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1167,7 +1209,9 @@ class _$ModelSettingsImpl
       maxResponseTokens,
       alwaysKeepSystemPrompt,
       keepFirstMessage,
-      renderMarkdown);
+      renderMarkdown,
+      enableWordByWordStreaming,
+      streamingWordDelay);
 
   /// Create a copy of ModelSettings
   /// with the given fields replaced by the non-null parameter values.
@@ -1197,7 +1241,9 @@ abstract class _ModelSettings implements ModelSettings {
       final int maxResponseTokens,
       final bool alwaysKeepSystemPrompt,
       final bool keepFirstMessage,
-      final bool renderMarkdown}) = _$ModelSettingsImpl;
+      final bool renderMarkdown,
+      final bool enableWordByWordStreaming,
+      final int streamingWordDelay}) = _$ModelSettingsImpl;
 
   factory _ModelSettings.fromJson(Map<String, dynamic> json) =
       _$ModelSettingsImpl.fromJson;
@@ -1224,6 +1270,10 @@ abstract class _ModelSettings implements ModelSettings {
   bool get keepFirstMessage;
   @override
   bool get renderMarkdown;
+  @override
+  bool get enableWordByWordStreaming;
+  @override
+  int get streamingWordDelay;
 
   /// Create a copy of ModelSettings
   /// with the given fields replaced by the non-null parameter values.

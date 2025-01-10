@@ -109,7 +109,6 @@ class AnthropicService extends AIService {
         );
 
         if (delta == null || delta!.isEmpty) continue;
-
         final content = delta!;
 
         try {
@@ -118,10 +117,13 @@ class AnthropicService extends AIService {
             if (!isCodeBlock) {
               // Starting a code block - yield accumulated text first
               if (accumulatedText.isNotEmpty) {
-                yield {
-                  'type': 'text',
-                  'content': accumulatedText,
-                };
+                await for (final chunk in processStreamingChunk(
+                  content: accumulatedText,
+                  enableWordByWordStreaming: settings.enableWordByWordStreaming,
+                  streamingWordDelay: settings.streamingWordDelay,
+                )) {
+                  yield chunk;
+                }
                 accumulatedText = '';
               }
               isCodeBlock = true;
@@ -141,10 +143,13 @@ class AnthropicService extends AIService {
           // Handle HTML blocks
           if (!isHtmlBlock && content.contains('<') && content.contains('>')) {
             if (accumulatedText.isNotEmpty) {
-              yield {
-                'type': 'text',
-                'content': accumulatedText,
-              };
+              await for (final chunk in processStreamingChunk(
+                content: accumulatedText,
+                enableWordByWordStreaming: settings.enableWordByWordStreaming,
+                streamingWordDelay: settings.streamingWordDelay,
+              )) {
+                yield chunk;
+              }
               accumulatedText = '';
             }
             isHtmlBlock = true;
@@ -167,26 +172,13 @@ class AnthropicService extends AIService {
           if (isCodeBlock || isHtmlBlock) {
             currentBlock += content;
           } else {
-            // For regular text, we'll accumulate it and add proper spacing
-            if (content.startsWith(' ') ||
-                accumulatedText.endsWith(' ') ||
-                accumulatedText.isEmpty ||
-                content.isEmpty) {
-              accumulatedText += content;
-            } else {
-              accumulatedText += ' $content';
-            }
-
-            // If we see certain markers, yield the accumulated text
-            if (content.endsWith('\n') ||
-                content.endsWith('.') ||
-                content.endsWith('?') ||
-                content.endsWith('!')) {
-              yield {
-                'type': 'text',
-                'content': accumulatedText,
-              };
-              accumulatedText = '';
+            // For regular text, stream word by word
+            await for (final chunk in processStreamingChunk(
+              content: content,
+              enableWordByWordStreaming: settings.enableWordByWordStreaming,
+              streamingWordDelay: settings.streamingWordDelay,
+            )) {
+              yield chunk;
             }
           }
         } catch (e) {
@@ -197,12 +189,15 @@ class AnthropicService extends AIService {
         }
       }
 
-      // Yield any remaining block content
+      // Handle any remaining content
       if (accumulatedText.isNotEmpty) {
-        yield {
-          'type': 'text',
-          'content': accumulatedText,
-        };
+        await for (final chunk in processStreamingChunk(
+          content: accumulatedText,
+          enableWordByWordStreaming: settings.enableWordByWordStreaming,
+          streamingWordDelay: settings.streamingWordDelay,
+        )) {
+          yield chunk;
+        }
       }
       if (currentBlock.isNotEmpty) {
         yield {

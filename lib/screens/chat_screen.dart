@@ -414,7 +414,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               value: 'conversation',
               child: Row(
                 children: [
-                  Icon(Icons.chat_bubble_outlined,
+                  Icon(Icons.chat_bubble_outline,
                       color: theme.styling.primaryColor),
                   const SizedBox(width: 8),
                   const Text('Conversation Settings'),
@@ -1121,6 +1121,39 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                     ),
                   ],
                   const SizedBox(height: 16),
+                  if (_selectedModelId != null) ...[
+                    const SizedBox(height: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Text(
+                              'System Prompt',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            _HelpIcon(
+                              title: 'System Prompt',
+                              content:
+                              'Sets the behavior, tone, and role of the AI, ensuring its responses align with the desired context or task. For example, it can instruct the model to act as a technical expert or a friendly assistant.',
+                            ),
+                          ],
+                        ),
+                        TextFormField(
+                          initialValue: _settings.systemPrompt,
+                          decoration: const InputDecoration(
+                            hintText: 'Instructions for the AI',
+                            border: OutlineInputBorder(),
+                          ),
+                          maxLines: 3,
+                          onChanged: (value) => setState(() =>
+                          _settings = _settings.copyWith(systemPrompt: value)
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 16),
                   SwitchListTile(
                     title: Text('Advanced Settings',
                         style: TextStyle(
@@ -1256,30 +1289,6 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                             ],
                           ),
                         ],
-                        Row(
-                          children: [
-                            const Expanded(
-                              child: Text('System Prompt'),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: TextFormField(
-                                initialValue: _settings.systemPrompt,
-                                decoration: const InputDecoration(
-                                  hintText: 'Instructions for the AI',
-                                ),
-                                maxLines: 3,
-                                onChanged: (value) => setState(() => _settings =
-                                    _settings.copyWith(systemPrompt: value)),
-                              ),
-                            ),
-                            const _HelpIcon(
-                              title: 'System Prompt',
-                              content:
-                                  'Sets the behavior, tone, and role of the AI, ensuring its responses align with the desired context or task. For example, it can instruct the model to act as a technical expert or a friendly assistant.',
-                            ),
-                          ],
-                        ),
                         SwitchListTile(
                           title: const Text('Render Markdown'),
                           subtitle: const Text('Format messages with markdown styling'),
@@ -1290,6 +1299,37 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                             });
                           },
                         ),
+                        SwitchListTile(
+                          title: const Text('Word-by-Word Streaming'),
+                          subtitle: const Text('Stream response word by word for a more natural feel'),
+                          value: _settings.enableWordByWordStreaming,
+                          onChanged: (value) {
+                            setState(() {
+                              _settings = _settings.copyWith(enableWordByWordStreaming: value);
+                            });
+                          },
+                        ),
+                        if (_settings.enableWordByWordStreaming)
+                          SettingsRow(
+                            label: 'Streaming Delay',
+                            value: _settings.streamingWordDelay.toDouble(),
+                            min: 0,
+                            max: 200,
+                            divisions: 20,
+                            vertical: true,
+                            precision: 0,
+                            controller: TextEditingController(
+                              text: _settings.streamingWordDelay.toString(),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _settings = _settings.copyWith(
+                                  streamingWordDelay: value.round(),
+                                );
+                              });
+                            },
+                            helpText: 'Delay between words in milliseconds. Lower values mean faster streaming.',
+                          ),
                       ],
                     ),
                   ],

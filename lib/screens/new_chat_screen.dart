@@ -241,6 +241,41 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                     ),
                   ],
                   const SizedBox(height: 16),
+                  if (_selectedModelId != null) ...[
+                    const SizedBox(height: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'System Prompt',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.help_outline),
+                              onPressed: () => _showHelpDialog(
+                                'System Prompt',
+                                'Sets the behavior, tone, and role of the AI, ensuring its responses align with the desired context or task. For example, it can instruct the model to act as a technical expert or a friendly assistant.',
+                              ),
+                            ),
+                          ],
+                        ),
+                        TextFormField(
+                          initialValue: _settings.systemPrompt,
+                          decoration: const InputDecoration(
+                            hintText: 'Instructions for the AI',
+                            border: OutlineInputBorder(),
+                          ),
+                          maxLines: 3,
+                          onChanged: (value) => setState(() =>
+                          _settings = _settings.copyWith(systemPrompt: value)
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 16),
                   SwitchListTile(
                     title: Text('Advanced Settings', style: TextStyle(
                       color: _selectedProviderId == null ? Colors.grey : null,
@@ -298,32 +333,82 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                             helpText: 'Reduces the likelihood of repeating frequently used tokens in a response, encouraging diversity in phrasing; it ranges from -2 to 2, with higher values penalizing repetition more strongly.',
                           ),
                         ],
-                        Row(
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Formatting Options',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+
+                    SwitchListTile(
+                      title: const Text('Render Markdown'),
+                      subtitle: const Text('Format messages with markdown styling'),
+                      value: _settings.renderMarkdown,
+                      onChanged: (value) {
+                        setState(() {
+                          _settings = _settings.copyWith(renderMarkdown: value);
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+                    const Text('Streaming Options',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+
+                    SwitchListTile(
+                      title: const Text('Word-by-Word Streaming'),
+                      subtitle: const Text('Stream response one word at a time'),
+                      value: _settings.enableWordByWordStreaming,
+                      onChanged: (value) {
+                        setState(() {
+                          _settings = _settings.copyWith(
+                            enableWordByWordStreaming: value,
+                          );
+                        });
+                      },
+                    ),
+
+                    if (_settings.enableWordByWordStreaming) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
                           children: [
-                            Expanded(
+                            const Expanded(
+                              child: Text('Word Delay (ms)'),
+                            ),
+                            SizedBox(
+                              width: 100,
                               child: TextFormField(
-                                initialValue: _settings.systemPrompt,
+                                initialValue: _settings.streamingWordDelay.toString(),
                                 decoration: const InputDecoration(
-                                  labelText: 'System Prompt',
-                                  helperText: 'Instructions for the AI',
+                                  hintText: '0-200',
                                 ),
-                                maxLines: 3,
-                                onChanged: (value) =>
-                                    setState(() =>
-                                    _settings = _settings.copyWith(systemPrompt: value)),
+                                keyboardType: TextInputType.number,
+                                onChanged: (value) {
+                                  final delay = int.tryParse(value);
+                                  if (delay != null) {
+                                    setState(() {
+                                      _settings = _settings.copyWith(
+                                        streamingWordDelay: delay.clamp(0, 200),
+                                      );
+                                    });
+                                  }
+                                },
                               ),
                             ),
                             IconButton(
                               icon: const Icon(Icons.help_outline),
                               onPressed: () => _showHelpDialog(
-                                'System Prompt',
-                                'Sets the behavior, tone, and role of the AI, ensuring its responses align with the desired context or task. For example, it can instruct the model to act as a technical expert or a friendly assistant.',
+                                'Word Delay',
+                                'The delay in milliseconds between each word when streaming responses. '
+                                    'Higher values create a more natural reading effect but slower overall response.',
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ],
                 ],
               );

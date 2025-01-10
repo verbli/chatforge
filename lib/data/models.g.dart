@@ -91,6 +91,9 @@ _$ModelSettingsImpl _$$ModelSettingsImplFromJson(Map<String, dynamic> json) =>
       alwaysKeepSystemPrompt: json['alwaysKeepSystemPrompt'] as bool? ?? true,
       keepFirstMessage: json['keepFirstMessage'] as bool? ?? false,
       renderMarkdown: json['renderMarkdown'] as bool? ?? true,
+      enableWordByWordStreaming:
+          json['enableWordByWordStreaming'] as bool? ?? true,
+      streamingWordDelay: (json['streamingWordDelay'] as num?)?.toInt() ?? 50,
     );
 
 Map<String, dynamic> _$$ModelSettingsImplToJson(_$ModelSettingsImpl instance) =>
@@ -107,6 +110,8 @@ Map<String, dynamic> _$$ModelSettingsImplToJson(_$ModelSettingsImpl instance) =>
       'alwaysKeepSystemPrompt': instance.alwaysKeepSystemPrompt,
       'keepFirstMessage': instance.keepFirstMessage,
       'renderMarkdown': instance.renderMarkdown,
+      'enableWordByWordStreaming': instance.enableWordByWordStreaming,
+      'streamingWordDelay': instance.streamingWordDelay,
     };
 
 const _$TruncationStrategyEnumMap = {
