@@ -2,6 +2,7 @@
 
 import 'package:uuid/uuid.dart';
 
+import '../../utils/word_streamer.dart';
 import '../models.dart';
 import 'providers/anthropic_service.dart';
 import 'providers/gemini_service.dart';
@@ -84,6 +85,21 @@ abstract class AIService {
     );
 
     return response.trim();
+  }
+
+  Stream<Map<String, dynamic>> processStreamingChunk({
+    required String content,
+    required bool enableWordByWordStreaming,
+    required int streamingWordDelay,
+  }) async* {
+    if (!enableWordByWordStreaming) {
+      yield {'type': 'text', 'content': content};
+      return;
+    }
+
+    await for (final word in WordStreamer.streamWords(content, streamingWordDelay)) {
+      yield {'type': 'text', 'content': word};
+    }
   }
 }
 

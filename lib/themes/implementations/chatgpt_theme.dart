@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../base_theme.dart';
+import '../syntax_theme.dart';
 
 class ChatGPTTheme extends BaseTheme {
   ChatGPTTheme({super.isDark = true});
@@ -51,4 +52,7 @@ class ChatGPTTheme extends BaseTheme {
 
   @override
   Color get codeBlockHeaderColor => isDark ? const Color(0xFF2D2D2D) : const Color(0xFFf9f9f9);
+
+  @override
+  SyntaxTheme get syntaxTheme => SyntaxTheme.vs;
 }

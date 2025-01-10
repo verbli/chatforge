@@ -105,6 +105,7 @@ class OpenAIService extends AIService {
       String currentBlock = '';
       bool isCodeBlock = false;
       bool isHtmlBlock = false;
+      String accumulatedText = '';
 
       await for (final chunk in response.data!.stream) {
         final lines = utf8.decode(chunk).split('\n');
@@ -115,7 +116,7 @@ class OpenAIService extends AIService {
               final data = json.decode(line.substring(6));
               final content = data['choices'][0]['delta']['content'];
               if (content != null) {
-                // Check for code blocks and HTML content
+                // Handle special blocks
                 if (content.contains('```') && !isCodeBlock) {
                   isCodeBlock = true;
                   currentBlock = content;
@@ -141,10 +142,14 @@ class OpenAIService extends AIService {
                 } else if (isCodeBlock || isHtmlBlock) {
                   currentBlock += content;
                 } else {
-                  yield {
-                    'type': 'text',
-                    'content': content,
-                  };
+                  // Handle regular text with word streaming
+                  await for (final chunk in processStreamingChunk(
+                    content: content,
+                    enableWordByWordStreaming: settings.enableWordByWordStreaming,
+                    streamingWordDelay: settings.streamingWordDelay,
+                  )) {
+                    yield chunk;
+                  }
                 }
               }
             } catch (e) {
