@@ -6,6 +6,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as markdown;
 import '../../core/config.dart';
 import '../chat_theme.dart';
+import '../syntax_theme.dart';
 import '../theme_widgets.dart';
 
 
@@ -60,4 +61,7 @@ class GeminiTheme extends BaseTheme {
 
   @override
   Color get codeBlockHeaderColor => isDark ? const Color(0xFF282a2c) : const Color(0xFFf0f4f9);
+
+  @override
+  SyntaxTheme get syntaxTheme => SyntaxTheme.vs;
 }

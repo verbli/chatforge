@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../base_theme.dart';
+import '../syntax_theme.dart';
 
 class ClaudeTheme extends BaseTheme {
   ClaudeTheme({super.isDark = true});
@@ -51,4 +52,7 @@ class ClaudeTheme extends BaseTheme {
 
   @override
   Color get codeBlockHeaderColor => isDark ? const Color(0xFF282c34) : const Color(0xFFe8e6dc);
+
+  @override
+  SyntaxTheme get syntaxTheme => SyntaxTheme.vs;
 }

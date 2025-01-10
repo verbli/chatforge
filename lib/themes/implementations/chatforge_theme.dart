@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import '../base_theme.dart';
+import '../syntax_theme.dart';
 
 class ChatForgeTheme extends BaseTheme {
   final Color themeColor;
@@ -51,8 +52,11 @@ class ChatForgeTheme extends BaseTheme {
   Color get buttonTextColor => Colors.white;
 
   @override
-  Color get codeBlockBackgroundColor => isDark ? Colors.black : Colors.grey[100]!;
+  Color get codeBlockBackgroundColor => Colors.black;
 
   @override
   Color get codeBlockHeaderColor => isDark ? Colors.grey[900]! : Colors.grey[200]!;
+
+  @override
+  SyntaxTheme get syntaxTheme => SyntaxTheme.vs;
 }

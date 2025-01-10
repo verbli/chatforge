@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_highlighter/flutter_highlighter.dart';
 import 'package:flutter_highlighter/themes/github.dart';
+import 'package:flutter_highlighter/themes/monokai.dart';
 import 'package:markdown/markdown.dart' as markdown;
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +16,7 @@ import 'implementations/chatforge_theme.dart';
 import 'implementations/chatgpt_theme.dart';
 import 'implementations/claude_theme.dart';
 import 'implementations/gemini_theme.dart';
+import 'syntax_theme.dart';
 import 'theme_widgets.dart';
 
 enum ChatThemeType {
@@ -38,7 +40,21 @@ class ChatTheme {
     required this.styling,
   });
 
-  factory ChatTheme.withColor(ChatThemeType type, Color color, {bool dark = false}) {
+  ChatTheme copyWith({
+    ChatThemeType? type,
+    ThemeData? themeData,
+    ChatThemeWidgets? widgets,
+    ChatThemeStyling? styling,
+  }) {
+    return ChatTheme(
+      type: type ?? this.type,
+      themeData: themeData ?? this.themeData,
+      widgets: widgets ?? this.widgets,
+      styling: styling ?? this.styling,
+    );
+  }
+
+  factory ChatTheme.withColor(ChatThemeType type, Color color, {bool dark = false, SyntaxTheme? syntaxTheme}) {
     BaseTheme baseTheme;
 
     switch (type) {
@@ -110,6 +126,7 @@ class ChatTheme {
         containerPadding: baseTheme.containerPadding,
         alignUserMessagesRight: baseTheme.alignUserMessagesRight,
         showAvatars: baseTheme.showAvatars,
+        syntaxTheme: syntaxTheme ?? baseTheme.syntaxTheme,
       ),
     );
   }
@@ -162,6 +179,8 @@ class ChatThemeStyling {
   final bool alignUserMessagesRight;
   final bool showAvatars;
 
+  final SyntaxTheme syntaxTheme;
+
   const ChatThemeStyling(this.buttonColor, this.buttonTextColor, {
     required this.primaryColor,
     required this.backgroundColor,
@@ -178,7 +197,50 @@ class ChatThemeStyling {
     required this.containerPadding,
     required this.alignUserMessagesRight,
     required this.showAvatars,
+    required this.syntaxTheme,
   });
+
+  ChatThemeStyling copyWith({
+    Color? primaryColor,
+    Color? backgroundColor,
+    Color? userMessageColor,
+    Color? assistantMessageColor,
+    Color? userMessageTextColor,
+    Color? assistantMessageTextColor,
+    Color? buttonColor,
+    Color? buttonTextColor,
+    TextStyle? userMessageStyle,
+    TextStyle? assistantMessageStyle,
+    BorderRadius? messageBorderRadius,
+    EdgeInsets? messagePadding,
+    double? messageSpacing,
+    double? maxWidth,
+    EdgeInsets? containerPadding,
+    bool? alignUserMessagesRight,
+    bool? showAvatars,
+    SyntaxTheme? syntaxTheme,
+  }) {
+    return ChatThemeStyling(
+      buttonColor ?? this.buttonColor,
+      buttonTextColor ?? this.buttonTextColor,
+      primaryColor: primaryColor ?? this.primaryColor,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      userMessageColor: userMessageColor ?? this.userMessageColor,
+      assistantMessageColor: assistantMessageColor ?? this.assistantMessageColor,
+      userMessageTextColor: userMessageTextColor ?? this.userMessageTextColor,
+      assistantMessageTextColor: assistantMessageTextColor ?? this.assistantMessageTextColor,
+      userMessageStyle: userMessageStyle ?? this.userMessageStyle,
+      assistantMessageStyle: assistantMessageStyle ?? this.assistantMessageStyle,
+      messageBorderRadius: messageBorderRadius ?? this.messageBorderRadius,
+      messagePadding: messagePadding ?? this.messagePadding,
+      messageSpacing: messageSpacing ?? this.messageSpacing,
+      maxWidth: maxWidth ?? this.maxWidth,
+      containerPadding: containerPadding ?? this.containerPadding,
+      alignUserMessagesRight: alignUserMessagesRight ?? this.alignUserMessagesRight,
+      showAvatars: showAvatars ?? this.showAvatars,
+      syntaxTheme: syntaxTheme ?? this.syntaxTheme,
+    );
+  }
 }
 
 
@@ -186,6 +248,7 @@ class ChatThemeNotifier extends StateNotifier<ChatTheme> {
   static const _themeTypeKey = 'chat_theme_type';
   static const themeColorKey = 'theme_color';
   static const _themeModeKey = 'theme_mode';
+  static const _syntaxThemeKey = 'syntax_theme';
   final Ref ref;
 
   ChatThemeNotifier(this.ref) : super(_createInitialTheme(false)) {
@@ -198,6 +261,7 @@ class ChatThemeNotifier extends StateNotifier<ChatTheme> {
       ChatThemeType.chatforge,
       Colors.teal,
       dark: isDark,
+      syntaxTheme: SyntaxTheme.defaultForBrightness(isDark ? Brightness.dark : Brightness.light),
     );
   }
 
@@ -220,7 +284,25 @@ class ChatThemeNotifier extends StateNotifier<ChatTheme> {
     // Get dark mode from provider
     final isDark = ref.read(isDarkModeProvider);
 
-    state = ChatTheme.withColor(type, color, dark: isDark);
+    // Load syntax theme
+    final syntaxThemeName = prefs.getString(_syntaxThemeKey);
+    final syntaxTheme = syntaxThemeName != null
+        ? SyntaxTheme.values.firstWhere(
+          (t) => t.name == syntaxThemeName,
+      orElse: () => SyntaxTheme.defaultForBrightness(isDark ? Brightness.dark : Brightness.light),
+    )
+        : SyntaxTheme.defaultForBrightness(isDark ? Brightness.dark : Brightness.light);
+
+    state = ChatTheme.withColor(type, color, dark: isDark, syntaxTheme: syntaxTheme);
+  }
+
+  Future<void> setSyntaxTheme(SyntaxTheme theme) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_syntaxThemeKey, theme.name);
+
+    state = state.copyWith(
+      styling: state.styling.copyWith(syntaxTheme: theme),
+    );
   }
 
   Future<void> setTheme(ChatThemeType type) async {
@@ -233,9 +315,9 @@ class ChatThemeNotifier extends StateNotifier<ChatTheme> {
     // If setting to ChatForge theme, use the saved color
     if (type == ChatThemeType.chatforge) {
       final colorValue = prefs.getInt(themeColorKey) ?? Colors.teal.value;
-      state = ChatTheme.withColor(type, Color(colorValue), dark: isDark);
+      state = ChatTheme.withColor(type, Color(colorValue), dark: isDark, syntaxTheme: state.styling.syntaxTheme);
     } else {
-      state = ChatTheme.withColor(type, Colors.teal, dark: isDark);
+      state = ChatTheme.withColor(type, Colors.teal, dark: isDark, syntaxTheme: state.styling.syntaxTheme);
     }
   }
 
@@ -411,6 +493,8 @@ class DefaultCodeBlock extends ConsumerWidget {
   final Color headerColor;
   final Color textColor;
 
+  static const monospaceFontFamily = 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace';
+
   const DefaultCodeBlock({
     super.key,
     required this.code,
@@ -423,72 +507,63 @@ class DefaultCodeBlock extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chatTheme = ref.watch(chatThemeProvider);
+    final isDark = ref.watch(isDarkModeProvider);
+    final syntaxTheme = chatTheme.styling.syntaxTheme;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: chatTheme.styling.backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: chatTheme.styling.primaryColor.withOpacity(0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: chatTheme.styling.primaryColor.withOpacity(0.1),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (language != null)
-                  Text(
-                    language!,
-                    style: TextStyle(
-                      color: chatTheme.styling.assistantMessageTextColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                IconButton(
-                  icon: Icon(
-                    Icons.copy,
-                    size: 16,
-                    color: chatTheme.styling.assistantMessageTextColor,
-                  ),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: code));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Code copied to clipboard')),
-                    );
-                  },
-                  tooltip: 'Copy code',
-                ),
-              ],
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: chatTheme.styling.primaryColor.withValues(alpha: 0.1),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
           ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: HighlightView(
-                code,
-                language: language ?? 'plaintext',
-                theme: githubTheme,
-                padding: EdgeInsets.zero,
-                textStyle: TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 14,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (language != null)
+                Text(
+                  language!,
+                  style: TextStyle(
+                    color: chatTheme.styling.assistantMessageTextColor,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: monospaceFontFamily,
+                  ),
+                ),
+              IconButton(
+                icon: Icon(
+                  Icons.copy,
+                  size: 16,
                   color: chatTheme.styling.assistantMessageTextColor,
                 ),
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: code));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Code copied to clipboard')),
+                  );
+                },
+                tooltip: 'Copy code',
               ),
+            ],
+          ),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: HighlightView(
+            code,
+            language: language ?? 'plaintext',
+            theme: syntaxTheme.theme,
+            padding: EdgeInsets.zero,
+            textStyle: const TextStyle(
+              fontFamily: monospaceFontFamily,
+              fontSize: 14,
+              height: 1.5,
+              letterSpacing: 0,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -575,14 +650,14 @@ class DefaultMarkdownBlock extends StatelessWidget {
             color: codeBackgroundColor,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: codeTextColor.withOpacity(0.2),
+              color: codeTextColor.withValues(alpha: 0.2),
             ),
           ),
         ),
         builders: {
           'code': DefaultCodeBlockBuilder(
             backgroundColor: codeBackgroundColor,
-            headerColor: codeTextColor.withOpacity(0.1),
+            headerColor: codeTextColor.withValues(alpha: 0.1),
             textColor: codeTextColor,
           ),
         },

@@ -20,6 +20,7 @@ import '../data/models.dart';
 import '../data/providers.dart';
 import '../providers/theme_provider.dart';
 import '../themes/chat_theme.dart';
+import '../themes/syntax_theme.dart';
 import 'home_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -147,11 +148,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                            */
 
                           ListTile(
-                            title: const Text('Appearance'),
+                            title: const Text('App Theme'),
                             subtitle: Text(
                                 '${themeMode.name} - ${chatTheme.type.name}'),
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () => _showThemeDialog(context, ref),
+                          ),
+
+                          ListTile(
+                            title: const Text('Code Syntax Theme'),
+                            subtitle: Text(ref.watch(chatThemeProvider).styling.syntaxTheme.displayName),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => _showSyntaxThemeDialog(context, ref),
                           ),
 
                           // About section
@@ -213,6 +221,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         );
       },
+    );
+  }
+
+  void _showSyntaxThemeDialog(BuildContext context, WidgetRef ref) {
+    final isDark = ref.read(isDarkModeProvider);
+    final currentTheme = ref.read(chatThemeProvider).styling.syntaxTheme;
+    final availableThemes = SyntaxTheme.forBrightness(
+      isDark ? Brightness.dark : Brightness.light,
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Syntax Highlighting Theme'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ...availableThemes.map((theme) => RadioListTile<SyntaxTheme>(
+              title: Text(theme.displayName),
+              value: theme,
+              groupValue: currentTheme,
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(chatThemeProvider.notifier).setSyntaxTheme(value);
+                  Navigator.pop(context);
+                }
+              },
+            )),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCEL'),
+          ),
+        ],
+      ),
     );
   }
 

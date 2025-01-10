@@ -358,21 +358,39 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       actions: [
         PopupMenuButton<String>(
+          icon: const Icon(Icons.settings),
           itemBuilder: (context) => [
             PopupMenuItem(
-              value: 'settings',
+              value: 'conversation',
               child: Row(
                 children: [
-                  Icon(Icons.settings, color: theme.styling.primaryColor),
+                  Icon(Icons.chat_bubble_outlined,
+                      color: theme.styling.primaryColor),
                   const SizedBox(width: 8),
-                  const Text('Settings'),
+                  const Text('Conversation Settings'),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'app',
+              child: Row(
+                children: [
+                  Icon(Icons.settings_outlined,
+                      color: theme.styling.primaryColor),
+                  const SizedBox(width: 8),
+                  const Text('App Settings'),
                 ],
               ),
             ),
           ],
           onSelected: (value) {
-            if (value == 'settings') {
-              _showSettings();
+            switch (value) {
+              case 'conversation':
+                _showConversationSettings();
+                break;
+              case 'app':
+                Navigator.pushNamed(context, '/settings');
+                break;
             }
           },
         ),
@@ -556,7 +574,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  void _showSettings() {
+  void _showConversationSettings() {
     _showSettingsDialog();
   }
 

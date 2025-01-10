@@ -1,4 +1,5 @@
 // lib/themes/base_theme.dart
+import 'package:chatforge/themes/syntax_theme.dart';
 import 'package:flutter/material.dart';
 
 abstract class BaseTheme {
@@ -26,6 +27,8 @@ abstract class BaseTheme {
   Color get buttonTextColor;
   Color get codeBlockBackgroundColor;
   Color get codeBlockHeaderColor;
+
+  SyntaxTheme get syntaxTheme;
 
   // Generate ThemeData
   ThemeData get themeData => ThemeData(
