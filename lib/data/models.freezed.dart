@@ -1091,7 +1091,7 @@ class _$ModelSettingsImpl
       this.keepFirstMessage = false,
       this.renderMarkdown = true,
       this.enableWordByWordStreaming = true,
-      this.streamingWordDelay = 50});
+      this.streamingWordDelay = 10});
 
   factory _$ModelSettingsImpl.fromJson(Map<String, dynamic> json) =>
       _$$ModelSettingsImplFromJson(json);

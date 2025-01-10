@@ -93,7 +93,7 @@ _$ModelSettingsImpl _$$ModelSettingsImplFromJson(Map<String, dynamic> json) =>
       renderMarkdown: json['renderMarkdown'] as bool? ?? true,
       enableWordByWordStreaming:
           json['enableWordByWordStreaming'] as bool? ?? true,
-      streamingWordDelay: (json['streamingWordDelay'] as num?)?.toInt() ?? 50,
+      streamingWordDelay: (json['streamingWordDelay'] as num?)?.toInt() ?? 10,
     );
 
 Map<String, dynamic> _$$ModelSettingsImplToJson(_$ModelSettingsImpl instance) =>
