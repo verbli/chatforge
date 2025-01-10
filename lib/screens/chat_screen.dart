@@ -43,6 +43,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _hasScrolledToBottom = false;
   String? _lastMessageId;
   final _focusNode = FocusNode();
+  bool _showScrollbar = false;
 
   @override
   void initState() {
@@ -249,20 +250,54 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         resizeToAvoidBottomInset: true,
         appBar: _buildAppBar(theme),
         body: SafeArea(
-          child: Column(
+          child: Stack(
             children: [
-              const AdBannerWidget(),
-              Expanded(
-                child: Container(
-                  color: theme.styling.backgroundColor,
-                  child: messages.when(
-                    data: (msgs) => _buildMessageList(msgs, theme),
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (err, stack) => Center(child: Text('Error: $err')),
+              Column(
+                children: [
+                  const AdBannerWidget(),
+                  Expanded(
+                    child: Container(
+                      color: theme.styling.backgroundColor,
+                      child: messages.when(
+                        data: (msgs) => _buildMessageList(msgs, theme),
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (err, stack) => Center(child: Text('Error: $err')),
+                      ),
+                    ),
+                  ),
+                  _buildInputArea(theme),
+                ],
+              ),
+              if (!_isNearBottom) // Show scroll button above input area
+                Positioned(
+                  bottom: 70,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: FloatingActionButton.small(
+                        onPressed: _scrollToBottom,
+                        backgroundColor: theme.styling.primaryColor.withValues(alpha: 0.9),
+                        shape: const CircleBorder(),
+                        elevation: 4,
+                        child: const Icon(
+                          Icons.arrow_downward,
+                          size: 20,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              _buildInputArea(theme),
             ],
           ),
         ),
@@ -271,39 +306,54 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildMessageList(List<Message> messages, ChatTheme theme) {
-    return ListView.builder(
+    return RawScrollbar(
       controller: _scrollController,
-      padding: theme.styling.containerPadding,
-      itemCount: messages.length,
-      itemBuilder: (context, index) {
-        final message = messages[index];
-        final messageData = MessageData(
-          id: "${widget.conversationId}/${message.id}",
-          content: message.content,
-          timestamp: message.timestamp,
-          isUser: message.role == Role.user,
-          onEdit: (message.role == Role.user) ?
-              (content) => _editMessage(message.copyWith(content: content)) : null,
-          onDelete: () => _deleteMessage(message),
-        );
+      thumbVisibility: false,
+      interactive: true,
+      thickness: 8.0,
+      radius: const Radius.circular(4.0),
+      fadeDuration: const Duration(milliseconds: 300),
+      timeToFade: const Duration(milliseconds: 3000),
+      // Hide scrollbar when at bottom
+      notificationPredicate: (notification) => !_isNearBottom,
+      thumbColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+      minThumbLength: 50, // Minimum size of the thumb
+      pressDuration: Duration.zero, // Immediate response to press
+      scrollbarOrientation: ScrollbarOrientation.right,
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: theme.styling.containerPadding,
+        itemCount: messages.length,
+        itemBuilder: (context, index) {
+          final message = messages[index];
+          final messageData = MessageData(
+            id: "${widget.conversationId}/${message.id}",
+            content: message.content,
+            timestamp: message.timestamp,
+            isUser: message.role == Role.user,
+            onEdit: (message.role == Role.user) ?
+                (content) => _editMessage(message.copyWith(content: content)) : null,
+            onDelete: () => _deleteMessage(message),
+          );
 
-        return Align(
-          alignment: message.role == Role.user && theme.styling.alignUserMessagesRight
-              ? Alignment.centerRight
-              : Alignment.centerLeft,
-          child: Container(
-            constraints: BoxConstraints(
-              maxWidth: theme.styling.maxWidth,
+          return Align(
+            alignment: message.role == Role.user && theme.styling.alignUserMessagesRight
+                ? Alignment.centerRight
+                : Alignment.centerLeft,
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: theme.styling.maxWidth,
+              ),
+              padding: EdgeInsets.symmetric(
+                vertical: theme.styling.messageSpacing / 2,
+              ),
+              child: message.role == Role.user
+                  ? theme.widgets.userMessage(context, messageData)
+                  : theme.widgets.assistantMessage(context, messageData),
             ),
-            padding: EdgeInsets.symmetric(
-              vertical: theme.styling.messageSpacing / 2,
-            ),
-            child: message.role == Role.user
-                ? theme.widgets.userMessage(context, messageData)
-                : theme.widgets.assistantMessage(context, messageData),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -629,12 +679,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _onScroll() {
-    // Consider "near bottom" if within 50 pixels of the bottom
+    // "Near" threshold for the arrow button (100 pixels)
     final isNearBottom = _scrollController.offset >=
-        (_scrollController.position.maxScrollExtent - 50);
+        (_scrollController.position.maxScrollExtent - 100);
 
-    if (isNearBottom != _isNearBottom) {
-      setState(() => _isNearBottom = isNearBottom);
+    // "Near" threshold for the scrollbar (500 pixels)
+    final shouldShowScrollbar = _scrollController.offset <
+        (_scrollController.position.maxScrollExtent - 500);
+
+    if (isNearBottom != _isNearBottom || shouldShowScrollbar != _showScrollbar) {
+      setState(() {
+        _isNearBottom = isNearBottom;
+        _showScrollbar = shouldShowScrollbar;
+      });
     }
   }
 }
