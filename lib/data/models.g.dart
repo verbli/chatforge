@@ -60,7 +60,8 @@ Map<String, dynamic> _$$ModelConfigImplToJson(_$ModelConfigImpl instance) =>
 _$ModelCapabilitiesImpl _$$ModelCapabilitiesImplFromJson(
         Map<String, dynamic> json) =>
     _$ModelCapabilitiesImpl(
-      maxTokens: (json['maxTokens'] as num).toInt(),
+      maxOutputTokens: (json['maxOutputTokens'] as num).toInt(),
+      maxContextTokens: (json['maxContextTokens'] as num).toInt(),
       supportsStreaming: json['supportsStreaming'] as bool? ?? true,
       supportsFunctions: json['supportsFunctions'] as bool? ?? false,
       supportsSystemPrompt: json['supportsSystemPrompt'] as bool? ?? true,
@@ -69,7 +70,8 @@ _$ModelCapabilitiesImpl _$$ModelCapabilitiesImplFromJson(
 Map<String, dynamic> _$$ModelCapabilitiesImplToJson(
         _$ModelCapabilitiesImpl instance) =>
     <String, dynamic>{
-      'maxTokens': instance.maxTokens,
+      'maxOutputTokens': instance.maxOutputTokens,
+      'maxContextTokens': instance.maxContextTokens,
       'supportsStreaming': instance.supportsStreaming,
       'supportsFunctions': instance.supportsFunctions,
       'supportsSystemPrompt': instance.supportsSystemPrompt,

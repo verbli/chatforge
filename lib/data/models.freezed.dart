@@ -597,7 +597,8 @@ ModelCapabilities _$ModelCapabilitiesFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$ModelCapabilities {
-  int get maxTokens => throw _privateConstructorUsedError;
+  int get maxOutputTokens => throw _privateConstructorUsedError;
+  int get maxContextTokens => throw _privateConstructorUsedError;
   bool get supportsStreaming => throw _privateConstructorUsedError;
   bool get supportsFunctions => throw _privateConstructorUsedError;
   bool get supportsSystemPrompt => throw _privateConstructorUsedError;
@@ -619,7 +620,8 @@ abstract class $ModelCapabilitiesCopyWith<$Res> {
       _$ModelCapabilitiesCopyWithImpl<$Res, ModelCapabilities>;
   @useResult
   $Res call(
-      {int maxTokens,
+      {int maxOutputTokens,
+      int maxContextTokens,
       bool supportsStreaming,
       bool supportsFunctions,
       bool supportsSystemPrompt});
@@ -640,15 +642,20 @@ class _$ModelCapabilitiesCopyWithImpl<$Res, $Val extends ModelCapabilities>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? maxTokens = null,
+    Object? maxOutputTokens = null,
+    Object? maxContextTokens = null,
     Object? supportsStreaming = null,
     Object? supportsFunctions = null,
     Object? supportsSystemPrompt = null,
   }) {
     return _then(_value.copyWith(
-      maxTokens: null == maxTokens
-          ? _value.maxTokens
-          : maxTokens // ignore: cast_nullable_to_non_nullable
+      maxOutputTokens: null == maxOutputTokens
+          ? _value.maxOutputTokens
+          : maxOutputTokens // ignore: cast_nullable_to_non_nullable
+              as int,
+      maxContextTokens: null == maxContextTokens
+          ? _value.maxContextTokens
+          : maxContextTokens // ignore: cast_nullable_to_non_nullable
               as int,
       supportsStreaming: null == supportsStreaming
           ? _value.supportsStreaming
@@ -675,7 +682,8 @@ abstract class _$$ModelCapabilitiesImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {int maxTokens,
+      {int maxOutputTokens,
+      int maxContextTokens,
       bool supportsStreaming,
       bool supportsFunctions,
       bool supportsSystemPrompt});
@@ -694,15 +702,20 @@ class __$$ModelCapabilitiesImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? maxTokens = null,
+    Object? maxOutputTokens = null,
+    Object? maxContextTokens = null,
     Object? supportsStreaming = null,
     Object? supportsFunctions = null,
     Object? supportsSystemPrompt = null,
   }) {
     return _then(_$ModelCapabilitiesImpl(
-      maxTokens: null == maxTokens
-          ? _value.maxTokens
-          : maxTokens // ignore: cast_nullable_to_non_nullable
+      maxOutputTokens: null == maxOutputTokens
+          ? _value.maxOutputTokens
+          : maxOutputTokens // ignore: cast_nullable_to_non_nullable
+              as int,
+      maxContextTokens: null == maxContextTokens
+          ? _value.maxContextTokens
+          : maxContextTokens // ignore: cast_nullable_to_non_nullable
               as int,
       supportsStreaming: null == supportsStreaming
           ? _value.supportsStreaming
@@ -726,7 +739,8 @@ class _$ModelCapabilitiesImpl
     with DiagnosticableTreeMixin
     implements _ModelCapabilities {
   const _$ModelCapabilitiesImpl(
-      {required this.maxTokens,
+      {required this.maxOutputTokens,
+      required this.maxContextTokens,
       this.supportsStreaming = true,
       this.supportsFunctions = false,
       this.supportsSystemPrompt = true});
@@ -735,7 +749,9 @@ class _$ModelCapabilitiesImpl
       _$$ModelCapabilitiesImplFromJson(json);
 
   @override
-  final int maxTokens;
+  final int maxOutputTokens;
+  @override
+  final int maxContextTokens;
   @override
   @JsonKey()
   final bool supportsStreaming;
@@ -748,7 +764,7 @@ class _$ModelCapabilitiesImpl
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'ModelCapabilities(maxTokens: $maxTokens, supportsStreaming: $supportsStreaming, supportsFunctions: $supportsFunctions, supportsSystemPrompt: $supportsSystemPrompt)';
+    return 'ModelCapabilities(maxOutputTokens: $maxOutputTokens, maxContextTokens: $maxContextTokens, supportsStreaming: $supportsStreaming, supportsFunctions: $supportsFunctions, supportsSystemPrompt: $supportsSystemPrompt)';
   }
 
   @override
@@ -756,7 +772,8 @@ class _$ModelCapabilitiesImpl
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty('type', 'ModelCapabilities'))
-      ..add(DiagnosticsProperty('maxTokens', maxTokens))
+      ..add(DiagnosticsProperty('maxOutputTokens', maxOutputTokens))
+      ..add(DiagnosticsProperty('maxContextTokens', maxContextTokens))
       ..add(DiagnosticsProperty('supportsStreaming', supportsStreaming))
       ..add(DiagnosticsProperty('supportsFunctions', supportsFunctions))
       ..add(DiagnosticsProperty('supportsSystemPrompt', supportsSystemPrompt));
@@ -767,8 +784,10 @@ class _$ModelCapabilitiesImpl
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$ModelCapabilitiesImpl &&
-            (identical(other.maxTokens, maxTokens) ||
-                other.maxTokens == maxTokens) &&
+            (identical(other.maxOutputTokens, maxOutputTokens) ||
+                other.maxOutputTokens == maxOutputTokens) &&
+            (identical(other.maxContextTokens, maxContextTokens) ||
+                other.maxContextTokens == maxContextTokens) &&
             (identical(other.supportsStreaming, supportsStreaming) ||
                 other.supportsStreaming == supportsStreaming) &&
             (identical(other.supportsFunctions, supportsFunctions) ||
@@ -779,8 +798,13 @@ class _$ModelCapabilitiesImpl
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, maxTokens, supportsStreaming,
-      supportsFunctions, supportsSystemPrompt);
+  int get hashCode => Object.hash(
+      runtimeType,
+      maxOutputTokens,
+      maxContextTokens,
+      supportsStreaming,
+      supportsFunctions,
+      supportsSystemPrompt);
 
   /// Create a copy of ModelCapabilities
   /// with the given fields replaced by the non-null parameter values.
@@ -801,7 +825,8 @@ class _$ModelCapabilitiesImpl
 
 abstract class _ModelCapabilities implements ModelCapabilities {
   const factory _ModelCapabilities(
-      {required final int maxTokens,
+      {required final int maxOutputTokens,
+      required final int maxContextTokens,
       final bool supportsStreaming,
       final bool supportsFunctions,
       final bool supportsSystemPrompt}) = _$ModelCapabilitiesImpl;
@@ -810,7 +835,9 @@ abstract class _ModelCapabilities implements ModelCapabilities {
       _$ModelCapabilitiesImpl.fromJson;
 
   @override
-  int get maxTokens;
+  int get maxOutputTokens;
+  @override
+  int get maxContextTokens;
   @override
   bool get supportsStreaming;
   @override

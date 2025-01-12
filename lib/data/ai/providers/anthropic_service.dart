@@ -73,7 +73,7 @@ class AnthropicService extends AIService {
         messages.map((m) => m.content).join('\n'),
       );
 
-      if (inputTokens >= model.capabilities.maxTokens) {
+      if (inputTokens >= model.capabilities.maxContextTokens) {
         throw AIServiceException(
           'Context window full',
           provider: provider.name,

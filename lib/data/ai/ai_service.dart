@@ -72,7 +72,7 @@ abstract class AIService {
       model: _provider!.models.first,
       settings: ModelSettings(
         temperature: 1,
-        maxContextTokens: _provider!.models.first.capabilities.maxTokens,
+        maxContextTokens: _provider!.models.first.capabilities.maxContextTokens,
         systemPrompt: "You are a helpful assistant that creates concise, descriptive titles.",
       ),
       messages: [Message(

@@ -197,8 +197,8 @@ class _ConversationList extends ConsumerWidget {
           orElse: () => const ModelConfig(
             id: 'unknown',
             name: 'Unknown Model',
-            capabilities: ModelCapabilities(maxTokens: 4096),
-            settings: ModelSettings(maxContextTokens: 4096),
+            capabilities: ModelCapabilities(maxOutputTokens: 0, maxContextTokens: 0),
+            settings: ModelSettings(maxContextTokens: 0),
           ),
         );
 

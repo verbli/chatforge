@@ -72,7 +72,7 @@ class OpenAIService extends AIService {
       final inputTokens = await countTokensForMessages(openAIMessages);
       final maxTokens = min(
           settings.maxResponseTokens,
-          model.capabilities.maxTokens - inputTokens
+          model.capabilities.maxContextTokens - inputTokens
       );
 
       if (maxTokens <= 0) {

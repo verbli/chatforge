@@ -409,6 +409,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                         ),
                       ),
                     ],
+                    _buildContextSettings(),
                   ],
                 ],
               );
@@ -426,5 +427,144 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildContextSettings() {
+    // Get the selected provider and model using the state variables
+    final provider = ref.read(providersProvider).value?.firstWhere(
+          (p) => p.id == _selectedProviderId,
+      orElse: () => throw Exception('Provider not found'),
+    );
+
+    final model = provider?.models.firstWhere(
+          (m) => m.id == _selectedModelId,
+      orElse: () => throw Exception('Model not found'),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Context Management',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+
+        // Max Context Tokens
+        Row(
+          children: [
+            const Expanded(
+              child: Text('Maximum Context Length'),
+            ),
+            SizedBox(
+              width: 100,
+              child: TextFormField(
+                initialValue: _settings.maxContextTokens.toString(),
+                decoration: InputDecoration(
+                  hintText: '<=${model?.capabilities.maxContextTokens ?? 0}',
+                ),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  final tokens = int.tryParse(value);
+                  if (tokens != null) {
+                    setState(() {
+                      _settings = _settings.copyWith(
+                        maxContextTokens: tokens.clamp(0, model?.capabilities.maxContextTokens ?? 0),
+                      );
+                    });
+                  }
+                },
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.help_outline),
+              onPressed: () => _showHelpDialog(
+                'Context Length',
+                'Maximum number of tokens to include in conversation context. '
+                    'Messages that would exceed this limit will be handled according '
+                    'to the truncation strategy.',
+              ),
+            ),
+          ],
+        ),
+
+        // Truncation Strategy
+        ListTile(
+          title: const Text('Truncation Strategy'),
+          subtitle: Text(_settings.truncationStrategy.name),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _showTruncationStrategyDialog(),
+        ),
+
+        // Keep System Prompt
+        SwitchListTile(
+          title: const Text('Always Keep System Prompt'),
+          subtitle: const Text(
+              'Include system prompt even when context is full'),
+          value: _settings.alwaysKeepSystemPrompt,
+          onChanged: (value) {
+            setState(() {
+              _settings = _settings.copyWith(
+                alwaysKeepSystemPrompt: value,
+              );
+            });
+          },
+        ),
+
+        // Keep First Message
+        SwitchListTile(
+          title: const Text('Keep First Message'),
+          subtitle: const Text(
+              'Always include the first message of the conversation'),
+          value: _settings.keepFirstMessage,
+          onChanged: (value) {
+            setState(() {
+              _settings = _settings.copyWith(
+                keepFirstMessage: value,
+              );
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  void _showTruncationStrategyDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Truncation Strategy'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: TruncationStrategy.values.map((strategy) {
+            return RadioListTile<TruncationStrategy>(
+              title: Text(strategy.name),
+              subtitle: Text(_getTruncationDescription(strategy)),
+              value: strategy,
+              groupValue: _settings.truncationStrategy,
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _settings = _settings.copyWith(
+                      truncationStrategy: value,
+                    );
+                  });
+                  Navigator.pop(context);
+                }
+              },
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  String _getTruncationDescription(TruncationStrategy strategy) {
+    switch (strategy) {
+      case TruncationStrategy.stopGeneration:
+        return 'Stop generating when context is full';
+      case TruncationStrategy.truncateOldest:
+        return 'Remove oldest messages to make room';
+      case TruncationStrategy.keepSystemPrompt:
+        return 'Keep system prompt, remove old messages';
+    }
   }
 }

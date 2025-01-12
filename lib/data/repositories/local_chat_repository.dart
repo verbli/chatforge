@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:chatforge/data/storage/services/database_service.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import '../ai/ai_service.dart';
 import '../models.dart';
 import 'base_repository.dart';
 
@@ -511,5 +512,74 @@ class LocalChatRepository extends ChatRepository {
     for (final id in _messageControllers.keys) {
       _broadcastMessages(id);
     }
+  }
+
+  Future<List<Message>> _prepareMessagesForContext(
+      String conversationId,
+      List<Message> messages,
+      ModelSettings settings,
+      AIService aiService,
+      ) async {
+    int totalTokens = 0;
+    final List<Message> contextMessages = [];
+
+    // Always add system prompt if enabled
+    Message? systemPrompt;
+    if (settings.alwaysKeepSystemPrompt && settings.systemPrompt.isNotEmpty) {
+      systemPrompt = Message(
+        id: 'system',
+        conversationId: conversationId,
+        content: settings.systemPrompt,
+        role: Role.system,
+        timestamp: DateTime.now().toIso8601String(),
+      );
+      totalTokens += await aiService.countTokens(settings.systemPrompt);
+    }
+
+    // Add first message if enabled
+    Message? firstMessage;
+    if (settings.keepFirstMessage && messages.isNotEmpty) {
+      firstMessage = messages.first;
+      totalTokens += firstMessage.tokenCount;
+    }
+
+    // Process remaining messages based on truncation strategy
+    for (final message in messages.reversed) {
+      // Skip first message if already included
+      if (message == firstMessage) continue;
+
+      final wouldExceedLimit = totalTokens + message.tokenCount >
+          settings.maxContextTokens - settings.maxResponseTokens;
+
+      if (wouldExceedLimit) {
+        switch (settings.truncationStrategy) {
+          case TruncationStrategy.stopGeneration:
+            throw AIServiceException(
+              'Context window full',
+              provider: 'Unknown',
+            );
+
+          case TruncationStrategy.truncateOldest:
+            continue; // Skip this message
+
+          case TruncationStrategy.keepSystemPrompt:
+            if (message.role != Role.system) {
+              continue; // Skip non-system messages
+            }
+            break;
+        }
+      }
+
+      totalTokens += message.tokenCount;
+      contextMessages.insert(0, message); // Add at beginning to maintain order
+    }
+
+    // Build final message list
+    final result = <Message>[];
+    if (systemPrompt != null) result.add(systemPrompt);
+    if (firstMessage != null) result.add(firstMessage);
+    result.addAll(contextMessages);
+
+    return result;
   }
 }

@@ -9,7 +9,8 @@ class ModelDefaults {
       id: 'gpt-4o',
       name: 'GPT-4o',
       capabilities: ModelCapabilities(
-        maxTokens: 16384,
+        maxContextTokens: 128000,
+        maxOutputTokens: 16384,
         supportsStreaming: true,
         supportsFunctions: true,
       ),
@@ -19,7 +20,8 @@ class ModelDefaults {
       id: 'gpt-4o-mini',
       name: 'GPT-4o mini',
       capabilities: ModelCapabilities(
-        maxTokens: 16384,
+        maxContextTokens: 128000,
+        maxOutputTokens: 16384,
         supportsStreaming: true,
         supportsFunctions: true,
       ),
@@ -67,7 +69,8 @@ class ModelDefaults {
       id: 'claude-3-5-sonnet-latest',
       name: 'Claude 3.5 Sonnet',
       capabilities: ModelCapabilities(
-        maxTokens: 8192,
+        maxContextTokens: 200000,
+        maxOutputTokens: 8192,
         supportsStreaming: true,
       ),
       settings: ModelSettings(maxContextTokens: 200000),
@@ -76,7 +79,8 @@ class ModelDefaults {
       id: 'claude-3-5-haiku-latest',
       name: 'Claude 3.5 Haiku',
       capabilities: ModelCapabilities(
-        maxTokens: 8192,
+        maxContextTokens: 200000,
+        maxOutputTokens: 8192,
         supportsStreaming: true,
       ),
       settings: ModelSettings(maxContextTokens: 200000),
@@ -85,7 +89,8 @@ class ModelDefaults {
       id: 'claude-3-opus-latest',
       name: 'Claude 3 Opus',
       capabilities: ModelCapabilities(
-        maxTokens: 4096,
+        maxContextTokens: 200000,
+        maxOutputTokens: 4096,
         supportsStreaming: true,
       ),
       settings: ModelSettings(maxContextTokens: 200000),
@@ -94,7 +99,8 @@ class ModelDefaults {
       id: 'claude-3-haiku-20240307',
       name: 'Claude 3 Haiku',
       capabilities: ModelCapabilities(
-        maxTokens: 4096,
+        maxContextTokens: 200000,
+        maxOutputTokens: 4096,
         supportsStreaming: true,
       ),
       settings: ModelSettings(maxContextTokens: 200000),
@@ -107,7 +113,8 @@ class ModelDefaults {
       id: 'models/gemini-2.0-flash-exp',
       name: 'Gemini 2.0 Flash',
       capabilities: ModelCapabilities(
-        maxTokens: 8192,
+        maxContextTokens: 1048576,
+        maxOutputTokens: 8192,
         supportsStreaming: true,
         supportsFunctions: false,
       ),
@@ -117,7 +124,8 @@ class ModelDefaults {
       id: 'models/gemini-1.5-flash-latest',
       name: 'Gemini 1.5 Flash',
       capabilities: ModelCapabilities(
-        maxTokens: 8192,
+        maxContextTokens: 1048576,
+        maxOutputTokens: 8192,
         supportsStreaming: true,
         supportsFunctions: false,
       ),
@@ -127,7 +135,8 @@ class ModelDefaults {
       id: 'models/gemini-1.5-flash-8b-latest',
       name: 'Gemini 1.5 Flash 8B',
       capabilities: ModelCapabilities(
-        maxTokens: 8192,
+        maxContextTokens: 1048576,
+        maxOutputTokens: 8192,
         supportsStreaming: true,
         supportsFunctions: false,
       ),
@@ -137,7 +146,8 @@ class ModelDefaults {
       id: 'models/gemini-1.5-pro-latest',
       name: 'Gemini 1.5 Pro',
       capabilities: ModelCapabilities(
-        maxTokens: 8192,
+        maxContextTokens: 2097152,
+        maxOutputTokens: 8192,
         supportsStreaming: true,
         supportsFunctions: false,
       ),

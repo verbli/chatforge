@@ -25,7 +25,8 @@ class OpenAIModelFetcher implements ModelFetcher {
         id: m['id'],
         name: m['id'],
         capabilities: ModelCapabilities(
-          maxTokens: m['context_window'] ?? 4096,
+          maxContextTokens: m['context_window'] ?? 0,
+          maxOutputTokens: m['max_tokens'] ?? 0,
           supportsStreaming: true,
           supportsFunctions: m['id'].toString().contains('gpt-4'),
         ),
@@ -48,7 +49,8 @@ class AnthropicModelFetcher implements ModelFetcher {
         id: 'claude-3-5-sonnet-latest',
         name: 'Claude 3.5 Sonnet',
         capabilities: ModelCapabilities(
-          maxTokens: 8192,
+          maxContextTokens: 200000,
+          maxOutputTokens: 8192,
           supportsStreaming: true,
         ),
         settings: ModelSettings(maxContextTokens: 200000),
@@ -57,7 +59,8 @@ class AnthropicModelFetcher implements ModelFetcher {
         id: 'claude-3-5-haiku-latest',
         name: 'Claude 3.5 Haiku',
         capabilities: ModelCapabilities(
-          maxTokens: 8192,
+          maxContextTokens: 200000,
+          maxOutputTokens: 8192,
           supportsStreaming: true,
         ),
         settings: ModelSettings(maxContextTokens: 200000),
@@ -66,7 +69,8 @@ class AnthropicModelFetcher implements ModelFetcher {
         id: 'claude-3-opus-latest',
         name: 'Claude 3 Opus',
         capabilities: ModelCapabilities(
-          maxTokens: 4096,
+          maxContextTokens: 200000,
+          maxOutputTokens: 4096,
           supportsStreaming: true,
         ),
         settings: ModelSettings(maxContextTokens: 200000),
@@ -75,7 +79,8 @@ class AnthropicModelFetcher implements ModelFetcher {
         id: 'claude-3-sonnet-20240229',
         name: 'Claude 3 Sonnet',
         capabilities: ModelCapabilities(
-          maxTokens: 4096,
+          maxContextTokens: 200000,
+          maxOutputTokens: 4096,
           supportsStreaming: true,
         ),
         settings: ModelSettings(maxContextTokens: 200000),
@@ -84,7 +89,8 @@ class AnthropicModelFetcher implements ModelFetcher {
         id: 'claude-3-haiku-20240307',
         name: 'Claude 3 Haiku',
         capabilities: ModelCapabilities(
-          maxTokens: 4096,
+          maxContextTokens: 200000,
+          maxOutputTokens: 4096,
           supportsStreaming: true,
         ),
         settings: ModelSettings(maxContextTokens: 200000),
@@ -103,7 +109,8 @@ class GeminiModelFetcher implements ModelFetcher {
           id: model.name ?? 'unknown-model',
           name: model.displayName ?? 'Unknown Model',
           capabilities: ModelCapabilities(
-              maxTokens: model.outputTokenLimit ?? 0
+              maxContextTokens: model.inputTokenLimit ?? 0,
+              maxOutputTokens: model.outputTokenLimit ?? 0
           ),
           settings: ModelSettings(
               maxContextTokens: model.inputTokenLimit ?? 0),

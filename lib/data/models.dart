@@ -62,7 +62,8 @@ class ModelConfig with _$ModelConfig {
 @freezed
 class ModelCapabilities with _$ModelCapabilities {
   const factory ModelCapabilities({
-    required int maxTokens,
+    required int maxOutputTokens,
+    required int maxContextTokens,
     @Default(true) bool supportsStreaming,
     @Default(false) bool supportsFunctions,
     @Default(true) bool supportsSystemPrompt,
