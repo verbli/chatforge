@@ -18,17 +18,14 @@ class ChangelogDialog extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             const Text(
-                'Enhancements\n'
-                '• Improved streaming visuals: Experience smoother, more responsive updates during AI responses.\n'
-                '\n'
-                'Bug Fixes\n'
-                '• Multiline message input: Resolved issues that prevented proper line breaks when composing longer messages.\n'
-                '• Theme colors: Fixed color inconsistencies and improved overall UI coherence.\n'
-                '• Message bubble edits: Removed the extra confirmation prompt, streamlining the editing process.\n'
-                '• Database concurrency: Addressed conflicts that could cause intermittent data corruption.\n'
-                '• Data clearing: Ensured that clearing data fully resets user information as expected.\n'
-                '• Markdown toggling: Fixed the bug preventing markdown rendering preferences from taking effect.\n'
-                '• System prompt retention: Preserved custom system prompts when switching providers mid• conversation.\n'
+                '• Fixed multiline message input\n'
+                '• Fixed theme colors\n'
+                '• Fixed extra confirmation on edits\n'
+                '• Fixed database concurrency\n'
+                '• Fixed data clearing bug\n'
+                '• Fixed markdown toggle\n'
+                '• Improved streaming visuals\n'
+                '• Preserved system prompts when switching providers\n'
             ),
             const Text('Version 1.1.1',
                 style: TextStyle(fontWeight: FontWeight.bold)),

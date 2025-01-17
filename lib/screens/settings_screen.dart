@@ -503,6 +503,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text('Version 1.1.2 - 2024-01-17',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text(
+                  '• Fixed multiline message input\n'
+                  '• Fixed theme colors\n'
+                  '• Fixed extra confirmation on edits\n'
+                  '• Fixed database concurrency\n'
+                  '• Fixed data clearing bug\n'
+                  '• Fixed markdown toggle\n'
+                  '• Improved streaming visuals\n'
+                  '• Preserved system prompts when switching providers\n'
+              ),
               Text('Version 1.1.1',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),

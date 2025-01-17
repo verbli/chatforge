@@ -1,5 +1,24 @@
 # Change Log
 
+## [1.1.2] - 2024-01-17
+
+Bug fixes and smoother streaming for a better chat experience.
+
+### Enhancements
+
+- **Improved streaming visuals**: Experience smoother, more responsive updates during AI responses.
+
+### Bug Fixes
+
+- **Multiline message input**: Resolved issues that prevented proper line brper line breaks when composing longer messages.
+- **Theme colors**: Fixed color inconsistencies and improved overall UI coherence.
+- **Message bubble edits**: Removed the extra confirmation prompt, streamlining the editing process.
+- **Database concurrency**: Addressed conflicts that could cause intermittent data corruption.
+- **Data clearing**: Ensured that clearing data fully resets user information as expected.
+- **Markdown toggling**: Fixed the bug preventing markdown rendering preferences from taking effect.
+- **System prompt retention**: Preserved custom system prompts when switching providers mid• conversation.
+
+
 ## [1.1.0] - 2024-01-05
 
 Improved AI provider support, expanded model settings, and revamed various UIs.
