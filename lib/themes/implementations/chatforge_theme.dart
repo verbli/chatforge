@@ -46,6 +46,9 @@ class ChatForgeTheme extends BaseTheme {
   Color get inputBorderColor => isDark ? Colors.grey[700]! : Colors.grey[300]!;
 
   @override
+  Color get inputTextColor => isDark ? Colors.white : Colors.black;
+
+  @override
   Color get buttonColor => primaryColor;
 
   @override

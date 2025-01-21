@@ -42,6 +42,9 @@ class ClaudeTheme extends BaseTheme {
   Color get inputBorderColor => isDark ? const Color(0xFF3a3a36) : const Color(0xFFfbfaf8);
 
   @override
+  Color get inputTextColor => textColor;
+
+  @override
   Color get buttonColor => primaryColor;
 
   @override

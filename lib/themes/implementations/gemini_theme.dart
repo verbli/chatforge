@@ -51,6 +51,9 @@ class GeminiTheme extends BaseTheme {
   Color get inputBorderColor => secondaryColor;
 
   @override
+  Color get inputTextColor => textColor;
+
+  @override
   Color get buttonColor => primaryColor;
 
   @override

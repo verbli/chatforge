@@ -42,6 +42,9 @@ class ChatGPTTheme extends BaseTheme {
   Color get inputBorderColor => backgroundColor;
 
   @override
+  Color get inputTextColor => textColor;
+
+  @override
   Color get buttonColor => primaryColor;
 
   @override

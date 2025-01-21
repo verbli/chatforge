@@ -90,7 +90,7 @@ class ChatTheme {
           data: data,
           backgroundColor: baseTheme.inputBackgroundColor,
           borderColor: baseTheme.inputBorderColor,
-          textColor: baseTheme.textColor,
+          textColor: baseTheme.inputTextColor,
           onPressed: data.onSubmit,
           isGenerating: data.isGenerating,
         ),
@@ -411,11 +411,13 @@ class DefaultMessageInput extends ConsumerWidget {
     return TextField(
       controller: data.controller,
       focusNode: data.focusNode,
-      style: TextStyle(color: chatTheme.styling.userMessageTextColor),
+      style: TextStyle(
+          color: textColor
+      ),
       decoration: InputDecoration(
         hintText: 'Type a message...',
         hintStyle: TextStyle(
-            color: chatTheme.styling.userMessageTextColor.withOpacity(0.6)
+            color: chatTheme.styling.userMessageTextColor.withValues(alpha: 0.6)
         ),
         filled: true,
         fillColor: backgroundColor,
