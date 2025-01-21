@@ -23,6 +23,7 @@ abstract class BaseTheme {
   // UI element colors
   Color get inputBackgroundColor;
   Color get inputBorderColor;
+  Color get inputTextColor;
   Color get buttonColor;
   Color get buttonTextColor;
   Color get codeBlockBackgroundColor;
