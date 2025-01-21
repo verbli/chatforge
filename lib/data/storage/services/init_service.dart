@@ -29,15 +29,13 @@ class InitService {
         ref.read(databaseServiceProvider).initialize(),
       ]);
 
-      final initOptional = BuildConfig.enableAds
-          ? MobileAds.instance.initialize()
-          : Future.value();
-
       onProgress('Loading database ...', 0.333);
       await initEssential;
 
-      onProgress('Loading analytics ...', 0.666);
-      await initOptional;
+      if (BuildConfig.enableAds) {
+        onProgress('Loading analytics ...', 0.666);
+        MobileAds.instance.initialize();
+      }
 
       // Check changelog after prefs are loaded
       if (_prefs!.getString('last_version') != BuildConfig.appVersion) {
