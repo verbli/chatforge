@@ -27,6 +27,7 @@ mixin _$ProviderConfig {
   String get apiKey => throw _privateConstructorUsedError;
   List<ModelConfig> get models => throw _privateConstructorUsedError;
   String? get organization => throw _privateConstructorUsedError;
+  bool? get allowFallback => throw _privateConstructorUsedError;
 
   /// Serializes this ProviderConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -51,7 +52,8 @@ abstract class $ProviderConfigCopyWith<$Res> {
       String baseUrl,
       String apiKey,
       List<ModelConfig> models,
-      String? organization});
+      String? organization,
+      bool? allowFallback});
 }
 
 /// @nodoc
@@ -76,6 +78,7 @@ class _$ProviderConfigCopyWithImpl<$Res, $Val extends ProviderConfig>
     Object? apiKey = null,
     Object? models = null,
     Object? organization = freezed,
+    Object? allowFallback = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -106,6 +109,10 @@ class _$ProviderConfigCopyWithImpl<$Res, $Val extends ProviderConfig>
           ? _value.organization
           : organization // ignore: cast_nullable_to_non_nullable
               as String?,
+      allowFallback: freezed == allowFallback
+          ? _value.allowFallback
+          : allowFallback // ignore: cast_nullable_to_non_nullable
+              as bool?,
     ) as $Val);
   }
 }
@@ -125,7 +132,8 @@ abstract class _$$ProviderConfigImplCopyWith<$Res>
       String baseUrl,
       String apiKey,
       List<ModelConfig> models,
-      String? organization});
+      String? organization,
+      bool? allowFallback});
 }
 
 /// @nodoc
@@ -148,6 +156,7 @@ class __$$ProviderConfigImplCopyWithImpl<$Res>
     Object? apiKey = null,
     Object? models = null,
     Object? organization = freezed,
+    Object? allowFallback = freezed,
   }) {
     return _then(_$ProviderConfigImpl(
       id: null == id
@@ -178,6 +187,10 @@ class __$$ProviderConfigImplCopyWithImpl<$Res>
           ? _value.organization
           : organization // ignore: cast_nullable_to_non_nullable
               as String?,
+      allowFallback: freezed == allowFallback
+          ? _value.allowFallback
+          : allowFallback // ignore: cast_nullable_to_non_nullable
+              as bool?,
     ));
   }
 }
@@ -194,7 +207,8 @@ class _$ProviderConfigImpl
       required this.baseUrl,
       required this.apiKey,
       required final List<ModelConfig> models,
-      this.organization})
+      this.organization,
+      this.allowFallback})
       : _models = models;
 
   factory _$ProviderConfigImpl.fromJson(Map<String, dynamic> json) =>
@@ -220,10 +234,12 @@ class _$ProviderConfigImpl
 
   @override
   final String? organization;
+  @override
+  final bool? allowFallback;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'ProviderConfig(id: $id, name: $name, type: $type, baseUrl: $baseUrl, apiKey: $apiKey, models: $models, organization: $organization)';
+    return 'ProviderConfig(id: $id, name: $name, type: $type, baseUrl: $baseUrl, apiKey: $apiKey, models: $models, organization: $organization, allowFallback: $allowFallback)';
   }
 
   @override
@@ -237,7 +253,8 @@ class _$ProviderConfigImpl
       ..add(DiagnosticsProperty('baseUrl', baseUrl))
       ..add(DiagnosticsProperty('apiKey', apiKey))
       ..add(DiagnosticsProperty('models', models))
-      ..add(DiagnosticsProperty('organization', organization));
+      ..add(DiagnosticsProperty('organization', organization))
+      ..add(DiagnosticsProperty('allowFallback', allowFallback));
   }
 
   @override
@@ -252,13 +269,23 @@ class _$ProviderConfigImpl
             (identical(other.apiKey, apiKey) || other.apiKey == apiKey) &&
             const DeepCollectionEquality().equals(other._models, _models) &&
             (identical(other.organization, organization) ||
-                other.organization == organization));
+                other.organization == organization) &&
+            (identical(other.allowFallback, allowFallback) ||
+                other.allowFallback == allowFallback));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, type, baseUrl, apiKey,
-      const DeepCollectionEquality().hash(_models), organization);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      name,
+      type,
+      baseUrl,
+      apiKey,
+      const DeepCollectionEquality().hash(_models),
+      organization,
+      allowFallback);
 
   /// Create a copy of ProviderConfig
   /// with the given fields replaced by the non-null parameter values.
@@ -285,7 +312,8 @@ abstract class _ProviderConfig implements ProviderConfig {
       required final String baseUrl,
       required final String apiKey,
       required final List<ModelConfig> models,
-      final String? organization}) = _$ProviderConfigImpl;
+      final String? organization,
+      final bool? allowFallback}) = _$ProviderConfigImpl;
 
   factory _ProviderConfig.fromJson(Map<String, dynamic> json) =
       _$ProviderConfigImpl.fromJson;
@@ -304,6 +332,8 @@ abstract class _ProviderConfig implements ProviderConfig {
   List<ModelConfig> get models;
   @override
   String? get organization;
+  @override
+  bool? get allowFallback;
 
   /// Create a copy of ProviderConfig
   /// with the given fields replaced by the non-null parameter values.
@@ -597,7 +627,8 @@ ModelCapabilities _$ModelCapabilitiesFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$ModelCapabilities {
-  int get maxTokens => throw _privateConstructorUsedError;
+  int get maxContextTokens => throw _privateConstructorUsedError;
+  int get maxResponseTokens => throw _privateConstructorUsedError;
   bool get supportsStreaming => throw _privateConstructorUsedError;
   bool get supportsFunctions => throw _privateConstructorUsedError;
   bool get supportsSystemPrompt => throw _privateConstructorUsedError;
@@ -619,7 +650,8 @@ abstract class $ModelCapabilitiesCopyWith<$Res> {
       _$ModelCapabilitiesCopyWithImpl<$Res, ModelCapabilities>;
   @useResult
   $Res call(
-      {int maxTokens,
+      {int maxContextTokens,
+      int maxResponseTokens,
       bool supportsStreaming,
       bool supportsFunctions,
       bool supportsSystemPrompt});
@@ -640,15 +672,20 @@ class _$ModelCapabilitiesCopyWithImpl<$Res, $Val extends ModelCapabilities>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? maxTokens = null,
+    Object? maxContextTokens = null,
+    Object? maxResponseTokens = null,
     Object? supportsStreaming = null,
     Object? supportsFunctions = null,
     Object? supportsSystemPrompt = null,
   }) {
     return _then(_value.copyWith(
-      maxTokens: null == maxTokens
-          ? _value.maxTokens
-          : maxTokens // ignore: cast_nullable_to_non_nullable
+      maxContextTokens: null == maxContextTokens
+          ? _value.maxContextTokens
+          : maxContextTokens // ignore: cast_nullable_to_non_nullable
+              as int,
+      maxResponseTokens: null == maxResponseTokens
+          ? _value.maxResponseTokens
+          : maxResponseTokens // ignore: cast_nullable_to_non_nullable
               as int,
       supportsStreaming: null == supportsStreaming
           ? _value.supportsStreaming
@@ -675,7 +712,8 @@ abstract class _$$ModelCapabilitiesImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {int maxTokens,
+      {int maxContextTokens,
+      int maxResponseTokens,
       bool supportsStreaming,
       bool supportsFunctions,
       bool supportsSystemPrompt});
@@ -694,15 +732,20 @@ class __$$ModelCapabilitiesImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? maxTokens = null,
+    Object? maxContextTokens = null,
+    Object? maxResponseTokens = null,
     Object? supportsStreaming = null,
     Object? supportsFunctions = null,
     Object? supportsSystemPrompt = null,
   }) {
     return _then(_$ModelCapabilitiesImpl(
-      maxTokens: null == maxTokens
-          ? _value.maxTokens
-          : maxTokens // ignore: cast_nullable_to_non_nullable
+      maxContextTokens: null == maxContextTokens
+          ? _value.maxContextTokens
+          : maxContextTokens // ignore: cast_nullable_to_non_nullable
+              as int,
+      maxResponseTokens: null == maxResponseTokens
+          ? _value.maxResponseTokens
+          : maxResponseTokens // ignore: cast_nullable_to_non_nullable
               as int,
       supportsStreaming: null == supportsStreaming
           ? _value.supportsStreaming
@@ -726,7 +769,8 @@ class _$ModelCapabilitiesImpl
     with DiagnosticableTreeMixin
     implements _ModelCapabilities {
   const _$ModelCapabilitiesImpl(
-      {required this.maxTokens,
+      {required this.maxContextTokens,
+      required this.maxResponseTokens,
       this.supportsStreaming = true,
       this.supportsFunctions = false,
       this.supportsSystemPrompt = true});
@@ -735,7 +779,9 @@ class _$ModelCapabilitiesImpl
       _$$ModelCapabilitiesImplFromJson(json);
 
   @override
-  final int maxTokens;
+  final int maxContextTokens;
+  @override
+  final int maxResponseTokens;
   @override
   @JsonKey()
   final bool supportsStreaming;
@@ -748,7 +794,7 @@ class _$ModelCapabilitiesImpl
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'ModelCapabilities(maxTokens: $maxTokens, supportsStreaming: $supportsStreaming, supportsFunctions: $supportsFunctions, supportsSystemPrompt: $supportsSystemPrompt)';
+    return 'ModelCapabilities(maxContextTokens: $maxContextTokens, maxResponseTokens: $maxResponseTokens, supportsStreaming: $supportsStreaming, supportsFunctions: $supportsFunctions, supportsSystemPrompt: $supportsSystemPrompt)';
   }
 
   @override
@@ -756,7 +802,8 @@ class _$ModelCapabilitiesImpl
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty('type', 'ModelCapabilities'))
-      ..add(DiagnosticsProperty('maxTokens', maxTokens))
+      ..add(DiagnosticsProperty('maxContextTokens', maxContextTokens))
+      ..add(DiagnosticsProperty('maxResponseTokens', maxResponseTokens))
       ..add(DiagnosticsProperty('supportsStreaming', supportsStreaming))
       ..add(DiagnosticsProperty('supportsFunctions', supportsFunctions))
       ..add(DiagnosticsProperty('supportsSystemPrompt', supportsSystemPrompt));
@@ -767,8 +814,10 @@ class _$ModelCapabilitiesImpl
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$ModelCapabilitiesImpl &&
-            (identical(other.maxTokens, maxTokens) ||
-                other.maxTokens == maxTokens) &&
+            (identical(other.maxContextTokens, maxContextTokens) ||
+                other.maxContextTokens == maxContextTokens) &&
+            (identical(other.maxResponseTokens, maxResponseTokens) ||
+                other.maxResponseTokens == maxResponseTokens) &&
             (identical(other.supportsStreaming, supportsStreaming) ||
                 other.supportsStreaming == supportsStreaming) &&
             (identical(other.supportsFunctions, supportsFunctions) ||
@@ -779,8 +828,13 @@ class _$ModelCapabilitiesImpl
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, maxTokens, supportsStreaming,
-      supportsFunctions, supportsSystemPrompt);
+  int get hashCode => Object.hash(
+      runtimeType,
+      maxContextTokens,
+      maxResponseTokens,
+      supportsStreaming,
+      supportsFunctions,
+      supportsSystemPrompt);
 
   /// Create a copy of ModelCapabilities
   /// with the given fields replaced by the non-null parameter values.
@@ -801,7 +855,8 @@ class _$ModelCapabilitiesImpl
 
 abstract class _ModelCapabilities implements ModelCapabilities {
   const factory _ModelCapabilities(
-      {required final int maxTokens,
+      {required final int maxContextTokens,
+      required final int maxResponseTokens,
       final bool supportsStreaming,
       final bool supportsFunctions,
       final bool supportsSystemPrompt}) = _$ModelCapabilitiesImpl;
@@ -810,7 +865,9 @@ abstract class _ModelCapabilities implements ModelCapabilities {
       _$ModelCapabilitiesImpl.fromJson;
 
   @override
-  int get maxTokens;
+  int get maxContextTokens;
+  @override
+  int get maxResponseTokens;
   @override
   bool get supportsStreaming;
   @override

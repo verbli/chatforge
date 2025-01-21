@@ -190,6 +190,7 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
   late final TextEditingController _apiKeyController;
   late ProviderType _type;
   bool _obscureApiKey = true;
+  bool _allowFallback = false;
   late final TextEditingController _baseUrlController;
 
   @override
@@ -199,6 +200,7 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
     _nameController = TextEditingController(text: provider?.name);
     _apiKeyController = TextEditingController(text: provider?.apiKey);
     _type = provider?.type ?? ProviderType.openAI;
+    _allowFallback = provider?.allowFallback ?? false;
 
     // Only set base URL if it differs from default
     if (provider == null) {
@@ -281,6 +283,31 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
                   }
                 },
               ),
+              if (_type == ProviderType.openRouter) ...[
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SwitchListTile(
+                        title: const Text('Allow Fallback'),
+                        value: _allowFallback,
+                        onChanged: (bool value) {
+                          setState(() {
+                            _allowFallback = value;
+                          });
+                        },
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.help_outline),
+                      onPressed: () => _showHelpDialog(
+                        'Provider Fallback',
+                        'This provider is a proxy to other upstream providers. If fallback is enabled, the proxy will attempt to use alternative providers if the primary provider is unavailable.\n\nNote: Not all upstream providers for a given model have the same costs. Enabling will increase reliability with the possibility of increased costs.',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -353,6 +380,7 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
                           ? _baseUrlController.text
                           : preset.baseUrl,
                       models: selectedModels,
+                      allowFallback: _type == ProviderType.openRouter ? _allowFallback : null,
                     ),
                   );
                 }
@@ -378,6 +406,22 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
           child: const Text('SAVE'),
         ),
       ],
+    );
+  }
+
+  void _showHelpDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 

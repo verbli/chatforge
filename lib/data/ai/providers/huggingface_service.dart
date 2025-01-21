@@ -10,21 +10,17 @@ import 'package:tiktoken/tiktoken.dart';
 import '../../models.dart';
 import '../ai_service.dart';
 
-class OpenAIService extends AIService {
+class HuggingfaceService extends AIService {
   final ProviderConfig _provider;
   final Dio _dio;
   late final Tiktoken _tokenizer;
 
-  OpenAIService(this._provider) : _dio = Dio() {
+  HuggingfaceService(this._provider) : _dio = Dio() {
     _dio.options.baseUrl = _provider.baseUrl;
     _dio.options.headers = {
       'Authorization': 'Bearer ${_provider.apiKey}',
       'Content-Type': 'application/json',
     };
-
-    if (_provider.organization != null) {
-      _dio.options.headers['OpenAI-Organization'] = _provider.organization!;
-    }
 
     _tokenizer = getEncoding('cl100k_base');
   }
@@ -55,7 +51,7 @@ class OpenAIService extends AIService {
   }) async* {
     try {
       // Convert messages to OpenAI format
-      final openAIMessages = messages.map((msg) => {
+      final openAIMessages = messages.where((msg) => msg.content.isNotEmpty).map((msg) => {
         'role': msg.role.toString().split('.').last,
         'content': msg.content,
       }).toList();
@@ -69,7 +65,9 @@ class OpenAIService extends AIService {
       }
 
       // Calculate available tokens for response
-      final inputTokens = await countTokensForMessages(openAIMessages);
+      final inputTokens = await countTokens(
+        messages.map((m) => m.content).join('\n'),
+      );
 
       if (inputTokens >= model.capabilities.maxContextTokens || inputTokens >= settings.maxContextTokens) {
         throw AIServiceException(
@@ -85,7 +83,7 @@ class OpenAIService extends AIService {
 
       // Make streaming request
       final response = await _dio.post<ResponseBody>(
-        '/chat/completions',
+        '/models/${model.id}/v1/chat/completions',
         options: Options(
           responseType: ResponseType.stream,
           receiveTimeout: const Duration(minutes: 2), // Increase timeout for long responses
@@ -106,7 +104,6 @@ class OpenAIService extends AIService {
       String currentBlock = '';
       bool isCodeBlock = false;
       bool isHtmlBlock = false;
-      String accumulatedText = '';
 
       await for (final chunk in response.data!.stream) {
         final lines = utf8.decode(chunk).split('\n');
@@ -177,7 +174,7 @@ class OpenAIService extends AIService {
         );
       }
       throw AIServiceException(
-        'OpenAI API error: ${e.message}',
+        'HuggingFace API error: ${e.message}',
         provider: provider.name,
         statusCode: e.response?.statusCode,
       );

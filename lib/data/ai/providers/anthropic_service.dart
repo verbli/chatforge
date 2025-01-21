@@ -69,11 +69,12 @@ class AnthropicService extends AIService {
         );
       }
 
+      // Calculate available tokens for response
       final inputTokens = await countTokens(
         messages.map((m) => m.content).join('\n'),
       );
 
-      if (inputTokens >= model.capabilities.maxTokens) {
+      if (inputTokens >= model.capabilities.maxContextTokens || inputTokens >= settings.maxContextTokens) {
         throw AIServiceException(
           'Context window full',
           provider: provider.name,
