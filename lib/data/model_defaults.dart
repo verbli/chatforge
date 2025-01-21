@@ -146,31 +146,39 @@ class ModelDefaults {
   ];
 
   static final defaultProviders = [
-    ProviderConfig(
+    const ProviderConfig(
       id: 'openai',
       name: 'OpenAI',
       type: ProviderType.openAI,
       baseUrl: 'https://api.openai.com/v1',
       apiKey: '',
-      models: openAIModels,
+      models: [],
     ),
 
-    ProviderConfig(
+    const ProviderConfig(
       id: 'anthropic',
       name: 'Anthropic',
       type: ProviderType.anthropic,
       baseUrl: 'https://api.anthropic.com/v1',
       apiKey: '',
-      models: anthropicModels,
+      models: [],
     ),
-    ProviderConfig(
+    const ProviderConfig(
       id: 'gemini',
       name: 'Google Gemini',
       type: ProviderType.gemini,
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
       apiKey: '',
-      models: geminiModels,
+      models: [],
     ),
+    const ProviderConfig(
+      id: 'openrouter',
+      name: 'OpenRouter',
+      type: ProviderType.openRouter,
+      baseUrl: 'https://openrouter.ai/api/v1',
+      apiKey: '',
+      models: [],
+    )
   ];
 
   static ProviderConfig? getDefaultProvider(ProviderType type) {

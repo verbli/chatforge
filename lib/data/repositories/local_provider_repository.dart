@@ -27,16 +27,6 @@ class LocalProviderRepository extends ProviderRepository {
     _controller.add(_providers);
   }
 
-  Future<void> _addDefaultProviders() async {
-    final defaultProviders = ModelDefaults.defaultProviders;
-    for (final provider in defaultProviders) {
-      await addProvider(provider.copyWith(
-        apiKey: '',  // Ensure API key is empty
-        models: provider.models.map((m) => m.copyWith(isEnabled: true)).toList(),
-      ));
-    }
-  }
-
   @override
   Stream<List<ProviderConfig>> watchProviders() {
     return _controller.stream;

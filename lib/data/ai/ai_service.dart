@@ -1,5 +1,6 @@
 // data/ai/ai_service.dart
 
+import 'package:chatforge/data/ai/providers/openrouter_service.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../utils/word_streamer.dart';
@@ -31,6 +32,8 @@ abstract class AIService {
 
   static AIService forProvider(ProviderConfig provider) {
     switch (provider.type) {
+      case ProviderType.openRouter:
+        return OpenRouterService(provider);
       case ProviderType.openAI:
         return OpenAIService(provider);
       case ProviderType.anthropic:

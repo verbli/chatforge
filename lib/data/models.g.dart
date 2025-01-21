@@ -32,6 +32,7 @@ Map<String, dynamic> _$$ProviderConfigImplToJson(
     };
 
 const _$ProviderTypeEnumMap = {
+  ProviderType.openRouter: 'openRouter',
   ProviderType.openAI: 'openAI',
   ProviderType.anthropic: 'anthropic',
   ProviderType.gemini: 'gemini',
