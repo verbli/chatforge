@@ -4,37 +4,108 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:anthropic_sdk_dart/anthropic_sdk_dart.dart';
+import '../../../core/constants.dart';
 import '../../models.dart';
 
 abstract class ModelFetcher {
   Future<List<ModelConfig>> fetchModels(String apiKey);
 }
 
+class HuggingfaceModelFetcher implements ModelFetcher {
+  @override
+  Future<List<ModelConfig>> fetchModels(String apiKey) async {
+    final dio = Dio(BaseOptions(
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    ));
+
+    try {
+      final response = await dio.get('${AppConstants.modelFetcherBaseUrl}/models?provider_id=huggingface');
+      final models = (response.data as List)
+          .map((m) => ModelConfig(
+        id: m['id'],
+        name: m['name'],
+        capabilities: ModelCapabilities(
+          maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
+          maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
+          supportsStreaming: true,
+          supportsFunctions: true,
+        ),
+        settings: ModelSettings(
+          maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
+          maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
+        ),
+      )).toList();
+      return models;
+    } catch (e) {
+      throw Exception('Failed to fetch OpenRouter models: $e');
+    }
+  }
+}
+
+class OpenRouterModelFetcher implements ModelFetcher {
+  @override
+  Future<List<ModelConfig>> fetchModels(String apiKey) async {
+    final dio = Dio(BaseOptions(
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    ));
+
+    try {
+      final response = await dio.get('${AppConstants.modelFetcherBaseUrl}/models?provider_id=openrouter');
+      final models = (response.data as List)
+          .map((m) => ModelConfig(
+        id: m['id'],
+        name: m['name'],
+        capabilities: ModelCapabilities(
+          maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
+          maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
+          supportsStreaming: true,
+          supportsFunctions: true,
+        ),
+        settings: ModelSettings(
+          maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
+          maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
+        ),
+      )).toList();
+      return models;
+    } catch (e) {
+      throw Exception('Failed to fetch OpenRouter models: $e');
+    }
+  }
+}
+
 class OpenAIModelFetcher implements ModelFetcher {
   @override
   Future<List<ModelConfig>> fetchModels(String apiKey) async {
     final dio = Dio(BaseOptions(
-      headers: {'Authorization': 'Bearer $apiKey'},
+      headers: {
+        'Content-Type': 'application/json',
+      },
     ));
 
     try {
-      final response = await dio.get('https://api.openai.com/v1/models');
-      final models = (response.data['data'] as List)
-          .where((m) => m['id'].toString().contains('gpt'))
+      final response = await dio.get('${AppConstants.modelFetcherBaseUrl}/models?provider_id=openai');
+      final models = (response.data as List)
           .map((m) => ModelConfig(
         id: m['id'],
-        name: m['id'],
+        name: m['name'],
         capabilities: ModelCapabilities(
-          maxTokens: m['context_window'] ?? 4096,
+          maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
+          maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
           supportsStreaming: true,
-          supportsFunctions: m['id'].toString().contains('gpt-4'),
+          supportsFunctions: true,
         ),
-        settings: ModelSettings(maxContextTokens: m['context_window'] ?? 4096),
-      ))
-          .toList();
+        settings: ModelSettings(
+          maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
+          maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
+        ),
+      )).toList();
       return models;
     } catch (e) {
-      throw Exception('Failed to fetch OpenAI models: $e');
+      throw Exception('Failed to fetch OpenRouter models: $e');
     }
   }
 }
@@ -42,75 +113,65 @@ class OpenAIModelFetcher implements ModelFetcher {
 class AnthropicModelFetcher implements ModelFetcher {
   @override
   Future<List<ModelConfig>> fetchModels(String apiKey) async {
-    // Anthropic doesn't have a way to programmatically fetch these yet
-    return [
-      const ModelConfig(
-        id: 'claude-3-5-sonnet-latest',
-        name: 'Claude 3.5 Sonnet',
+    final dio = Dio(BaseOptions(
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    ));
+
+    try {
+      final response = await dio.get('${AppConstants.modelFetcherBaseUrl}/models?provider_id=anthropic');
+      final models = (response.data as List)
+          .map((m) => ModelConfig(
+        id: m['id'],
+        name: m['name'],
         capabilities: ModelCapabilities(
-          maxTokens: 8192,
+          maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
+          maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
           supportsStreaming: true,
+          supportsFunctions: true,
         ),
-        settings: ModelSettings(maxContextTokens: 200000),
-      ),
-      const ModelConfig(
-        id: 'claude-3-5-haiku-latest',
-        name: 'Claude 3.5 Haiku',
-        capabilities: ModelCapabilities(
-          maxTokens: 8192,
-          supportsStreaming: true,
+        settings: ModelSettings(
+          maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
+          maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
         ),
-        settings: ModelSettings(maxContextTokens: 200000),
-      ),
-      const ModelConfig(
-        id: 'claude-3-opus-latest',
-        name: 'Claude 3 Opus',
-        capabilities: ModelCapabilities(
-          maxTokens: 4096,
-          supportsStreaming: true,
-        ),
-        settings: ModelSettings(maxContextTokens: 200000),
-      ),
-      const ModelConfig(
-        id: 'claude-3-sonnet-20240229',
-        name: 'Claude 3 Sonnet',
-        capabilities: ModelCapabilities(
-          maxTokens: 4096,
-          supportsStreaming: true,
-        ),
-        settings: ModelSettings(maxContextTokens: 200000),
-      ),
-      const ModelConfig(
-        id: 'claude-3-haiku-20240307',
-        name: 'Claude 3 Haiku',
-        capabilities: ModelCapabilities(
-          maxTokens: 4096,
-          supportsStreaming: true,
-        ),
-        settings: ModelSettings(maxContextTokens: 200000),
-      ),
-    ];
+      )).toList();
+      return models;
+    } catch (e) {
+      throw Exception('Failed to fetch OpenRouter models: $e');
+    }
   }
 }
 
 class GeminiModelFetcher implements ModelFetcher {
   @override
   Future<List<ModelConfig>> fetchModels(String apiKey) async {
+    final dio = Dio(BaseOptions(
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    ));
+
     try {
-      Gemini.reInitialize(apiKey: apiKey);
-      return (await Gemini.instance.listModels()).map((model) {
-        return ModelConfig(
-          id: model.name ?? 'unknown-model',
-          name: model.displayName ?? 'Unknown Model',
-          capabilities: ModelCapabilities(
-              maxTokens: model.outputTokenLimit ?? 0
-          ),
-          settings: ModelSettings(
-              maxContextTokens: model.inputTokenLimit ?? 0),
-        );
-      }).toList();
+      final response = await dio.get('${AppConstants.modelFetcherBaseUrl}/models?provider_id=gemini');
+      final models = (response.data as List)
+          .map((m) => ModelConfig(
+        id: m['id'],
+        name: m['name'],
+        capabilities: ModelCapabilities(
+          maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
+          maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
+          supportsStreaming: true,
+          supportsFunctions: true,
+        ),
+        settings: ModelSettings(
+          maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
+          maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
+        ),
+      )).toList();
+      return models;
     } catch (e) {
-      throw Exception('Failed to fetch Gemini models: $e');
+      throw Exception('Failed to fetch OpenRouter models: $e');
     }
   }
 }
@@ -124,6 +185,8 @@ class ModelFetcherFactory {
         return AnthropicModelFetcher();
       case ProviderType.gemini:
         return GeminiModelFetcher();
+      case ProviderType.openRouter:
+        return OpenRouterModelFetcher();
       default:
         return null;
     }

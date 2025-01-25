@@ -10,7 +10,8 @@ part 'models.g.dart';
 enum ProviderType {
   openAI('OpenAI'),
   anthropic('Anthropic'),
-  gemini('Google Gemini');
+  gemini('Google Gemini'),
+  openRouter('OpenRouter'),;
 
   final String displayName;
   const ProviderType(this.displayName);
@@ -39,6 +40,7 @@ class ProviderConfig with _$ProviderConfig {
     required String apiKey,
     required List<ModelConfig> models,
     String? organization,
+    bool? allowFallback,
   }) = _ProviderConfig;
 
   factory ProviderConfig.fromJson(Map<String, dynamic> json) =>
@@ -62,7 +64,8 @@ class ModelConfig with _$ModelConfig {
 @freezed
 class ModelCapabilities with _$ModelCapabilities {
   const factory ModelCapabilities({
-    required int maxTokens,
+    required int maxContextTokens,
+    required int maxResponseTokens,
     @Default(true) bool supportsStreaming,
     @Default(false) bool supportsFunctions,
     @Default(true) bool supportsSystemPrompt,

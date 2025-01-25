@@ -17,6 +17,7 @@ _$ProviderConfigImpl _$$ProviderConfigImplFromJson(Map<String, dynamic> json) =>
           .map((e) => ModelConfig.fromJson(e as Map<String, dynamic>))
           .toList(),
       organization: json['organization'] as String?,
+      allowFallback: json['allowFallback'] as bool?,
     );
 
 Map<String, dynamic> _$$ProviderConfigImplToJson(
@@ -29,12 +30,14 @@ Map<String, dynamic> _$$ProviderConfigImplToJson(
       'apiKey': instance.apiKey,
       'models': instance.models,
       'organization': instance.organization,
+      'allowFallback': instance.allowFallback,
     };
 
 const _$ProviderTypeEnumMap = {
   ProviderType.openAI: 'openAI',
   ProviderType.anthropic: 'anthropic',
   ProviderType.gemini: 'gemini',
+  ProviderType.openRouter: 'openRouter',
 };
 
 _$ModelConfigImpl _$$ModelConfigImplFromJson(Map<String, dynamic> json) =>
@@ -60,7 +63,8 @@ Map<String, dynamic> _$$ModelConfigImplToJson(_$ModelConfigImpl instance) =>
 _$ModelCapabilitiesImpl _$$ModelCapabilitiesImplFromJson(
         Map<String, dynamic> json) =>
     _$ModelCapabilitiesImpl(
-      maxTokens: (json['maxTokens'] as num).toInt(),
+      maxContextTokens: (json['maxContextTokens'] as num).toInt(),
+      maxResponseTokens: (json['maxResponseTokens'] as num).toInt(),
       supportsStreaming: json['supportsStreaming'] as bool? ?? true,
       supportsFunctions: json['supportsFunctions'] as bool? ?? false,
       supportsSystemPrompt: json['supportsSystemPrompt'] as bool? ?? true,
@@ -69,7 +73,8 @@ _$ModelCapabilitiesImpl _$$ModelCapabilitiesImplFromJson(
 Map<String, dynamic> _$$ModelCapabilitiesImplToJson(
         _$ModelCapabilitiesImpl instance) =>
     <String, dynamic>{
-      'maxTokens': instance.maxTokens,
+      'maxContextTokens': instance.maxContextTokens,
+      'maxResponseTokens': instance.maxResponseTokens,
       'supportsStreaming': instance.supportsStreaming,
       'supportsFunctions': instance.supportsFunctions,
       'supportsSystemPrompt': instance.supportsSystemPrompt,

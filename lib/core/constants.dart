@@ -3,7 +3,10 @@ class AppConstants {
   // API Endpoints
   static const String openAIBaseUrl = 'https://api.openai.com/v1';
   static const String anthropicBaseUrl = 'https://api.anthropic.com/v1';
-  static const String geminiBaseUrl = 'https://generativelanguage.googleapis.com/v1';
+  static const String geminiBaseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+  static const String openRouterBaseUrl = 'https://openrouter.ai/api/v1';
+  static const String huggingfaceBaseUrl = 'https://api-inference.huggingface.co';
+  static const String modelFetcherBaseUrl = 'https://eshipman-ai-capabilities.hf.space';
 
   // Default system prompts
   static const String defaultAssistantPrompt = 'You are a helpful AI assistant.';

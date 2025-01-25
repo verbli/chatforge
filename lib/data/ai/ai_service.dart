@@ -1,5 +1,7 @@
 // data/ai/ai_service.dart
 
+import 'package:chatforge/data/ai/providers/huggingface_service.dart';
+import 'package:chatforge/data/ai/providers/openrouter_service.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../utils/word_streamer.dart';
@@ -31,6 +33,8 @@ abstract class AIService {
 
   static AIService forProvider(ProviderConfig provider) {
     switch (provider.type) {
+      case ProviderType.openRouter:
+        return OpenRouterService(provider);
       case ProviderType.openAI:
         return OpenAIService(provider);
       case ProviderType.anthropic:
@@ -72,7 +76,7 @@ abstract class AIService {
       model: _provider!.models.first,
       settings: ModelSettings(
         temperature: 1,
-        maxContextTokens: _provider!.models.first.capabilities.maxTokens,
+        maxContextTokens: _provider!.models.first.capabilities.maxContextTokens,
         systemPrompt: "You are a helpful assistant that creates concise, descriptive titles.",
       ),
       messages: [Message(

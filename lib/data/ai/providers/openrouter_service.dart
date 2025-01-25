@@ -1,32 +1,35 @@
-// data/ai/providers/openai_service.dart
 
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:chatforge/data/models.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:highlighter/languages/fix.dart';
 import 'package:tiktoken/tiktoken.dart';
 
-import '../../models.dart';
 import '../ai_service.dart';
 
-class OpenAIService extends AIService {
+class OpenRouterService extends AIService {
   final ProviderConfig _provider;
   final Dio _dio;
   late final Tiktoken _tokenizer;
 
-  OpenAIService(this._provider) : _dio = Dio() {
+  OpenRouterService(this._provider) : _dio = Dio() {
     _dio.options.baseUrl = _provider.baseUrl;
     _dio.options.headers = {
       'Authorization': 'Bearer ${_provider.apiKey}',
+      'HTTP-Referer': 'https://chatforge.verbli.org',
+      'X-Title': 'ChatForge',
       'Content-Type': 'application/json',
     };
 
-    if (_provider.organization != null) {
-      _dio.options.headers['OpenAI-Organization'] = _provider.organization!;
-    }
-
     _tokenizer = getEncoding('cl100k_base');
+  }
+
+  @override
+  Future<int> countTokens(String text) async {
+    return _tokenizer.encode(text).length;
   }
 
   @override
@@ -55,7 +58,7 @@ class OpenAIService extends AIService {
   }) async* {
     try {
       // Convert messages to OpenAI format
-      final openAIMessages = messages.map((msg) => {
+      final openAIMessages = messages.where((msg) => msg.content.isNotEmpty).map((msg) => {
         'role': msg.role.toString().split('.').last,
         'content': msg.content,
       }).toList();
@@ -69,7 +72,9 @@ class OpenAIService extends AIService {
       }
 
       // Calculate available tokens for response
-      final inputTokens = await countTokensForMessages(openAIMessages);
+      final inputTokens = await countTokens(
+        messages.map((m) => m.content).join('\n'),
+      );
 
       if (inputTokens >= model.capabilities.maxContextTokens || inputTokens >= settings.maxContextTokens) {
         throw AIServiceException(
@@ -106,15 +111,29 @@ class OpenAIService extends AIService {
       String currentBlock = '';
       bool isCodeBlock = false;
       bool isHtmlBlock = false;
-      String accumulatedText = '';
 
       await for (final chunk in response.data!.stream) {
         final lines = utf8.decode(chunk).split('\n');
         for (final line in lines) {
           if (line.isEmpty || line.startsWith('data: [DONE]')) continue;
-          if (line.startsWith('data: ')) {
+          if (line.contains(': OPENROUTER PROCESSING')) continue;
+          if (line.startsWith('data:')) {
             try {
-              final data = json.decode(line.substring(6));
+              final fixed = line.replaceFirst('data: ', '');
+              var data;
+              try {
+                data = jsonDecode(fixed);
+              } catch (e) {
+                continue;
+              }
+
+              if (data['error'] != null) {
+                throw AIServiceException(
+                  'OpenRouter API error: ${data['error']['metadata']['raw']['data']['message']}',
+                  provider: provider.name,
+                );
+              }
+
               final content = data['choices'][0]['delta']['content'];
               if (content != null) {
                 // Handle special blocks
@@ -129,7 +148,8 @@ class OpenAIService extends AIService {
                     'content': currentBlock,
                   };
                   currentBlock = '';
-                } else if (content.contains('<') && content.contains('>') && !isHtmlBlock) {
+                } else if (content.contains('<') && content.contains('>') &&
+                    !isHtmlBlock) {
                   isHtmlBlock = true;
                   currentBlock = content;
                 } else if (content.contains('</') && isHtmlBlock) {
@@ -146,13 +166,16 @@ class OpenAIService extends AIService {
                   // Handle regular text with word streaming
                   await for (final chunk in processStreamingChunk(
                     content: content,
-                    enableWordByWordStreaming: settings.enableWordByWordStreaming,
+                    enableWordByWordStreaming: settings
+                        .enableWordByWordStreaming,
                     streamingWordDelay: settings.streamingWordDelay,
                   )) {
                     yield chunk;
                   }
                 }
               }
+            } on AIServiceException catch (e) {
+              rethrow;
             } catch (e) {
               debugPrint('Error processing chunk: $e');
               continue;
@@ -177,7 +200,7 @@ class OpenAIService extends AIService {
         );
       }
       throw AIServiceException(
-        'OpenAI API error: ${e.message}',
+        'OpenRouter API error: ${e.message}',
         provider: provider.name,
         statusCode: e.response?.statusCode,
       );
@@ -190,30 +213,14 @@ class OpenAIService extends AIService {
   }
 
   @override
-  Future<int> countTokens(String text) async {
-    return _tokenizer.encode(text).length;
-  }
-
-  Future<int> countTokensForMessages(List<Map<String, dynamic>> messages) async {
-    int total = 0;
-    for (final message in messages) {
-      // Include token overhead for each message
-      total += 4; // Format overhead per message
-      for (final value in message.values) {
-        total += await countTokens(value.toString());
-      }
-    }
-    total += 2; // Format overhead for the entire request
-    return total;
-  }
-
-  @override
   Future<bool> testConnection() async {
     try {
-      await _dio.get('/models');
+      await _dio.get('/models/count');
       return true;
     } catch (_) {
       return false;
     }
   }
+
+
 }
