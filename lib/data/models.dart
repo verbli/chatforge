@@ -128,8 +128,9 @@ class Message with _$Message {
     required String conversationId,
     required String content,
     required Role role,
-    required String timestamp,  // Keep as String
+    required String timestamp,
     @Default(0) int tokenCount,
+    @Default(false) bool isPlaceholder,
   }) = _Message;
 
   factory Message.fromJson(Map<String, dynamic> json) => _$MessageFromJson(json);
