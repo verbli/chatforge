@@ -116,8 +116,12 @@ class _DefaultMessageBubbleState extends State<DefaultMessageBubble> {
   }
 
   Future<void> _saveEdit() async {
-    final newContent = _editController.text;
-    if (newContent != widget.data.content) {
+    final newContent = _editController.text.trim();
+    if (newContent.isEmpty) {
+      // Delete the message if empty
+      widget.data.onDelete?.call();
+      setState(() => _isEditing = false);
+    } else if (newContent != widget.data.content) {
       setState(() => _isEditing = false);
       await widget.data.onEdit?.call(newContent);
     } else {

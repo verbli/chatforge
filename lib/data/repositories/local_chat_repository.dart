@@ -174,6 +174,11 @@ class LocalChatRepository extends ChatRepository {
 
   @override
   Future<Message> addMessage(Message message) async {
+    // Validate message content
+    if (message.content.trim().isEmpty) {
+      throw Exception('Cannot add empty message');
+    }
+
     await databaseService.transaction((txn) async {
       // Insert message
       await txn.insert('messages', {
