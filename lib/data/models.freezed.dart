@@ -1703,8 +1703,9 @@ mixin _$Message {
   String get conversationId => throw _privateConstructorUsedError;
   String get content => throw _privateConstructorUsedError;
   Role get role => throw _privateConstructorUsedError;
-  String get timestamp => throw _privateConstructorUsedError; // Keep as String
+  String get timestamp => throw _privateConstructorUsedError;
   int get tokenCount => throw _privateConstructorUsedError;
+  bool get isPlaceholder => throw _privateConstructorUsedError;
 
   /// Serializes this Message to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1726,7 +1727,8 @@ abstract class $MessageCopyWith<$Res> {
       String content,
       Role role,
       String timestamp,
-      int tokenCount});
+      int tokenCount,
+      bool isPlaceholder});
 }
 
 /// @nodoc
@@ -1750,6 +1752,7 @@ class _$MessageCopyWithImpl<$Res, $Val extends Message>
     Object? role = null,
     Object? timestamp = null,
     Object? tokenCount = null,
+    Object? isPlaceholder = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -1776,6 +1779,10 @@ class _$MessageCopyWithImpl<$Res, $Val extends Message>
           ? _value.tokenCount
           : tokenCount // ignore: cast_nullable_to_non_nullable
               as int,
+      isPlaceholder: null == isPlaceholder
+          ? _value.isPlaceholder
+          : isPlaceholder // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -1793,7 +1800,8 @@ abstract class _$$MessageImplCopyWith<$Res> implements $MessageCopyWith<$Res> {
       String content,
       Role role,
       String timestamp,
-      int tokenCount});
+      int tokenCount,
+      bool isPlaceholder});
 }
 
 /// @nodoc
@@ -1815,6 +1823,7 @@ class __$$MessageImplCopyWithImpl<$Res>
     Object? role = null,
     Object? timestamp = null,
     Object? tokenCount = null,
+    Object? isPlaceholder = null,
   }) {
     return _then(_$MessageImpl(
       id: null == id
@@ -1841,6 +1850,10 @@ class __$$MessageImplCopyWithImpl<$Res>
           ? _value.tokenCount
           : tokenCount // ignore: cast_nullable_to_non_nullable
               as int,
+      isPlaceholder: null == isPlaceholder
+          ? _value.isPlaceholder
+          : isPlaceholder // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -1854,7 +1867,8 @@ class _$MessageImpl with DiagnosticableTreeMixin implements _Message {
       required this.content,
       required this.role,
       required this.timestamp,
-      this.tokenCount = 0});
+      this.tokenCount = 0,
+      this.isPlaceholder = false});
 
   factory _$MessageImpl.fromJson(Map<String, dynamic> json) =>
       _$$MessageImplFromJson(json);
@@ -1869,14 +1883,16 @@ class _$MessageImpl with DiagnosticableTreeMixin implements _Message {
   final Role role;
   @override
   final String timestamp;
-// Keep as String
   @override
   @JsonKey()
   final int tokenCount;
+  @override
+  @JsonKey()
+  final bool isPlaceholder;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'Message(id: $id, conversationId: $conversationId, content: $content, role: $role, timestamp: $timestamp, tokenCount: $tokenCount)';
+    return 'Message(id: $id, conversationId: $conversationId, content: $content, role: $role, timestamp: $timestamp, tokenCount: $tokenCount, isPlaceholder: $isPlaceholder)';
   }
 
   @override
@@ -1889,7 +1905,8 @@ class _$MessageImpl with DiagnosticableTreeMixin implements _Message {
       ..add(DiagnosticsProperty('content', content))
       ..add(DiagnosticsProperty('role', role))
       ..add(DiagnosticsProperty('timestamp', timestamp))
-      ..add(DiagnosticsProperty('tokenCount', tokenCount));
+      ..add(DiagnosticsProperty('tokenCount', tokenCount))
+      ..add(DiagnosticsProperty('isPlaceholder', isPlaceholder));
   }
 
   @override
@@ -1905,13 +1922,15 @@ class _$MessageImpl with DiagnosticableTreeMixin implements _Message {
             (identical(other.timestamp, timestamp) ||
                 other.timestamp == timestamp) &&
             (identical(other.tokenCount, tokenCount) ||
-                other.tokenCount == tokenCount));
+                other.tokenCount == tokenCount) &&
+            (identical(other.isPlaceholder, isPlaceholder) ||
+                other.isPlaceholder == isPlaceholder));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, id, conversationId, content, role, timestamp, tokenCount);
+  int get hashCode => Object.hash(runtimeType, id, conversationId, content,
+      role, timestamp, tokenCount, isPlaceholder);
 
   /// Create a copy of Message
   /// with the given fields replaced by the non-null parameter values.
@@ -1936,7 +1955,8 @@ abstract class _Message implements Message {
       required final String content,
       required final Role role,
       required final String timestamp,
-      final int tokenCount}) = _$MessageImpl;
+      final int tokenCount,
+      final bool isPlaceholder}) = _$MessageImpl;
 
   factory _Message.fromJson(Map<String, dynamic> json) = _$MessageImpl.fromJson;
 
@@ -1949,9 +1969,11 @@ abstract class _Message implements Message {
   @override
   Role get role;
   @override
-  String get timestamp; // Keep as String
+  String get timestamp;
   @override
   int get tokenCount;
+  @override
+  bool get isPlaceholder;
 
   /// Create a copy of Message
   /// with the given fields replaced by the non-null parameter values.

@@ -18,6 +18,7 @@ import '../themes/chat_theme.dart';
 import '../themes/theme_widgets.dart';
 import '../widgets/ad_banner.dart';
 import '../widgets/settings_row.dart';
+import '../widgets/typing_indicator.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
@@ -44,6 +45,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   String? _lastMessageId;
   final _focusNode = FocusNode();
   bool _showScrollbar = false;
+  Message? _placeholderMessage;
 
   @override
   void initState() {
@@ -117,8 +119,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Future<void> _stopGeneration() async {
     if (_messageStream != null) {
-      await _messageStream!.cancel(); // Cancel the stream
+      await _messageStream!.cancel();
       _messageStream = null;
+
+      // Clean up any placeholders for this conversation
+      try {
+        final messages = ref.read(messagesProvider(widget.conversationId)).value ?? [];
+        final placeholders = messages.where((m) => m.isPlaceholder);
+        for (final placeholder in placeholders) {
+          await ref.read(chatRepositoryProvider).deleteMessage(placeholder.id);
+        }
+      } catch (e) {
+        debugPrint('Error cleaning up placeholders: $e');
+      }
+
       setState(() => _isGenerating = false);
     }
   }
@@ -138,6 +152,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     setState(() => _isGenerating = true);
     _inputController.clear();
 
+    Message? placeholderMessage;
+    Message? addedAssistantMessage;
+
     try {
       final userMessage = Message(
         id: const Uuid().v4(),
@@ -153,19 +170,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         _scrollToBottom();
       }
 
-      final assistantMessage = Message(
+      // Create and add placeholder message
+      Message? placeholderMessage = Message(
         id: const Uuid().v4(),
         conversationId: widget.conversationId,
         content: '',
         role: Role.assistant,
         timestamp: DateTime.now().toIso8601String(),
+        isPlaceholder: true,
       );
 
-      // Don't add empty assistant message to database yet
-      // We'll only add it once we have content
+      await ref.read(chatRepositoryProvider).addMessage(placeholderMessage);
+
+      String fullResponse = '';
+      Message? addedAssistantMessage;
 
       final aiService = ref.read(aiServiceProvider(provider));
-      String fullResponse = '';
       int tokenCount = 0;
 
       if (_isNearBottom) {
@@ -176,8 +196,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       await ref.read(chatRepositoryProvider).updateMessage(
         userMessage.copyWith(tokenCount: userTokens),
       );
-
-      Message? addedAssistantMessage;
 
       _messageStream = aiService.streamCompletion(
         provider: provider,
@@ -190,15 +208,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
           fullResponse += chunk['content'];
 
-          // Only add or update the assistant message if we have content
           if (fullResponse.isNotEmpty) {
             if (addedAssistantMessage == null) {
-              // First content received - add the message
+              // Only try to delete placeholder if we haven't already
+              if (placeholderMessage != null) {
+                await ref.read(chatRepositoryProvider).deleteMessage(placeholderMessage!.id);
+                placeholderMessage = null;
+              }
+
               addedAssistantMessage = await ref.read(chatRepositoryProvider).addMessage(
-                assistantMessage.copyWith(content: fullResponse),
+                Message(
+                  id: const Uuid().v4(),
+                  conversationId: widget.conversationId,
+                  content: fullResponse,
+                  role: Role.assistant,
+                  timestamp: DateTime.now().toIso8601String(),
+                ),
               );
             } else {
-              // Update existing message
               await ref.read(chatRepositoryProvider).updateMessageContent(
                 addedAssistantMessage!.copyWith(content: fullResponse),
               );
@@ -214,9 +241,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         onDone: () async {
           if (!mounted) return;
 
-          // If we got a response and added the message, update the token count
+          // Clean up placeholder if it still exists
+          if (placeholderMessage != null) {
+            await ref.read(chatRepositoryProvider).deleteMessage(placeholderMessage!.id);
+            placeholderMessage = null;
+          }
+
           if (addedAssistantMessage != null) {
-            tokenCount = await aiService.countTokens(fullResponse);
+            final tokenCount = await aiService.countTokens(fullResponse);
             await ref.read(chatRepositoryProvider).updateMessage(
               addedAssistantMessage!.copyWith(
                 content: fullResponse,
@@ -230,17 +262,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         },
         onError: (error) {
           debugPrint('Error in stream: $error');
+          // Clean up placeholder if it exists
+          if (placeholderMessage != null) {
+            ref.read(chatRepositoryProvider).deleteMessage(placeholderMessage!.id);
+            placeholderMessage = null;
+          }
           setState(() => _isGenerating = false);
           _messageStream = null;
         },
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      // Clean up placeholder on any error
+      if (placeholderMessage != null) {
+        await ref.read(chatRepositoryProvider).deleteMessage(placeholderMessage.id);
+      }
+      setState(() => _isGenerating = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     } finally {
       if (mounted && _messageStream == null) {
         setState(() => _isGenerating = false);
@@ -317,6 +361,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildMessageList(List<Message> messages, ChatTheme theme) {
+    final displayMessages = [...messages];
+    if (_placeholderMessage != null) {
+      displayMessages.add(_placeholderMessage!);
+    }
+
     return RawScrollbar(
       controller: _scrollController,
       thumbVisibility: false,
@@ -337,6 +386,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         itemCount: messages.length,
         itemBuilder: (context, index) {
           final message = messages[index];
+
+          // Show typing indicator for empty placeholder message
+          if (message == _placeholderMessage) {
+            return Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: theme.styling.maxWidth,
+                ),
+                padding: EdgeInsets.symmetric(
+                  vertical: theme.styling.messageSpacing / 2,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.styling.assistantMessageColor,
+                    borderRadius: theme.styling.messageBorderRadius,
+                  ),
+                  padding: theme.styling.messagePadding,
+                  child: TypingIndicator(
+                    backgroundColor: theme.styling.assistantMessageColor,
+                    dotColor: theme.styling.assistantMessageTextColor,
+                  ),
+                ),
+              ),
+            );
+          }
+
           final messageData = MessageData(
             id: "${widget.conversationId}/${message.id}",
             content: message.content,
@@ -1074,17 +1150,15 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                         final provider = provs.firstWhere((p) => p.id == id);
                         setState(() {
                           _selectedProviderId = id;
-                          _selectedModelId = provider.models.isNotEmpty
-                              ? provider.models.firstWhere((m) => m.isEnabled,
-                              orElse: () => provider.models.first).id
-                              : null;
-                          if (_selectedModelId != null) {
-                            final model = provider.models.firstWhere((m) => m.id == _selectedModelId);
-                            // Preserve system prompt while updating other settings
-                            _settings = model.settings.copyWith(
-                              systemPrompt: _settings.systemPrompt,
-                            );
-                          }
+                          // Find first enabled model or fallback to first model
+                          final defaultModel = provider.models.firstWhere(
+                                (m) => m.isEnabled,
+                            orElse: () => provider.models.first,
+                          );
+                          _selectedModelId = defaultModel.id;
+                          _settings = defaultModel.settings.copyWith(
+                            systemPrompt: _settings.systemPrompt,
+                          );
                         });
                       }
                     },

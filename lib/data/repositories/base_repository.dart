@@ -36,6 +36,7 @@ abstract class ChatRepository extends BaseRepository {
   Future<void> deleteMessage(String id);
 
   Future<Map<String, int>> getTokenUsageByModel();
+  Future<void> cleanupPlaceholders();
 }
 
 /// Interface for provider-related operations

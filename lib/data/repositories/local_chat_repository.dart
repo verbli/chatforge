@@ -18,12 +18,35 @@ class LocalChatRepository extends ChatRepository {
   @override
   Future<void> initialize() async {
     super.initialize();
+
+    // Clean up any lingering placeholder messages
+    await cleanupPlaceholders();
+
     // Initial load
     _broadcastConversations();
   }
 
   @override
+  Future<void> cleanupPlaceholders() async {
+    try {
+      await databaseService.execute(
+          'DELETE FROM messages WHERE is_placeholder = 1'
+      );
+      // Refresh all message streams
+      final conversations = await databaseService.query('conversations');
+      for (final conv in conversations) {
+        _broadcastMessages(conv['id'] as String);
+      }
+    } catch (e) {
+      debugPrint('Error cleaning up placeholders: $e');
+    }
+  }
+
+  @override
   void dispose() {
+    // Clean up placeholders before closing
+    cleanupPlaceholders();
+
     _conversationController.close();
     for (final controller in _messageControllers.values) {
       controller.close();
@@ -95,6 +118,7 @@ class LocalChatRepository extends ChatRepository {
       'timestamp': DateTime.fromMillisecondsSinceEpoch(map['timestamp'])
           .toIso8601String(),
       'tokenCount': map['token_count'],
+      'isPlaceholder': map['is_placeholder'] == 1,
     }))
         .toList();
 
@@ -174,8 +198,8 @@ class LocalChatRepository extends ChatRepository {
 
   @override
   Future<Message> addMessage(Message message) async {
-    // Validate message content
-    if (message.content.trim().isEmpty) {
+    // Only validate non-placeholder messages
+    if (!message.isPlaceholder && message.content.trim().isEmpty) {
       throw Exception('Cannot add empty message');
     }
 
@@ -188,20 +212,23 @@ class LocalChatRepository extends ChatRepository {
         'role': message.role.toString().split('.').last,
         'timestamp': DateTime.parse(message.timestamp).millisecondsSinceEpoch,
         'token_count': message.tokenCount,
+        'is_placeholder': message.isPlaceholder ? 1 : 0,  // Add this line
       });
 
-      // Update conversation total tokens
-      await txn.rawUpdate('''
-      UPDATE conversations 
-      SET 
-        total_tokens = total_tokens + ?,
-        updated_at = ?
-      WHERE id = ?
-    ''', [
-        message.tokenCount,
-        DateTime.now().millisecondsSinceEpoch,
-        message.conversationId,
-      ]);
+      // Only update conversation tokens for non-placeholder messages
+      if (!message.isPlaceholder) {
+        await txn.rawUpdate('''
+        UPDATE conversations 
+        SET 
+          total_tokens = total_tokens + ?,
+          updated_at = ?
+        WHERE id = ?
+      ''', [
+          message.tokenCount,
+          DateTime.now().millisecondsSinceEpoch,
+          message.conversationId,
+        ]);
+      }
     });
 
     _broadcastMessages(message.conversationId);
@@ -383,40 +410,39 @@ class LocalChatRepository extends ChatRepository {
 
   @override
   Future<void> deleteMessage(String id) async {
-    // Get message details before deleting
-    final List<Map<String, dynamic>> messages = await databaseService.query(
-      'messages',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-
-    if (messages.isEmpty) {
-      throw Exception('Message not found: $id');
-    }
-
-    final message = messages.first;
-    final tokenCount = message['token_count'] as int;
-    final conversationId = message['conversation_id'] as String;
-    final role = message['role'] as String;
-
-    await databaseService.transaction((txn) async {
-      // Delete the message
-      await txn.delete(
+    try {
+      // Get message details before deleting
+      final List<Map<String, dynamic>> messages = await databaseService.query(
         'messages',
         where: 'id = ?',
         whereArgs: [id],
       );
 
-      // Update conversation total tokens
-      await txn.rawUpdate('''
-        UPDATE conversations
-        SET total_tokens = total_tokens - ?
-        WHERE id = ?
-      ''', [tokenCount, conversationId]);
-    });
+      if (messages.isEmpty) {
+        debugPrint('Message not found for deletion: $id');
+        return;
+      }
 
-    _broadcastMessages(conversationId);
-    _broadcastConversations();
+      final message = messages.first;
+      final tokenCount = message['token_count'] as int;
+      final conversationId = message['conversation_id'] as String;
+      final role = message['role'] as String;
+
+      await databaseService.transaction((txn) async {
+        // Delete the message
+        await txn.delete(
+          'messages',
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+      });
+
+      _broadcastMessages(conversationId);
+      _broadcastConversations();
+    } catch (e) {
+      debugPrint('Error deleting message: $e');
+      // Don't rethrow - allow the operation to "succeed" even if message is gone
+    }
   }
 
   // Helper method to validate database state - useful for debugging

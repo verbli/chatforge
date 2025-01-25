@@ -160,6 +160,7 @@ _$MessageImpl _$$MessageImplFromJson(Map<String, dynamic> json) =>
       role: $enumDecode(_$RoleEnumMap, json['role']),
       timestamp: json['timestamp'] as String,
       tokenCount: (json['tokenCount'] as num?)?.toInt() ?? 0,
+      isPlaceholder: json['isPlaceholder'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$MessageImplToJson(_$MessageImpl instance) =>
@@ -170,6 +171,7 @@ Map<String, dynamic> _$$MessageImplToJson(_$MessageImpl instance) =>
       'role': _$RoleEnumMap[instance.role]!,
       'timestamp': instance.timestamp,
       'tokenCount': instance.tokenCount,
+      'isPlaceholder': instance.isPlaceholder,
     };
 
 const _$RoleEnumMap = {

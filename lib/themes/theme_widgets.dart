@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/models.dart';
 import '../data/providers.dart';
+import '../widgets/typing_indicator.dart';
 import 'chat_theme.dart';
 
 /// Base data classes for widgets
@@ -173,6 +175,20 @@ class _DefaultMessageBubbleState extends State<DefaultMessageBubble> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.data.content.isEmpty && !widget.data.isUser) {
+      return Container(
+        decoration: BoxDecoration(
+          color: widget.backgroundColor,
+          borderRadius: widget.borderRadius,
+        ),
+        padding: widget.padding,
+        child: TypingIndicator(
+          backgroundColor: widget.backgroundColor,
+          dotColor: widget.textColor,
+        ),
+      );
+    }
+
     return GestureDetector(
       onLongPress: _showOptions,
       child: Container(
