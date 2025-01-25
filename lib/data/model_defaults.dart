@@ -39,14 +39,6 @@ class ModelDefaults {
       apiKey: '',
       models: [],
     ),
-    const ProviderConfig(
-      id: 'huggingface',
-      name: 'Hugging Face',
-      type: ProviderType.huggingface,
-      baseUrl: AppConstants.huggingfaceBaseUrl,
-      apiKey: '',
-      models: [],
-    ),
   ];
 
   static ProviderConfig? getDefaultProvider(ProviderType type) {

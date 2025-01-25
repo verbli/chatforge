@@ -187,8 +187,6 @@ class ModelFetcherFactory {
         return GeminiModelFetcher();
       case ProviderType.openRouter:
         return OpenRouterModelFetcher();
-      case ProviderType.huggingface:
-        return HuggingfaceModelFetcher();
       default:
         return null;
     }

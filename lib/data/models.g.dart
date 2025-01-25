@@ -38,7 +38,6 @@ const _$ProviderTypeEnumMap = {
   ProviderType.anthropic: 'anthropic',
   ProviderType.gemini: 'gemini',
   ProviderType.openRouter: 'openRouter',
-  ProviderType.huggingface: 'huggingface',
 };
 
 _$ModelConfigImpl _$$ModelConfigImplFromJson(Map<String, dynamic> json) =>

@@ -33,8 +33,6 @@ abstract class AIService {
 
   static AIService forProvider(ProviderConfig provider) {
     switch (provider.type) {
-      case ProviderType.huggingface:
-        return HuggingfaceService(provider);
       case ProviderType.openRouter:
         return OpenRouterService(provider);
       case ProviderType.openAI:
