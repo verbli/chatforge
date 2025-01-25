@@ -161,20 +161,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         timestamp: DateTime.now().toIso8601String(),
       );
 
-      await ref.read(chatRepositoryProvider).addMessage(assistantMessage);
-
-      if (_isNearBottom) {
-        _scrollToBottom();
-      }
+      // Don't add empty assistant message to database yet
+      // We'll only add it once we have content
 
       final aiService = ref.read(aiServiceProvider(provider));
       String fullResponse = '';
       int tokenCount = 0;
 
+      if (_isNearBottom) {
+        _scrollToBottom();
+      }
+
       final userTokens = await aiService.countTokens(message);
       await ref.read(chatRepositoryProvider).updateMessage(
         userMessage.copyWith(tokenCount: userTokens),
       );
+
+      Message? addedAssistantMessage;
 
       _messageStream = aiService.streamCompletion(
         provider: provider,
@@ -182,34 +185,46 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         settings: conversation.settings,
         messages: ref.read(messagesProvider(widget.conversationId)).value ?? [],
       ).listen(
-            (chunk) {
+            (chunk) async {
           if (!mounted) return;
 
           fullResponse += chunk['content'];
 
-          // Update less frequently
-          ref.read(chatRepositoryProvider).updateMessageContent(
-            assistantMessage.copyWith(
-              content: fullResponse,
-            ),
-          );
+          // Only add or update the assistant message if we have content
+          if (fullResponse.isNotEmpty) {
+            if (addedAssistantMessage == null) {
+              // First content received - add the message
+              addedAssistantMessage = await ref.read(chatRepositoryProvider).addMessage(
+                assistantMessage.copyWith(content: fullResponse),
+              );
+            } else {
+              // Update existing message
+              await ref.read(chatRepositoryProvider).updateMessageContent(
+                addedAssistantMessage!.copyWith(content: fullResponse),
+              );
+            }
 
-          // Only scroll if we're near the bottom
-          if (_isNearBottom) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _scrollToBottom();
-            });
+            if (_isNearBottom) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _scrollToBottom();
+              });
+            }
           }
         },
         onDone: () async {
           if (!mounted) return;
-          tokenCount = await aiService.countTokens(fullResponse);
-          await ref.read(chatRepositoryProvider).updateMessage(
-            assistantMessage.copyWith(
-              content: fullResponse,
-              tokenCount: tokenCount,
-            ),
-          );
+
+          // If we got a response and added the message, update the token count
+          if (addedAssistantMessage != null) {
+            tokenCount = await aiService.countTokens(fullResponse);
+            await ref.read(chatRepositoryProvider).updateMessage(
+              addedAssistantMessage!.copyWith(
+                content: fullResponse,
+                tokenCount: tokenCount,
+              ),
+            );
+          }
+
           setState(() => _isGenerating = false);
           _messageStream = null;
         },
