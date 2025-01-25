@@ -185,24 +185,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             (chunk) {
           if (!mounted) return;
 
-          switch (chunk['type']) {
-            case 'text':
-            case 'markdown':
-            case 'html':
-              fullResponse += chunk['content'];
-              ref.read(chatRepositoryProvider).updateMessageContent(
-                assistantMessage.copyWith(
-                  content: fullResponse,
-                  tokenCount: tokenCount,
-                ),
-              );
+          fullResponse += chunk['content'];
 
-              if (_isNearBottom) {
-                _scrollToBottom();
-              }
-              break;
-            default:
-              debugPrint('Unknown chunk type: ${chunk['type']}');
+          // Update less frequently
+          ref.read(chatRepositoryProvider).updateMessageContent(
+            assistantMessage.copyWith(
+              content: fullResponse,
+            ),
+          );
+
+          // Only scroll if we're near the bottom
+          if (_isNearBottom) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollToBottom();
+            });
           }
         },
         onDone: () async {
