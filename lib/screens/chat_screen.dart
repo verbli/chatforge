@@ -121,6 +121,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (_messageStream != null) {
       await _messageStream!.cancel();
       _messageStream = null;
+
+      // Clean up any placeholders for this conversation
+      try {
+        final messages = ref.read(messagesProvider(widget.conversationId)).value ?? [];
+        final placeholders = messages.where((m) => m.isPlaceholder);
+        for (final placeholder in placeholders) {
+          await ref.read(chatRepositoryProvider).deleteMessage(placeholder.id);
+        }
+      } catch (e) {
+        debugPrint('Error cleaning up placeholders: $e');
+      }
+
       setState(() => _isGenerating = false);
     }
   }
@@ -1138,17 +1150,15 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                         final provider = provs.firstWhere((p) => p.id == id);
                         setState(() {
                           _selectedProviderId = id;
-                          _selectedModelId = provider.models.isNotEmpty
-                              ? provider.models.firstWhere((m) => m.isEnabled,
-                              orElse: () => provider.models.first).id
-                              : null;
-                          if (_selectedModelId != null) {
-                            final model = provider.models.firstWhere((m) => m.id == _selectedModelId);
-                            // Preserve system prompt while updating other settings
-                            _settings = model.settings.copyWith(
-                              systemPrompt: _settings.systemPrompt,
-                            );
-                          }
+                          // Find first enabled model or fallback to first model
+                          final defaultModel = provider.models.firstWhere(
+                                (m) => m.isEnabled,
+                            orElse: () => provider.models.first,
+                          );
+                          _selectedModelId = defaultModel.id;
+                          _settings = defaultModel.settings.copyWith(
+                            systemPrompt: _settings.systemPrompt,
+                          );
                         });
                       }
                     },

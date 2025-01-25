@@ -18,12 +18,35 @@ class LocalChatRepository extends ChatRepository {
   @override
   Future<void> initialize() async {
     super.initialize();
+
+    // Clean up any lingering placeholder messages
+    await cleanupPlaceholders();
+
     // Initial load
     _broadcastConversations();
   }
 
   @override
+  Future<void> cleanupPlaceholders() async {
+    try {
+      await databaseService.execute(
+          'DELETE FROM messages WHERE is_placeholder = 1'
+      );
+      // Refresh all message streams
+      final conversations = await databaseService.query('conversations');
+      for (final conv in conversations) {
+        _broadcastMessages(conv['id'] as String);
+      }
+    } catch (e) {
+      debugPrint('Error cleaning up placeholders: $e');
+    }
+  }
+
+  @override
   void dispose() {
+    // Clean up placeholders before closing
+    cleanupPlaceholders();
+
     _conversationController.close();
     for (final controller in _messageControllers.values) {
       controller.close();

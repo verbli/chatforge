@@ -25,8 +25,10 @@ class InitService {
           _prefs = prefs;
           return ProviderStorage.initializeWithPrefs(prefs);
         }),
-        // Use ref to get the database service instance
-        ref.read(databaseServiceProvider).initialize(),
+        // Use ref to get the database service instance and clean up
+        ref.read(databaseServiceProvider).initialize().then((_) {
+          return ref.read(chatRepositoryProvider).cleanupPlaceholders();
+        }),
       ]);
 
       onProgress('Loading database ...', 0.333);
