@@ -1,33 +1,22 @@
 class WordStreamer {
   static Stream<String> streamWords(String text, int delayMs) async* {
-    int index = 0;
+    // If no delay, return the whole text at once
+    if (delayMs <= 0) {
+      yield text;
+      return;
+    }
 
-    while (index < text.length) {
-      // If we're at a whitespace character, consume all consecutive whitespace
-      if (text[index].trim().isEmpty) {
-        int whitespaceEnd = index;
-        while (whitespaceEnd < text.length && text[whitespaceEnd].trim().isEmpty) {
-          whitespaceEnd++;
-        }
-        yield text.substring(index, whitespaceEnd);
-        index = whitespaceEnd;
-        if (delayMs > 0) {
-          await Future.delayed(Duration(milliseconds: delayMs));
-        }
-        continue;
-      }
+    // Split into chunks instead of individual words for better performance
+    final chunkSize = 3; // Process 3 words at a time
+    final words = text.split(' ');
+    String buffer = '';
 
-      // If we're at a non-whitespace character, consume until we hit whitespace
-      int wordEnd = index;
-      while (wordEnd < text.length && text[wordEnd].trim().isNotEmpty) {
-        wordEnd++;
-      }
-      yield text.substring(index, wordEnd);
-      index = wordEnd;
+    for (var i = 0; i < words.length; i += chunkSize) {
+      buffer = words.skip(i).take(chunkSize).join(' ') + ' ';
+      yield buffer;
 
-      if (delayMs > 0) {
-        await Future.delayed(Duration(milliseconds: delayMs));
-      }
+      // Add a small delay between chunks
+      await Future.delayed(Duration(milliseconds: delayMs));
     }
   }
 }
