@@ -11,7 +11,7 @@ import 'database_service.dart';
 class SQLite3Service extends DatabaseService {
   final DatabaseDriver driver;
   static const String dbName = 'chatforge.db';
-  static const int _currentVersion = 4;
+  static const int _currentVersion = 5;
   bool _inTransaction = false;
 
   SQLite3Service(this.driver);
@@ -66,6 +66,14 @@ class SQLite3Service extends DatabaseService {
         ADD COLUMN is_placeholder INTEGER NOT NULL DEFAULT 0
       ''');
     }
+
+    if (oldVersion < 5) {
+      // Add is_temporary column to conversations table
+      await driver.execute('''
+        ALTER TABLE conversations 
+        ADD COLUMN is_temporary INTEGER NOT NULL DEFAULT 0
+      ''');
+    }
   }
 
   Future<void> _createDb(dynamic db, int version) async {
@@ -79,7 +87,8 @@ class SQLite3Service extends DatabaseService {
         model_id TEXT NOT NULL,
         settings TEXT NOT NULL,
         total_tokens INTEGER NOT NULL DEFAULT 0,
-        sort_order INTEGER NOT NULL DEFAULT 0
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        is_temporary INTEGER NOT NULL DEFAULT 0
       )
     ''');
 

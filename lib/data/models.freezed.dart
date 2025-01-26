@@ -1355,6 +1355,7 @@ mixin _$Conversation {
   ModelSettings get settings => throw _privateConstructorUsedError;
   int get totalTokens => throw _privateConstructorUsedError;
   int get sortOrder => throw _privateConstructorUsedError;
+  bool get isTemporary => throw _privateConstructorUsedError;
 
   /// Serializes this Conversation to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1381,7 +1382,8 @@ abstract class $ConversationCopyWith<$Res> {
       String modelId,
       ModelSettings settings,
       int totalTokens,
-      int sortOrder});
+      int sortOrder,
+      bool isTemporary});
 
   $ModelSettingsCopyWith<$Res> get settings;
 }
@@ -1410,6 +1412,7 @@ class _$ConversationCopyWithImpl<$Res, $Val extends Conversation>
     Object? settings = null,
     Object? totalTokens = null,
     Object? sortOrder = null,
+    Object? isTemporary = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -1448,6 +1451,10 @@ class _$ConversationCopyWithImpl<$Res, $Val extends Conversation>
           ? _value.sortOrder
           : sortOrder // ignore: cast_nullable_to_non_nullable
               as int,
+      isTemporary: null == isTemporary
+          ? _value.isTemporary
+          : isTemporary // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 
@@ -1479,7 +1486,8 @@ abstract class _$$ConversationImplCopyWith<$Res>
       String modelId,
       ModelSettings settings,
       int totalTokens,
-      int sortOrder});
+      int sortOrder,
+      bool isTemporary});
 
   @override
   $ModelSettingsCopyWith<$Res> get settings;
@@ -1507,6 +1515,7 @@ class __$$ConversationImplCopyWithImpl<$Res>
     Object? settings = null,
     Object? totalTokens = null,
     Object? sortOrder = null,
+    Object? isTemporary = null,
   }) {
     return _then(_$ConversationImpl(
       id: null == id
@@ -1545,6 +1554,10 @@ class __$$ConversationImplCopyWithImpl<$Res>
           ? _value.sortOrder
           : sortOrder // ignore: cast_nullable_to_non_nullable
               as int,
+      isTemporary: null == isTemporary
+          ? _value.isTemporary
+          : isTemporary // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -1561,7 +1574,8 @@ class _$ConversationImpl with DiagnosticableTreeMixin implements _Conversation {
       required this.modelId,
       required this.settings,
       this.totalTokens = 0,
-      this.sortOrder = 0});
+      this.sortOrder = 0,
+      this.isTemporary = false});
 
   factory _$ConversationImpl.fromJson(Map<String, dynamic> json) =>
       _$$ConversationImplFromJson(json);
@@ -1586,10 +1600,13 @@ class _$ConversationImpl with DiagnosticableTreeMixin implements _Conversation {
   @override
   @JsonKey()
   final int sortOrder;
+  @override
+  @JsonKey()
+  final bool isTemporary;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'Conversation(id: $id, title: $title, createdAt: $createdAt, updatedAt: $updatedAt, providerId: $providerId, modelId: $modelId, settings: $settings, totalTokens: $totalTokens, sortOrder: $sortOrder)';
+    return 'Conversation(id: $id, title: $title, createdAt: $createdAt, updatedAt: $updatedAt, providerId: $providerId, modelId: $modelId, settings: $settings, totalTokens: $totalTokens, sortOrder: $sortOrder, isTemporary: $isTemporary)';
   }
 
   @override
@@ -1605,7 +1622,8 @@ class _$ConversationImpl with DiagnosticableTreeMixin implements _Conversation {
       ..add(DiagnosticsProperty('modelId', modelId))
       ..add(DiagnosticsProperty('settings', settings))
       ..add(DiagnosticsProperty('totalTokens', totalTokens))
-      ..add(DiagnosticsProperty('sortOrder', sortOrder));
+      ..add(DiagnosticsProperty('sortOrder', sortOrder))
+      ..add(DiagnosticsProperty('isTemporary', isTemporary));
   }
 
   @override
@@ -1627,13 +1645,15 @@ class _$ConversationImpl with DiagnosticableTreeMixin implements _Conversation {
             (identical(other.totalTokens, totalTokens) ||
                 other.totalTokens == totalTokens) &&
             (identical(other.sortOrder, sortOrder) ||
-                other.sortOrder == sortOrder));
+                other.sortOrder == sortOrder) &&
+            (identical(other.isTemporary, isTemporary) ||
+                other.isTemporary == isTemporary));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, title, createdAt, updatedAt,
-      providerId, modelId, settings, totalTokens, sortOrder);
+      providerId, modelId, settings, totalTokens, sortOrder, isTemporary);
 
   /// Create a copy of Conversation
   /// with the given fields replaced by the non-null parameter values.
@@ -1661,7 +1681,8 @@ abstract class _Conversation implements Conversation {
       required final String modelId,
       required final ModelSettings settings,
       final int totalTokens,
-      final int sortOrder}) = _$ConversationImpl;
+      final int sortOrder,
+      final bool isTemporary}) = _$ConversationImpl;
 
   factory _Conversation.fromJson(Map<String, dynamic> json) =
       _$ConversationImpl.fromJson;
@@ -1684,6 +1705,8 @@ abstract class _Conversation implements Conversation {
   int get totalTokens;
   @override
   int get sortOrder;
+  @override
+  bool get isTemporary;
 
   /// Create a copy of Conversation
   /// with the given fields replaced by the non-null parameter values.

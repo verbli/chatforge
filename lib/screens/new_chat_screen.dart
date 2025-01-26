@@ -24,6 +24,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
   String? _selectedModelId;
   bool _showAdvanced = false;
   late ModelSettings _settings;
+  bool _isTemporary = false;
 
   void _showHelpDialog(String title, String content) {
     showDialog(
@@ -111,6 +112,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                     'providerId': _selectedProviderId,
                     'modelId': _selectedModelId,
                     'settings': _settings,
+                    'isTemporary': _isTemporary,
                     'needsTitle': _titleController.text.isEmpty,
                   };
 
@@ -164,6 +166,15 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  SwitchListTile(
+                    title: const Text('Temporary Chat'),
+                    subtitle: const Text('Delete this chat when closed'),
+                    value: _isTemporary,
+                    onChanged: (value) {
+                      setState(() => _isTemporary = value);
+                    },
                   ),
                   const SizedBox(height: 16),
                   Row(

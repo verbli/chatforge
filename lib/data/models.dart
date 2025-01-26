@@ -115,6 +115,7 @@ class Conversation with _$Conversation {
     required ModelSettings settings,
     @Default(0) int totalTokens,
     @Default(0) int sortOrder,
+    @Default(false) bool isTemporary,
   }) = _Conversation;
 
   factory Conversation.fromJson(Map<String, dynamic> json) =>
