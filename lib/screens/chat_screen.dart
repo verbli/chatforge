@@ -62,10 +62,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollController.removeListener(_onScroll);
     _inputController.dispose();
     _scrollController.dispose();
-    // Check if conversation should be deleted
-    if (_wasTemporary == true) {
-      ref.read(chatRepositoryProvider).deleteConversation(widget.conversationId);
+    _focusNode.dispose();
+
+    // Don't use ref here - store the values we need before disposal
+    final bool isTemp = _wasTemporary ?? false;
+    final String convId = widget.conversationId;
+
+    // Schedule deletion for after disposal if needed
+    if (isTemp) {
+      // Use a post-frame callback to ensure the widget is fully disposed
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Check if we can still access the BuildContext
+        if (mounted) {
+          final repository = ProviderScope.containerOf(context).read(chatRepositoryProvider);
+          repository.deleteConversation(convId);
+        }
+      });
     }
+
     super.dispose();
   }
 
@@ -316,15 +330,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // Add this near the start of build to track temporary status
     ref.listen(conversationProvider(widget.conversationId), (previous, next) {
       next.whenData((conversation) {
-        if (_wasTemporary != conversation.isTemporary) {
-          setState(() => _wasTemporary = conversation.isTemporary);
+        if (_wasTemporary != conversation?.isTemporary) {
+          setState(() => _wasTemporary = conversation?.isTemporary ?? false);
         }
       });
     });
 
     final theme = ref.watch(chatThemeProvider);
     final messages = ref.watch(messagesProvider(widget.conversationId));
-    final conversation = ref.watch(conversationProvider(widget.conversationId));
 
     return PopScope(
       canPop: true,
@@ -510,32 +523,40 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       elevation: theme.themeData.appBarTheme.elevation,
       shadowColor: theme.themeData.appBarTheme.shadowColor,
       title: ref.watch(conversationProvider(widget.conversationId)).when(
-        data: (conv) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(conv.isTemporary ? 'Temporary Chat' : conv.title),
-                ),
-                if (!conv.isTemporary) // Only show edit button for non-temporary chats
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    iconSize: 16,
-                    onPressed: () => _showTitleEditDialog(context),
+        data: (conv) {
+          if (conv == null) {
+            // If conversation is null, we're probably in the process of closing
+            // Just show a basic title
+            return const Text('Closing...');
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(conv.isTemporary ? 'Temporary Chat' : conv.title),
                   ),
-              ],
-            ),
-            if (conv.isTemporary)
-              Text(
-                'This chat will be deleted when closed',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                ),
+                  if (!conv.isTemporary) // Only show edit button for non-temporary chats
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      iconSize: 16,
+                      onPressed: () => _showTitleEditDialog(context),
+                    ),
+                ],
               ),
-          ],
-        ),
-        loading: () => const Text('Loading...'),
+              if (conv.isTemporary)
+                Text(
+                  'This chat will be deleted when closed',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+            ],
+          );
+        },
+        loading: () => const CircularProgressIndicator(),
         error: (err, stack) => Text('Error: $err'),
       ),
       actions: [
