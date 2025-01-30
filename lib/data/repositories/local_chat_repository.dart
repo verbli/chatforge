@@ -78,6 +78,7 @@ class LocalChatRepository extends ChatRepository {
       'totalInputTokens': map['total_input_tokens'],
       'totalOutputTokens': map['total_output_tokens'],
       'sortOrder': map['sort_order'],
+      'isTemporary': map['is_temporary'] == 1,
     }))
         .toList();
 
@@ -149,6 +150,7 @@ class LocalChatRepository extends ChatRepository {
       'settings': json.decode(maps[0]['settings']),
       'totalTokens': maps[0]['total_tokens'],
       'sortOrder': maps[0]['sort_order'],
+      'isTemporary': maps[0]['is_temporary'] == 1,
     });
   }
 
@@ -158,6 +160,7 @@ class LocalChatRepository extends ChatRepository {
     required String providerId,
     required String modelId,
     required ModelSettings settings,
+    bool isTemporary = false,
   }) async {
     final now = DateTime.now();
 
@@ -174,6 +177,7 @@ class LocalChatRepository extends ChatRepository {
       modelId: modelId,
       settings: settings,
       sortOrder: sortOrder,
+      isTemporary: isTemporary,
     );
 
     await databaseService.insert(
@@ -189,6 +193,7 @@ class LocalChatRepository extends ChatRepository {
         'settings': json.encode(conversation.settings.toJson()),
         'total_tokens': conversation.totalTokens,
         'sort_order': conversation.sortOrder,
+        'is_temporary': conversation.isTemporary ? 1 : 0,
       },
     );
 
@@ -277,6 +282,7 @@ class LocalChatRepository extends ChatRepository {
         'settings': json.encode(conversation.settings.toJson()),
         'total_tokens': conversation.totalTokens,
         'sort_order': conversation.sortOrder,
+        'is_temporary': conversation.isTemporary ? 1 : 0,
       },
       where: 'id = ?',
       whereArgs: [conversation.id],

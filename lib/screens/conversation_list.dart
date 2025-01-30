@@ -125,13 +125,23 @@ class _ConversationListScreenState
           providerId: result['providerId'] as String,
           modelId: result['modelId'] as String,
           settings: result['settings'] as ModelSettings,
+          isTemporary: result['isTemporary'] as bool,
         );
 
         if (mounted) {
           if (widget.isPanel) {
             ref.read(selectedConversationProvider.notifier).state = conversation.id;
           } else {
-            Navigator.pushNamed(context, '/chat', arguments: conversation.id);
+            await Navigator.pushNamed(
+                context,
+                '/chat',
+                arguments: conversation.id
+            );
+
+            // Check if we need to delete the temporary conversation after returning
+            if (conversation.isTemporary) {
+              await ref.read(chatRepositoryProvider).deleteConversation(conversation.id);
+            }
           }
         }
       }
@@ -162,8 +172,12 @@ class _ConversationList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedId = ref.watch(selectedConversationProvider);
+    // Filter out temporary chats from the list
+    final displayConversations = conversations
+        .where((conv) => !conv.isTemporary)
+        .toList();
 
-    if (conversations.isEmpty) {
+    if (displayConversations.isEmpty) {
       return const Center(
         child: Text('No conversations yet. Tap + to start chatting!'),
       );

@@ -137,6 +137,7 @@ _$ConversationImpl _$$ConversationImplFromJson(Map<String, dynamic> json) =>
           ModelSettings.fromJson(json['settings'] as Map<String, dynamic>),
       totalTokens: (json['totalTokens'] as num?)?.toInt() ?? 0,
       sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
+      isTemporary: json['isTemporary'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$ConversationImplToJson(_$ConversationImpl instance) =>
@@ -150,6 +151,7 @@ Map<String, dynamic> _$$ConversationImplToJson(_$ConversationImpl instance) =>
       'settings': instance.settings,
       'totalTokens': instance.totalTokens,
       'sortOrder': instance.sortOrder,
+      'isTemporary': instance.isTemporary,
     };
 
 _$MessageImpl _$$MessageImplFromJson(Map<String, dynamic> json) =>

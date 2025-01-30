@@ -46,6 +46,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _focusNode = FocusNode();
   bool _showScrollbar = false;
   Message? _placeholderMessage;
+  bool? _wasTemporary;
 
   @override
   void initState() {
@@ -61,6 +62,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollController.removeListener(_onScroll);
     _inputController.dispose();
     _scrollController.dispose();
+    _focusNode.dispose();
+
+    // Don't use ref here - store the values we need before disposal
+    final bool isTemp = _wasTemporary ?? false;
+    final String convId = widget.conversationId;
+
+    // Schedule deletion for after disposal if needed
+    if (isTemp) {
+      // Use a post-frame callback to ensure the widget is fully disposed
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Check if we can still access the BuildContext
+        if (mounted) {
+          final repository = ProviderScope.containerOf(context).read(chatRepositoryProvider);
+          repository.deleteConversation(convId);
+        }
+      });
+    }
+
     super.dispose();
   }
 
@@ -292,68 +311,94 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  void _handlePopInvoked(bool didPop, dynamic result) async {
+    if (!didPop) {
+      final conversation = ref.read(conversationProvider(widget.conversationId)).value;
+      if (conversation?.isTemporary == true) {
+        // We don't delete here - the conversation list will handle deletion
+        // for temporary chats after the navigation completes
+      }
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+
+    // Add this near the start of build to track temporary status
+    ref.listen(conversationProvider(widget.conversationId), (previous, next) {
+      next.whenData((conversation) {
+        if (_wasTemporary != conversation?.isTemporary) {
+          setState(() => _wasTemporary = conversation?.isTemporary ?? false);
+        }
+      });
+    });
+
     final theme = ref.watch(chatThemeProvider);
     final messages = ref.watch(messagesProvider(widget.conversationId));
-    final conversation = ref.watch(conversationProvider(widget.conversationId));
 
-    return Theme(
-      data: theme.themeData,
-      child: Scaffold(
-        backgroundColor: theme.styling.backgroundColor,
-        resizeToAvoidBottomInset: true,
-        appBar: _buildAppBar(theme),
-        body: SafeArea(
-          child: Stack(
-            children: [
-              Column(
-                children: [
-                  const AdBannerWidget(),
-                  Expanded(
-                    child: Container(
-                      color: theme.styling.backgroundColor,
-                      child: messages.when(
-                        data: (msgs) => _buildMessageList(msgs, theme),
-                        loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (err, stack) => Center(child: Text('Error: $err')),
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: _handlePopInvoked,
+      child: Theme(
+        data: theme.themeData,
+        child: Scaffold(
+          backgroundColor: theme.styling.backgroundColor,
+          resizeToAvoidBottomInset: true,
+          appBar: _buildAppBar(theme),
+          body: SafeArea(
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    const AdBannerWidget(),
+                    Expanded(
+                      child: Container(
+                        color: theme.styling.backgroundColor,
+                        child: messages.when(
+                          data: (msgs) => _buildMessageList(msgs, theme),
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (err, stack) => Center(child: Text('Error: $err')),
+                        ),
                       ),
                     ),
-                  ),
-                  _buildInputArea(theme),
-                ],
-              ),
-              if (!_isNearBottom) // Show scroll button above input area
-                Positioned(
-                  bottom: 70,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
+                    _buildInputArea(theme),
+                  ],
+                ),
+                if (!_isNearBottom) // Show scroll button above input area
+                  Positioned(
+                    bottom: 70,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: FloatingActionButton.small(
+                          onPressed: _scrollToBottom,
+                          backgroundColor: theme.styling.primaryColor.withValues(alpha: 0.9),
+                          shape: const CircleBorder(),
+                          elevation: 4,
+                          child: const Icon(
+                            Icons.arrow_downward,
+                            size: 20,
                           ),
-                        ],
-                      ),
-                      child: FloatingActionButton.small(
-                        onPressed: _scrollToBottom,
-                        backgroundColor: theme.styling.primaryColor.withValues(alpha: 0.9),
-                        shape: const CircleBorder(),
-                        elevation: 4,
-                        child: const Icon(
-                          Icons.arrow_downward,
-                          size: 20,
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -468,30 +513,51 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   PreferredSizeWidget _buildAppBar(ChatTheme theme) {
     return AppBar(
-      leading: widget.isPanel ? null : const BackButton(),
+      leading: widget.isPanel ? null : BackButton(
+        onPressed: () {
+          // Just navigate back - deletion is handled by the conversation list
+          Navigator.pop(context);
+        },
+      ),
       backgroundColor: theme.themeData.appBarTheme.backgroundColor,
       elevation: theme.themeData.appBarTheme.elevation,
       shadowColor: theme.themeData.appBarTheme.shadowColor,
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      title: ref.watch(conversationProvider(widget.conversationId)).when(
+        data: (conv) {
+          if (conv == null) {
+            // If conversation is null, we're probably in the process of closing
+            // Just show a basic title
+            return const Text('Closing...');
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: ref.watch(conversationProvider(widget.conversationId)).when(
-                  data: (conv) => Text(conv.title),
-                  loading: () => const Text('Loading...'),
-                  error: (err, stack) => Text('Error: $err'),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(conv.isTemporary ? 'Temporary Chat' : conv.title),
+                  ),
+                  if (!conv.isTemporary) // Only show edit button for non-temporary chats
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      iconSize: 16,
+                      onPressed: () => _showTitleEditDialog(context),
+                    ),
+                ],
+              ),
+              if (conv.isTemporary)
+                Text(
+                  'This chat will be deleted when closed',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.edit),
-                iconSize: 16,
-                onPressed: () => _showTitleEditDialog(context),
-              ),
             ],
-          ),
-        ],
+          );
+        },
+        loading: () => const CircularProgressIndicator(),
+        error: (err, stack) => Text('Error: $err'),
       ),
       actions: [
         PopupMenuButton<String>(
@@ -732,6 +798,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         initialProviderId: conversation.providerId,
         initialModelId: conversation.modelId,
         initialSettings: conversation.settings,
+        isTemporary: conversation.isTemporary,
       ),
     );
 
@@ -740,6 +807,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final newProviderId = result['providerId'] as String;
       final newModelId = result['modelId'] as String;
       final newSettings = result['settings'] as ModelSettings;
+      final isTemporary = result['isTemporary'] as bool;
 
       await ref.read(chatRepositoryProvider).updateConversation(
             conversation.copyWith(
@@ -747,9 +815,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               providerId: newProviderId,
               modelId: newModelId,
               settings: newSettings,
+              isTemporary: isTemporary,
               updatedAt: DateTime.now(),
             ),
           );
+
+      // Update temporary tracking
+      setState(() => _wasTemporary = isTemporary);
+
       // force a refresh of the conversation
       ref.invalidate(conversationProvider(widget.conversationId));
     }
@@ -1045,12 +1118,14 @@ class _ChatSettingsDialog extends ConsumerStatefulWidget {
   final String initialProviderId;
   final String initialModelId;
   final ModelSettings initialSettings;
+  final bool isTemporary;
 
   const _ChatSettingsDialog({
     required this.initialTitle,
     required this.initialProviderId,
     required this.initialModelId,
     required this.initialSettings,
+    this.isTemporary = false,
   });
 
   @override
@@ -1065,6 +1140,7 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
   String? _selectedModelId;
   bool _showAdvanced = false;
   late ModelSettings _settings;
+  bool _isTemporary = false;
 
   final _temperatureController = TextEditingController();
   final _topPController = TextEditingController();
@@ -1085,6 +1161,7 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
         _settings.frequencyPenalty.toStringAsFixed(1);
     _presencePenaltyController.text =
         _settings.presencePenalty.toStringAsFixed(1);
+    _isTemporary = widget.isTemporary;
   }
 
   @override
@@ -1136,6 +1213,18 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                   //   textCapitalization: TextCapitalization.sentences,
                   // ),
                   // const SizedBox(height: 16),
+                  SwitchListTile(
+                    title: const Text('Temporary Chat'),
+                    subtitle: const Text(
+                      'Delete this chat when closed',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    value: _isTemporary,
+                    onChanged: (value) {
+                      setState(() => _isTemporary = value);
+                    },
+                  ),
+                  const Divider(),
                   DropdownButtonFormField<String>(
                     value: _selectedProviderId,
                     decoration: const InputDecoration(labelText: 'Provider'),
@@ -1441,6 +1530,7 @@ class _ChatSettingsDialogState extends ConsumerState<_ChatSettingsDialog> {
                 'providerId': _selectedProviderId,
                 'modelId': _selectedModelId,
                 'settings': _settings,
+                'isTemporary': _isTemporary,
               };
 
               Navigator.pop(context, result);

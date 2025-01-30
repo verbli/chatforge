@@ -244,7 +244,8 @@ class _DefaultMessageBubbleState extends State<DefaultMessageBubble> {
 
             return conversation.when(
               data: (conversation) {
-                if (!conversation.settings.renderMarkdown) {
+                // If conversation is null, fall back to non-markdown rendering
+                if (conversation == null || !conversation.settings.renderMarkdown) {
                   return SelectableText(
                     widget.data.content,
                     style: TextStyle(color: widget.textColor),
@@ -259,8 +260,11 @@ class _DefaultMessageBubbleState extends State<DefaultMessageBubble> {
                   codeTextColor: widget.textColor,
                 );
               },
-              loading: () => const CircularProgressIndicator(),
-              error: (_, __) => Text(
+              loading: () => SelectableText(
+                widget.data.content,
+                style: TextStyle(color: widget.textColor),
+              ),
+              error: (_, __) => SelectableText(
                 widget.data.content,
                 style: TextStyle(color: widget.textColor),
               ),

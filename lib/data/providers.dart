@@ -40,22 +40,27 @@ StreamProvider<List<Conversation>>((ref) {
   return ref.watch(chatRepositoryProvider).watchConversations();
 });
 
-final conversationProvider = StreamProvider.family<Conversation, String>((ref, id) {
+final conversationProvider = StreamProvider.family<Conversation?, String>((ref, id) {
   final repository = ref.watch(chatRepositoryProvider);
 
   // Create a stream that emits whenever the conversation is updated
-  final controller = StreamController<Conversation>();
+  final controller = StreamController<Conversation?>();
 
   // Initial load
   repository.getConversation(id).then((conversation) {
     if (controller.hasListener) {
       controller.add(conversation);
     }
+  }).catchError((e) {
+    // If conversation not found, emit null instead of throwing
+    if (controller.hasListener) {
+      controller.add(null);
+    }
   });
 
   // Watch for updates
   final subscription = repository.watchConversations().listen((conversations) {
-    final conversation = conversations.firstWhere((c) => c.id == id);
+    final conversation = conversations.where((c) => c.id == id).firstOrNull;
     if (controller.hasListener) {
       controller.add(conversation);
     }

@@ -23,6 +23,7 @@ abstract class ChatRepository extends BaseRepository {
     required String providerId,
     required String modelId,
     required ModelSettings settings,
+    bool isTemporary = false,
   });
   Future<void> updateConversation(Conversation conversation);
   Future<void> deleteConversation(String id);
