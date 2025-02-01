@@ -10,6 +10,7 @@ import '../data/model_defaults.dart';
 import '../data/providers.dart';
 import '../providers/theme_provider.dart';
 import '../themes/chat_theme.dart';
+import 'models_screen.dart';
 
 class ProvidersScreen extends ConsumerWidget {
   const ProvidersScreen({super.key});
@@ -130,7 +131,7 @@ class _ProviderListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasApiKey = provider.apiKey.isNotEmpty;
 
-    return ExpansionTile(
+    return ListTile(
       leading: hasApiKey
           ? null
           : const Icon(Icons.warning_amber_rounded, color: Colors.orange),
@@ -138,39 +139,26 @@ class _ProviderListItem extends StatelessWidget {
       subtitle: Text(
         hasApiKey ? provider.type.displayName : 'API key required',
       ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Models:', style: TextStyle(fontWeight: FontWeight.bold)),
-              ...provider.models.map((m) => Text('• ${m.name}')),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: onTest,
-                    child: const Text('TEST'),
-                  ),
-                  TextButton(
-                    onPressed: onEdit,
-                    child: const Text('EDIT'),
-                  ),
-                  TextButton(
-                    onPressed: onDelete,
-                    style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.error,
-                    ),
-                    child: const Text('DELETE'),
-                  ),
-                ],
-              ),
-            ],
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: onEdit,
           ),
-        ),
-      ],
+          IconButton(
+            icon: const Icon(Icons.view_list),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ModelsScreen(provider: provider),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }

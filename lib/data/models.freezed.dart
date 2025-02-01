@@ -354,6 +354,8 @@ mixin _$ModelConfig {
   ModelCapabilities get capabilities => throw _privateConstructorUsedError;
   ModelSettings get settings => throw _privateConstructorUsedError;
   bool get isEnabled => throw _privateConstructorUsedError;
+  ModelPricing? get pricing => throw _privateConstructorUsedError;
+  String? get type => throw _privateConstructorUsedError;
 
   /// Serializes this ModelConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -376,10 +378,13 @@ abstract class $ModelConfigCopyWith<$Res> {
       String name,
       ModelCapabilities capabilities,
       ModelSettings settings,
-      bool isEnabled});
+      bool isEnabled,
+      ModelPricing? pricing,
+      String? type});
 
   $ModelCapabilitiesCopyWith<$Res> get capabilities;
   $ModelSettingsCopyWith<$Res> get settings;
+  $ModelPricingCopyWith<$Res>? get pricing;
 }
 
 /// @nodoc
@@ -402,6 +407,8 @@ class _$ModelConfigCopyWithImpl<$Res, $Val extends ModelConfig>
     Object? capabilities = null,
     Object? settings = null,
     Object? isEnabled = null,
+    Object? pricing = freezed,
+    Object? type = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -424,6 +431,14 @@ class _$ModelConfigCopyWithImpl<$Res, $Val extends ModelConfig>
           ? _value.isEnabled
           : isEnabled // ignore: cast_nullable_to_non_nullable
               as bool,
+      pricing: freezed == pricing
+          ? _value.pricing
+          : pricing // ignore: cast_nullable_to_non_nullable
+              as ModelPricing?,
+      type: freezed == type
+          ? _value.type
+          : type // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 
@@ -446,6 +461,20 @@ class _$ModelConfigCopyWithImpl<$Res, $Val extends ModelConfig>
       return _then(_value.copyWith(settings: value) as $Val);
     });
   }
+
+  /// Create a copy of ModelConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $ModelPricingCopyWith<$Res>? get pricing {
+    if (_value.pricing == null) {
+      return null;
+    }
+
+    return $ModelPricingCopyWith<$Res>(_value.pricing!, (value) {
+      return _then(_value.copyWith(pricing: value) as $Val);
+    });
+  }
 }
 
 /// @nodoc
@@ -461,12 +490,16 @@ abstract class _$$ModelConfigImplCopyWith<$Res>
       String name,
       ModelCapabilities capabilities,
       ModelSettings settings,
-      bool isEnabled});
+      bool isEnabled,
+      ModelPricing? pricing,
+      String? type});
 
   @override
   $ModelCapabilitiesCopyWith<$Res> get capabilities;
   @override
   $ModelSettingsCopyWith<$Res> get settings;
+  @override
+  $ModelPricingCopyWith<$Res>? get pricing;
 }
 
 /// @nodoc
@@ -487,6 +520,8 @@ class __$$ModelConfigImplCopyWithImpl<$Res>
     Object? capabilities = null,
     Object? settings = null,
     Object? isEnabled = null,
+    Object? pricing = freezed,
+    Object? type = freezed,
   }) {
     return _then(_$ModelConfigImpl(
       id: null == id
@@ -509,6 +544,14 @@ class __$$ModelConfigImplCopyWithImpl<$Res>
           ? _value.isEnabled
           : isEnabled // ignore: cast_nullable_to_non_nullable
               as bool,
+      pricing: freezed == pricing
+          ? _value.pricing
+          : pricing // ignore: cast_nullable_to_non_nullable
+              as ModelPricing?,
+      type: freezed == type
+          ? _value.type
+          : type // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -521,7 +564,9 @@ class _$ModelConfigImpl with DiagnosticableTreeMixin implements _ModelConfig {
       required this.name,
       required this.capabilities,
       required this.settings,
-      this.isEnabled = false});
+      this.isEnabled = false,
+      this.pricing,
+      this.type});
 
   factory _$ModelConfigImpl.fromJson(Map<String, dynamic> json) =>
       _$$ModelConfigImplFromJson(json);
@@ -537,10 +582,14 @@ class _$ModelConfigImpl with DiagnosticableTreeMixin implements _ModelConfig {
   @override
   @JsonKey()
   final bool isEnabled;
+  @override
+  final ModelPricing? pricing;
+  @override
+  final String? type;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'ModelConfig(id: $id, name: $name, capabilities: $capabilities, settings: $settings, isEnabled: $isEnabled)';
+    return 'ModelConfig(id: $id, name: $name, capabilities: $capabilities, settings: $settings, isEnabled: $isEnabled, pricing: $pricing, type: $type)';
   }
 
   @override
@@ -552,7 +601,9 @@ class _$ModelConfigImpl with DiagnosticableTreeMixin implements _ModelConfig {
       ..add(DiagnosticsProperty('name', name))
       ..add(DiagnosticsProperty('capabilities', capabilities))
       ..add(DiagnosticsProperty('settings', settings))
-      ..add(DiagnosticsProperty('isEnabled', isEnabled));
+      ..add(DiagnosticsProperty('isEnabled', isEnabled))
+      ..add(DiagnosticsProperty('pricing', pricing))
+      ..add(DiagnosticsProperty('type', type));
   }
 
   @override
@@ -567,13 +618,15 @@ class _$ModelConfigImpl with DiagnosticableTreeMixin implements _ModelConfig {
             (identical(other.settings, settings) ||
                 other.settings == settings) &&
             (identical(other.isEnabled, isEnabled) ||
-                other.isEnabled == isEnabled));
+                other.isEnabled == isEnabled) &&
+            (identical(other.pricing, pricing) || other.pricing == pricing) &&
+            (identical(other.type, type) || other.type == type));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, name, capabilities, settings, isEnabled);
+  int get hashCode => Object.hash(
+      runtimeType, id, name, capabilities, settings, isEnabled, pricing, type);
 
   /// Create a copy of ModelConfig
   /// with the given fields replaced by the non-null parameter values.
@@ -597,7 +650,9 @@ abstract class _ModelConfig implements ModelConfig {
       required final String name,
       required final ModelCapabilities capabilities,
       required final ModelSettings settings,
-      final bool isEnabled}) = _$ModelConfigImpl;
+      final bool isEnabled,
+      final ModelPricing? pricing,
+      final String? type}) = _$ModelConfigImpl;
 
   factory _ModelConfig.fromJson(Map<String, dynamic> json) =
       _$ModelConfigImpl.fromJson;
@@ -612,6 +667,10 @@ abstract class _ModelConfig implements ModelConfig {
   ModelSettings get settings;
   @override
   bool get isEnabled;
+  @override
+  ModelPricing? get pricing;
+  @override
+  String? get type;
 
   /// Create a copy of ModelConfig
   /// with the given fields replaced by the non-null parameter values.
@@ -2003,5 +2062,519 @@ abstract class _Message implements Message {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$MessageImplCopyWith<_$MessageImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+TokenPrice _$TokenPriceFromJson(Map<String, dynamic> json) {
+  return _TokenPrice.fromJson(json);
+}
+
+/// @nodoc
+mixin _$TokenPrice {
+  double get price => throw _privateConstructorUsedError;
+  int? get minTokens => throw _privateConstructorUsedError;
+  int? get maxTokens => throw _privateConstructorUsedError;
+
+  /// Serializes this TokenPrice to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of TokenPrice
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $TokenPriceCopyWith<TokenPrice> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $TokenPriceCopyWith<$Res> {
+  factory $TokenPriceCopyWith(
+          TokenPrice value, $Res Function(TokenPrice) then) =
+      _$TokenPriceCopyWithImpl<$Res, TokenPrice>;
+  @useResult
+  $Res call({double price, int? minTokens, int? maxTokens});
+}
+
+/// @nodoc
+class _$TokenPriceCopyWithImpl<$Res, $Val extends TokenPrice>
+    implements $TokenPriceCopyWith<$Res> {
+  _$TokenPriceCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of TokenPrice
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? price = null,
+    Object? minTokens = freezed,
+    Object? maxTokens = freezed,
+  }) {
+    return _then(_value.copyWith(
+      price: null == price
+          ? _value.price
+          : price // ignore: cast_nullable_to_non_nullable
+              as double,
+      minTokens: freezed == minTokens
+          ? _value.minTokens
+          : minTokens // ignore: cast_nullable_to_non_nullable
+              as int?,
+      maxTokens: freezed == maxTokens
+          ? _value.maxTokens
+          : maxTokens // ignore: cast_nullable_to_non_nullable
+              as int?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$TokenPriceImplCopyWith<$Res>
+    implements $TokenPriceCopyWith<$Res> {
+  factory _$$TokenPriceImplCopyWith(
+          _$TokenPriceImpl value, $Res Function(_$TokenPriceImpl) then) =
+      __$$TokenPriceImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({double price, int? minTokens, int? maxTokens});
+}
+
+/// @nodoc
+class __$$TokenPriceImplCopyWithImpl<$Res>
+    extends _$TokenPriceCopyWithImpl<$Res, _$TokenPriceImpl>
+    implements _$$TokenPriceImplCopyWith<$Res> {
+  __$$TokenPriceImplCopyWithImpl(
+      _$TokenPriceImpl _value, $Res Function(_$TokenPriceImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of TokenPrice
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? price = null,
+    Object? minTokens = freezed,
+    Object? maxTokens = freezed,
+  }) {
+    return _then(_$TokenPriceImpl(
+      price: null == price
+          ? _value.price
+          : price // ignore: cast_nullable_to_non_nullable
+              as double,
+      minTokens: freezed == minTokens
+          ? _value.minTokens
+          : minTokens // ignore: cast_nullable_to_non_nullable
+              as int?,
+      maxTokens: freezed == maxTokens
+          ? _value.maxTokens
+          : maxTokens // ignore: cast_nullable_to_non_nullable
+              as int?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$TokenPriceImpl with DiagnosticableTreeMixin implements _TokenPrice {
+  const _$TokenPriceImpl({required this.price, this.minTokens, this.maxTokens});
+
+  factory _$TokenPriceImpl.fromJson(Map<String, dynamic> json) =>
+      _$$TokenPriceImplFromJson(json);
+
+  @override
+  final double price;
+  @override
+  final int? minTokens;
+  @override
+  final int? maxTokens;
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'TokenPrice(price: $price, minTokens: $minTokens, maxTokens: $maxTokens)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'TokenPrice'))
+      ..add(DiagnosticsProperty('price', price))
+      ..add(DiagnosticsProperty('minTokens', minTokens))
+      ..add(DiagnosticsProperty('maxTokens', maxTokens));
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$TokenPriceImpl &&
+            (identical(other.price, price) || other.price == price) &&
+            (identical(other.minTokens, minTokens) ||
+                other.minTokens == minTokens) &&
+            (identical(other.maxTokens, maxTokens) ||
+                other.maxTokens == maxTokens));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, price, minTokens, maxTokens);
+
+  /// Create a copy of TokenPrice
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$TokenPriceImplCopyWith<_$TokenPriceImpl> get copyWith =>
+      __$$TokenPriceImplCopyWithImpl<_$TokenPriceImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$TokenPriceImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _TokenPrice implements TokenPrice {
+  const factory _TokenPrice(
+      {required final double price,
+      final int? minTokens,
+      final int? maxTokens}) = _$TokenPriceImpl;
+
+  factory _TokenPrice.fromJson(Map<String, dynamic> json) =
+      _$TokenPriceImpl.fromJson;
+
+  @override
+  double get price;
+  @override
+  int? get minTokens;
+  @override
+  int? get maxTokens;
+
+  /// Create a copy of TokenPrice
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$TokenPriceImplCopyWith<_$TokenPriceImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+ModelPricing _$ModelPricingFromJson(Map<String, dynamic> json) {
+  return _ModelPricing.fromJson(json);
+}
+
+/// @nodoc
+mixin _$ModelPricing {
+  List<TokenPrice> get input => throw _privateConstructorUsedError;
+  List<TokenPrice> get output => throw _privateConstructorUsedError;
+  List<TokenPrice>? get batchInput => throw _privateConstructorUsedError;
+  List<TokenPrice>? get batchOutput => throw _privateConstructorUsedError;
+  List<TokenPrice>? get cacheRead => throw _privateConstructorUsedError;
+  double? get cacheWrite => throw _privateConstructorUsedError;
+
+  /// Serializes this ModelPricing to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of ModelPricing
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $ModelPricingCopyWith<ModelPricing> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $ModelPricingCopyWith<$Res> {
+  factory $ModelPricingCopyWith(
+          ModelPricing value, $Res Function(ModelPricing) then) =
+      _$ModelPricingCopyWithImpl<$Res, ModelPricing>;
+  @useResult
+  $Res call(
+      {List<TokenPrice> input,
+      List<TokenPrice> output,
+      List<TokenPrice>? batchInput,
+      List<TokenPrice>? batchOutput,
+      List<TokenPrice>? cacheRead,
+      double? cacheWrite});
+}
+
+/// @nodoc
+class _$ModelPricingCopyWithImpl<$Res, $Val extends ModelPricing>
+    implements $ModelPricingCopyWith<$Res> {
+  _$ModelPricingCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of ModelPricing
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? input = null,
+    Object? output = null,
+    Object? batchInput = freezed,
+    Object? batchOutput = freezed,
+    Object? cacheRead = freezed,
+    Object? cacheWrite = freezed,
+  }) {
+    return _then(_value.copyWith(
+      input: null == input
+          ? _value.input
+          : input // ignore: cast_nullable_to_non_nullable
+              as List<TokenPrice>,
+      output: null == output
+          ? _value.output
+          : output // ignore: cast_nullable_to_non_nullable
+              as List<TokenPrice>,
+      batchInput: freezed == batchInput
+          ? _value.batchInput
+          : batchInput // ignore: cast_nullable_to_non_nullable
+              as List<TokenPrice>?,
+      batchOutput: freezed == batchOutput
+          ? _value.batchOutput
+          : batchOutput // ignore: cast_nullable_to_non_nullable
+              as List<TokenPrice>?,
+      cacheRead: freezed == cacheRead
+          ? _value.cacheRead
+          : cacheRead // ignore: cast_nullable_to_non_nullable
+              as List<TokenPrice>?,
+      cacheWrite: freezed == cacheWrite
+          ? _value.cacheWrite
+          : cacheWrite // ignore: cast_nullable_to_non_nullable
+              as double?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$ModelPricingImplCopyWith<$Res>
+    implements $ModelPricingCopyWith<$Res> {
+  factory _$$ModelPricingImplCopyWith(
+          _$ModelPricingImpl value, $Res Function(_$ModelPricingImpl) then) =
+      __$$ModelPricingImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {List<TokenPrice> input,
+      List<TokenPrice> output,
+      List<TokenPrice>? batchInput,
+      List<TokenPrice>? batchOutput,
+      List<TokenPrice>? cacheRead,
+      double? cacheWrite});
+}
+
+/// @nodoc
+class __$$ModelPricingImplCopyWithImpl<$Res>
+    extends _$ModelPricingCopyWithImpl<$Res, _$ModelPricingImpl>
+    implements _$$ModelPricingImplCopyWith<$Res> {
+  __$$ModelPricingImplCopyWithImpl(
+      _$ModelPricingImpl _value, $Res Function(_$ModelPricingImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of ModelPricing
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? input = null,
+    Object? output = null,
+    Object? batchInput = freezed,
+    Object? batchOutput = freezed,
+    Object? cacheRead = freezed,
+    Object? cacheWrite = freezed,
+  }) {
+    return _then(_$ModelPricingImpl(
+      input: null == input
+          ? _value._input
+          : input // ignore: cast_nullable_to_non_nullable
+              as List<TokenPrice>,
+      output: null == output
+          ? _value._output
+          : output // ignore: cast_nullable_to_non_nullable
+              as List<TokenPrice>,
+      batchInput: freezed == batchInput
+          ? _value._batchInput
+          : batchInput // ignore: cast_nullable_to_non_nullable
+              as List<TokenPrice>?,
+      batchOutput: freezed == batchOutput
+          ? _value._batchOutput
+          : batchOutput // ignore: cast_nullable_to_non_nullable
+              as List<TokenPrice>?,
+      cacheRead: freezed == cacheRead
+          ? _value._cacheRead
+          : cacheRead // ignore: cast_nullable_to_non_nullable
+              as List<TokenPrice>?,
+      cacheWrite: freezed == cacheWrite
+          ? _value.cacheWrite
+          : cacheWrite // ignore: cast_nullable_to_non_nullable
+              as double?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$ModelPricingImpl with DiagnosticableTreeMixin implements _ModelPricing {
+  const _$ModelPricingImpl(
+      {required final List<TokenPrice> input,
+      required final List<TokenPrice> output,
+      final List<TokenPrice>? batchInput,
+      final List<TokenPrice>? batchOutput,
+      final List<TokenPrice>? cacheRead,
+      this.cacheWrite})
+      : _input = input,
+        _output = output,
+        _batchInput = batchInput,
+        _batchOutput = batchOutput,
+        _cacheRead = cacheRead;
+
+  factory _$ModelPricingImpl.fromJson(Map<String, dynamic> json) =>
+      _$$ModelPricingImplFromJson(json);
+
+  final List<TokenPrice> _input;
+  @override
+  List<TokenPrice> get input {
+    if (_input is EqualUnmodifiableListView) return _input;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_input);
+  }
+
+  final List<TokenPrice> _output;
+  @override
+  List<TokenPrice> get output {
+    if (_output is EqualUnmodifiableListView) return _output;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_output);
+  }
+
+  final List<TokenPrice>? _batchInput;
+  @override
+  List<TokenPrice>? get batchInput {
+    final value = _batchInput;
+    if (value == null) return null;
+    if (_batchInput is EqualUnmodifiableListView) return _batchInput;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  final List<TokenPrice>? _batchOutput;
+  @override
+  List<TokenPrice>? get batchOutput {
+    final value = _batchOutput;
+    if (value == null) return null;
+    if (_batchOutput is EqualUnmodifiableListView) return _batchOutput;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  final List<TokenPrice>? _cacheRead;
+  @override
+  List<TokenPrice>? get cacheRead {
+    final value = _cacheRead;
+    if (value == null) return null;
+    if (_cacheRead is EqualUnmodifiableListView) return _cacheRead;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  @override
+  final double? cacheWrite;
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'ModelPricing(input: $input, output: $output, batchInput: $batchInput, batchOutput: $batchOutput, cacheRead: $cacheRead, cacheWrite: $cacheWrite)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'ModelPricing'))
+      ..add(DiagnosticsProperty('input', input))
+      ..add(DiagnosticsProperty('output', output))
+      ..add(DiagnosticsProperty('batchInput', batchInput))
+      ..add(DiagnosticsProperty('batchOutput', batchOutput))
+      ..add(DiagnosticsProperty('cacheRead', cacheRead))
+      ..add(DiagnosticsProperty('cacheWrite', cacheWrite));
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ModelPricingImpl &&
+            const DeepCollectionEquality().equals(other._input, _input) &&
+            const DeepCollectionEquality().equals(other._output, _output) &&
+            const DeepCollectionEquality()
+                .equals(other._batchInput, _batchInput) &&
+            const DeepCollectionEquality()
+                .equals(other._batchOutput, _batchOutput) &&
+            const DeepCollectionEquality()
+                .equals(other._cacheRead, _cacheRead) &&
+            (identical(other.cacheWrite, cacheWrite) ||
+                other.cacheWrite == cacheWrite));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(
+      runtimeType,
+      const DeepCollectionEquality().hash(_input),
+      const DeepCollectionEquality().hash(_output),
+      const DeepCollectionEquality().hash(_batchInput),
+      const DeepCollectionEquality().hash(_batchOutput),
+      const DeepCollectionEquality().hash(_cacheRead),
+      cacheWrite);
+
+  /// Create a copy of ModelPricing
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ModelPricingImplCopyWith<_$ModelPricingImpl> get copyWith =>
+      __$$ModelPricingImplCopyWithImpl<_$ModelPricingImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$ModelPricingImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _ModelPricing implements ModelPricing {
+  const factory _ModelPricing(
+      {required final List<TokenPrice> input,
+      required final List<TokenPrice> output,
+      final List<TokenPrice>? batchInput,
+      final List<TokenPrice>? batchOutput,
+      final List<TokenPrice>? cacheRead,
+      final double? cacheWrite}) = _$ModelPricingImpl;
+
+  factory _ModelPricing.fromJson(Map<String, dynamic> json) =
+      _$ModelPricingImpl.fromJson;
+
+  @override
+  List<TokenPrice> get input;
+  @override
+  List<TokenPrice> get output;
+  @override
+  List<TokenPrice>? get batchInput;
+  @override
+  List<TokenPrice>? get batchOutput;
+  @override
+  List<TokenPrice>? get cacheRead;
+  @override
+  double? get cacheWrite;
+
+  /// Create a copy of ModelPricing
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ModelPricingImplCopyWith<_$ModelPricingImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

@@ -48,6 +48,10 @@ _$ModelConfigImpl _$$ModelConfigImplFromJson(Map<String, dynamic> json) =>
       settings:
           ModelSettings.fromJson(json['settings'] as Map<String, dynamic>),
       isEnabled: json['isEnabled'] as bool? ?? false,
+      pricing: json['pricing'] == null
+          ? null
+          : ModelPricing.fromJson(json['pricing'] as Map<String, dynamic>),
+      type: json['type'] as String?,
     );
 
 Map<String, dynamic> _$$ModelConfigImplToJson(_$ModelConfigImpl instance) =>
@@ -57,6 +61,8 @@ Map<String, dynamic> _$$ModelConfigImplToJson(_$ModelConfigImpl instance) =>
       'capabilities': instance.capabilities,
       'settings': instance.settings,
       'isEnabled': instance.isEnabled,
+      'pricing': instance.pricing,
+      'type': instance.type,
     };
 
 _$ModelCapabilitiesImpl _$$ModelCapabilitiesImplFromJson(
@@ -180,3 +186,47 @@ const _$RoleEnumMap = {
   Role.user: 'user',
   Role.assistant: 'assistant',
 };
+
+_$TokenPriceImpl _$$TokenPriceImplFromJson(Map<String, dynamic> json) =>
+    _$TokenPriceImpl(
+      price: (json['price'] as num).toDouble(),
+      minTokens: (json['minTokens'] as num?)?.toInt(),
+      maxTokens: (json['maxTokens'] as num?)?.toInt(),
+    );
+
+Map<String, dynamic> _$$TokenPriceImplToJson(_$TokenPriceImpl instance) =>
+    <String, dynamic>{
+      'price': instance.price,
+      'minTokens': instance.minTokens,
+      'maxTokens': instance.maxTokens,
+    };
+
+_$ModelPricingImpl _$$ModelPricingImplFromJson(Map<String, dynamic> json) =>
+    _$ModelPricingImpl(
+      input: (json['input'] as List<dynamic>)
+          .map((e) => TokenPrice.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      output: (json['output'] as List<dynamic>)
+          .map((e) => TokenPrice.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      batchInput: (json['batchInput'] as List<dynamic>?)
+          ?.map((e) => TokenPrice.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      batchOutput: (json['batchOutput'] as List<dynamic>?)
+          ?.map((e) => TokenPrice.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      cacheRead: (json['cacheRead'] as List<dynamic>?)
+          ?.map((e) => TokenPrice.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      cacheWrite: (json['cacheWrite'] as num?)?.toDouble(),
+    );
+
+Map<String, dynamic> _$$ModelPricingImplToJson(_$ModelPricingImpl instance) =>
+    <String, dynamic>{
+      'input': instance.input,
+      'output': instance.output,
+      'batchInput': instance.batchInput,
+      'batchOutput': instance.batchOutput,
+      'cacheRead': instance.cacheRead,
+      'cacheWrite': instance.cacheWrite,
+    };

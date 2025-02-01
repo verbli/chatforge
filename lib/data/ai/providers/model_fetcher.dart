@@ -8,12 +8,41 @@ import '../../../core/constants.dart';
 import '../../models.dart';
 
 abstract class ModelFetcher {
-  Future<List<ModelConfig>> fetchModels(String apiKey);
+  Future<List<ModelConfig>> fetchModels([String? apiKey]);
+}
+
+ModelPricing _parsePricing(Map<String, dynamic> json) {
+  dynamic parsePrice(dynamic value) {
+    if (value == null) return null;
+
+    if (value is num) {
+      return [TokenPrice(price: value.toDouble())];
+    }
+
+    if (value is List) {
+      return value.map((priceRange) => TokenPrice(
+        price: priceRange['price'].toDouble(),
+        minTokens: priceRange['min_tokens'],
+        maxTokens: priceRange['max_tokens'],
+      )).toList();
+    }
+
+    return null;
+  }
+
+  return ModelPricing(
+    input: parsePrice(json['input']) ?? [],
+    output: parsePrice(json['output']) ?? [],
+    batchInput: parsePrice(json['batch_input']),
+    batchOutput: parsePrice(json['batch_output']),
+    cacheRead: parsePrice(json['cache_read']),
+    cacheWrite: json['cache_write']?.toDouble(),
+  );
 }
 
 class HuggingfaceModelFetcher implements ModelFetcher {
   @override
-  Future<List<ModelConfig>> fetchModels(String apiKey) async {
+  Future<List<ModelConfig>> fetchModels([String? apiKey]) async {
     final dio = Dio(BaseOptions(
       headers: {
         'Content-Type': 'application/json',
@@ -36,6 +65,8 @@ class HuggingfaceModelFetcher implements ModelFetcher {
           maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
           maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
         ),
+        pricing: m['pricing'] != null ? _parsePricing(m['pricing']) : null,
+        type: m['type'] ?? 'latest',
       )).toList();
       return models;
     } catch (e) {
@@ -46,7 +77,7 @@ class HuggingfaceModelFetcher implements ModelFetcher {
 
 class OpenRouterModelFetcher implements ModelFetcher {
   @override
-  Future<List<ModelConfig>> fetchModels(String apiKey) async {
+  Future<List<ModelConfig>> fetchModels([String? apiKey]) async {
     final dio = Dio(BaseOptions(
       headers: {
         'Content-Type': 'application/json',
@@ -69,6 +100,8 @@ class OpenRouterModelFetcher implements ModelFetcher {
           maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
           maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
         ),
+        pricing: m['pricing'] != null ? _parsePricing(m['pricing']) : null,
+        type: m['type'] ?? 'latest',
       )).toList();
       return models;
     } catch (e) {
@@ -79,7 +112,7 @@ class OpenRouterModelFetcher implements ModelFetcher {
 
 class OpenAIModelFetcher implements ModelFetcher {
   @override
-  Future<List<ModelConfig>> fetchModels(String apiKey) async {
+  Future<List<ModelConfig>> fetchModels([String? apiKey]) async {
     final dio = Dio(BaseOptions(
       headers: {
         'Content-Type': 'application/json',
@@ -102,6 +135,8 @@ class OpenAIModelFetcher implements ModelFetcher {
           maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
           maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
         ),
+        pricing: m['pricing'] != null ? _parsePricing(m['pricing']) : null,
+        type: m['type'] ?? 'latest',
       )).toList();
       return models;
     } catch (e) {
@@ -112,7 +147,7 @@ class OpenAIModelFetcher implements ModelFetcher {
 
 class AnthropicModelFetcher implements ModelFetcher {
   @override
-  Future<List<ModelConfig>> fetchModels(String apiKey) async {
+  Future<List<ModelConfig>> fetchModels([String? apiKey]) async {
     final dio = Dio(BaseOptions(
       headers: {
         'Content-Type': 'application/json',
@@ -135,6 +170,8 @@ class AnthropicModelFetcher implements ModelFetcher {
           maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
           maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
         ),
+        pricing: m['pricing'] != null ? _parsePricing(m['pricing']) : null,
+        type: m['type'] ?? 'latest',
       )).toList();
       return models;
     } catch (e) {
@@ -145,7 +182,7 @@ class AnthropicModelFetcher implements ModelFetcher {
 
 class GeminiModelFetcher implements ModelFetcher {
   @override
-  Future<List<ModelConfig>> fetchModels(String apiKey) async {
+  Future<List<ModelConfig>> fetchModels([String? apiKey]) async {
     final dio = Dio(BaseOptions(
       headers: {
         'Content-Type': 'application/json',
@@ -168,6 +205,8 @@ class GeminiModelFetcher implements ModelFetcher {
           maxContextTokens: m['endpoints'][0]['context_size'] ?? 4096,
           maxResponseTokens: m['endpoints'][0]['output_size'] ?? 4096,
         ),
+        pricing: m['pricing'] != null ? _parsePricing(m['pricing']) : null,
+        type: m['type'] ?? 'latest',
       )).toList();
       return models;
     } catch (e) {
