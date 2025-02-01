@@ -283,31 +283,6 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
                   }
                 },
               ),
-              if (_type == ProviderType.openRouter) ...[
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SwitchListTile(
-                        title: const Text('Allow Fallback'),
-                        value: _allowFallback,
-                        onChanged: (bool value) {
-                          setState(() {
-                            _allowFallback = value;
-                          });
-                        },
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.help_outline),
-                      onPressed: () => _showHelpDialog(
-                        'Provider Fallback',
-                        'This provider is a proxy to other upstream providers. If fallback is enabled, the proxy will attempt to use alternative providers if the primary provider is unavailable.\n\nNote: Not all upstream providers for a given model have the same costs. Enabling will increase reliability with the possibility of increased costs.',
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ],
           ),
         ),
@@ -380,7 +355,7 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
                           ? _baseUrlController.text
                           : preset.baseUrl,
                       models: selectedModels,
-                      allowFallback: _type == ProviderType.openRouter ? _allowFallback : null,
+                      allowFallback: null,
                     ),
                   );
                 }

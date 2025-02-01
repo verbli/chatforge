@@ -14,7 +14,19 @@ class ChangelogDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Version 1.1.2',
+            const Text('Version 1.1.3 - 2024-02-01',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text(
+                '• Improved model fetching\n'
+                '• Added temporary chats\n'
+                '• Enhanced response loading indicator\n'
+                '• Fixed empty message bubbles\n'
+                '• Fixed frozen chats during streaming\n'
+                '• Fixed broken light theme colors\n'
+                '• Improved analytics loading time\n'
+            ),
+            const Text('Version 1.1.2 - 2024-01-17',
                 style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             const Text(

@@ -503,6 +503,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text('Version 1.1.3 - 2024-02-01',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text(
+                  '• Improved model fetching\n'
+                  '• Added temporary chats\n'
+                  '• Enhanced response loading indicator\n'
+                  '• Fixed empty message bubbles\n'
+                  '• Fixed frozen chats during streaming\n'
+                  '• Fixed broken light theme colors\n'
+                  '• Improved analytics loading time\n'
+              ),
               Text('Version 1.1.2 - 2024-01-17',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
