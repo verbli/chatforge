@@ -1,6 +1,6 @@
 # ChatForge
 
-ChatForge is a versatile, privacy-focused chat application that enables seamless interaction with Large Language Models (LLMs). Built with Flutter, it prioritizes user privacy by keeping data local while providing powerful features for both individual users and enterprises.
+ChatForge is a versatile, privacy-focused chat application that enables seamless interaction with Large Language Models (LLMs). Built with Flutter, it prioritizes user privacy by keeping data local while providing powerful features for both individual users and enterprises. With support for multiple AI providers and customizable themes, ChatForge offers a premium chat experience without compromising on privacy.
 
 [![en](google_play.svg)](https://play.google.com/store/apps/details?id=org.verbli.chatforge)
 
@@ -14,17 +14,38 @@ If you find ChatForge useful and want to support its development, consider buyin
 ## Features
 
 ### Current Features
-- **Local Storage**: All data is stored securely with SQLite, ensuring your conversations remain private
-- **Multiple Conversations**: Manage and organize multiple chat sessions simultaneously
-- **Conversation Rewind**: Edit previous messages and regenerate responses from any point
-- **Custom Prompts & Settings**: Personalize system prompts and fine-tune model parameters
-- **Multiple LLM Integrations**: Seamless access to powerful language models from OpenAI, Anthropic, & Gemini
+- **Privacy-First Architecture**
+  - Local SQLite storage for all conversations and settings
+  - No data collection or tracking
+  - Optional temporary chats that delete on close
+
+- **Advanced Chat Features**
+  - Multiple concurrent conversations with different models
+  - Edit and regenerate from any point in chat history
+  - Markdown and code syntax highlighting
+  - Word-by-word streaming for natural response flow
+
+- **AI Provider Integration**
+  - Support for OpenAI, Anthropic Claude, and Google Gemini
+  - Dynamic model fetching and capabilities detection
+  - Fine-grained control over model parameters
+  - Customizable system prompts per conversation
+
+- **Rich UI/UX**
+  - Multiple theme options (ChatForge, ChatGPT, Claude, Gemini styles)
+  - Light/dark mode support
+  - Responsive design for mobile and desktop
+  - Custom syntax highlighting themes
+
 - **Linux Desktop**: Run ChatForge on Linux!
 
 ### Coming Soon
 - Detailed Usage Statistics and Analytics
 - Cross-Platform Support (Web, Windows)
 - External Backend Options (Supabase, Firebase, Appwrite, PocketBase)
+
+### Pro Features
+- Ad-free experience
 
 ## Installation
 
@@ -54,18 +75,20 @@ flutter run
 ### Build Variants
 ChatForge supports multiple build configurations:
 
-- **Community Edition** (GPLv3)
-    - Free with ads
-    - Local storage only
-    - Basic features
+#### Community Edition (GPLv3)
+- Free with ads
+- Local storage only
+- All core features included
+- Basic customization options
 
-- **Pro Edition** (GPLv3)
-    - Ad-free experience
+#### Pro Edition (GPLv3)
+- Ad-free experience
 
-- **Enterprise Edition** (Commercial License)
-    - _Coming Soon_
+#### Enterprise Edition (Commercial License)
+- _Coming Soon_
+- Custom branding
 
-### Build Command
+### Build Commands
 ```bash
 flutter build apk --dart-define=IS_PRO=true --dart-define=ENABLE_ADS=false
 ```

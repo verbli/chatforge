@@ -1,5 +1,22 @@
 # Change Log
 
+## [1.1.3] - 2024-02-01
+
+Temporary chats and better model fetching.
+
+### Enhancements
+
+- **Improved model fetching**: Integrated a unified API for fetching the latest model information.
+- **Added temporary chats**: Now you can create temporary chats that are not saved in the database.
+- **Better response loading**: Added an indicator when waiting for AI responses.
+
+### Bug Fixes
+
+- **Empty message bubbles**: Fixed a bug where empty message bubbles were displayed.
+- **Frozen chats**: Chats no longer freeze when streaming responses.
+- **Broken theme**: The default theme colors for light mode have been fixed.
+- **Async Analytics**: Analytics load in the background at startup now.
+
 ## [1.1.2] - 2024-01-17
 
 Bug fixes and smoother streaming for a better chat experience.
