@@ -10,7 +10,8 @@ part 'models.g.dart';
 enum ProviderType {
   openAI('OpenAI'),
   anthropic('Anthropic'),
-  gemini('Google Gemini'),;
+  gemini('Google Gemini'),
+  openRouter('OpenRouter');
 
   final String displayName;
   const ProviderType(this.displayName);

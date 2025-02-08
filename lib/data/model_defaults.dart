@@ -31,6 +31,14 @@ class ModelDefaults {
       apiKey: '',
       models: [],
     ),
+    const ProviderConfig(
+      id: 'openrouter',
+      name: 'OpenRouter',
+      type: ProviderType.openRouter,
+      baseUrl: AppConstants.openRouterBaseUrl,
+      apiKey: '',
+      models: [],
+    ),
   ];
 
   static ProviderConfig? getDefaultProvider(ProviderType type) {

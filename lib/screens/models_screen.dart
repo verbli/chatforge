@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/ai/providers/model_fetcher.dart';
 import '../data/models.dart';
 import '../data/providers.dart';
+import 'custom_model_screen.dart';
 
 class ModelsScreen extends ConsumerStatefulWidget {
   final ProviderConfig provider;
@@ -21,9 +22,8 @@ class ModelsScreen extends ConsumerStatefulWidget {
 class _ModelsScreenState extends ConsumerState<ModelsScreen> {
   bool _isLoading = false;
   String? _error;
-  bool _showDetailedView = false;
   bool _showModelTypes = true;
-  bool _showEnabledOnly = false;
+  bool _showAllModels = true;
 
   @override
   void initState() {
@@ -42,18 +42,28 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
         throw Exception('No model fetcher available for ${widget.provider.type}');
       }
 
-      final models = await fetcher.fetchModels();
+      // Get current provider to preserve enabled states
+      final currentProvider = await ref.read(providerRepositoryProvider).getProvider(widget.provider.id);
 
-      // Preserve enabled state of existing models
-      final updatedModels = models.map((model) {
-        final existingModel = widget.provider.models.firstWhere(
-              (m) => m.id == model.id,
-          orElse: () => model,
+      // Create a map of existing enabled states
+      final enabledStates = <String, bool>{};
+      for (final model in currentProvider.models) {
+        enabledStates[model.id] = model.isEnabled;
+      }
+
+      final fetchedModels = await fetcher.fetchModels();
+
+      // Update models preserving existing enabled states
+      final updatedModels = fetchedModels.map((model) {
+        // If we have an existing state for this model, use it
+        // Otherwise, preserve the model's current enabled state
+        return model.copyWith(
+          isEnabled: enabledStates.containsKey(model.id)
+              ? enabledStates[model.id]!
+              : model.isEnabled,
         );
-        return model.copyWith(isEnabled: existingModel.isEnabled);
       }).toList();
 
-      // Update provider with new models
       await ref.read(providerRepositoryProvider).updateProvider(
         widget.provider.copyWith(models: updatedModels),
       );
@@ -65,30 +75,12 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
   }
 
   Future<void> _addCustomModel() async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => const _AddCustomModelDialog(),
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddCustomModelScreen(provider: widget.provider),
+      ),
     );
-
-    if (result != null) {
-      final newModel = ModelConfig(
-        id: result['id'],
-        name: result['name'],
-        capabilities: ModelCapabilities(
-          maxContextTokens: result['contextTokens'],
-          maxResponseTokens: result['responseTokens'],
-        ),
-        settings: ModelSettings(
-          maxContextTokens: result['contextTokens'],
-        ),
-        isEnabled: true,
-      );
-
-      final updatedModels = [...widget.provider.models, newModel];
-      await ref.read(providerRepositoryProvider).updateProvider(
-        widget.provider.copyWith(models: updatedModels),
-      );
-    }
   }
 
   Future<void> _toggleModel(ModelConfig model, bool enabled) async {
@@ -149,14 +141,15 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
             .map((m) => m.type ?? 'unknown')
             .toSet();
 
+        // Filter models based on _showAllModels
+        final modelsToShow = _showAllModels
+            ? currentProvider.models
+            : currentProvider.models.where((m) => m.isEnabled).toList();
+
         return Scaffold(
           appBar: AppBar(
             title: Text('${currentProvider.name} Models'),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: _addCustomModel,
-              ),
               IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: _isLoading ? null : _refreshModels,
@@ -164,125 +157,198 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
             ],
           ),
           body: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Card(
-                margin: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // Header
+              SizedBox(
+                height: 48, // Fixed height
+                child: ListTile(
+                  title: Text(
+                    'Model Types',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  trailing: IconButton(
+                    icon: Icon(_showModelTypes ? Icons.expand_less : Icons.expand_more),
+                    onPressed: () => setState(() => _showModelTypes = !_showModelTypes),
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+
+              // Model types section
+              if (_showModelTypes)
+                Column(
                   children: [
-                    // Header with collapse button
-                    ListTile(
-                      title: Text(
-                        'Model Types',
-                        style: Theme.of(context).textTheme.titleLarge,
+                    if (availableTypes.length > 3) ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // First column
+                          Expanded(
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              padding: EdgeInsets.zero,
+                              itemCount: (availableTypes.length / 2).ceil(),
+                              itemBuilder: (context, index) {
+                                final type = availableTypes.elementAt(index);
+                                final modelsOfType = currentProvider.models
+                                    .where((m) => (m.type ?? 'unknown') == type);
+                                final enabledCount = modelsOfType.where((m) => m.isEnabled).length;
+                                final totalCount = modelsOfType.length;
+                                final allEnabled = modelsOfType.every((m) => m.isEnabled);
+
+                                return SizedBox(
+                                  height: 56,
+                                  child: SwitchListTile(
+                                    title: Text(
+                                      type.toUpperCase(),
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    subtitle: Text(
+                                      '$enabledCount/$totalCount models enabled',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                    dense: true,
+                                    value: allEnabled,
+                                    onChanged: (enabled) => _toggleTypeEnabled(type, enabled),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          // Second column
+                          Expanded(
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              padding: EdgeInsets.zero,
+                              itemCount: availableTypes.length - (availableTypes.length / 2).ceil(),
+                              itemBuilder: (context, index) {
+                                final actualIndex = index + (availableTypes.length / 2).ceil();
+                                final type = availableTypes.elementAt(actualIndex);
+                                final modelsOfType = currentProvider.models
+                                    .where((m) => (m.type ?? 'unknown') == type);
+                                final enabledCount = modelsOfType.where((m) => m.isEnabled).length;
+                                final totalCount = modelsOfType.length;
+                                final allEnabled = modelsOfType.every((m) => m.isEnabled);
+
+                                return SizedBox(
+                                  height: 56,
+                                  child: SwitchListTile(
+                                    title: Text(
+                                      type.toUpperCase(),
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    subtitle: Text(
+                                      '$enabledCount/$totalCount models enabled',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                    dense: true,
+                                    value: allEnabled,
+                                    onChanged: (enabled) => _toggleTypeEnabled(type, enabled),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
-                      trailing: IconButton(
-                        icon: Icon(_showModelTypes ? Icons.expand_less : Icons.expand_more),
-                        onPressed: () => setState(() => _showModelTypes = !_showModelTypes),
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    // Collapsible model types section
-                    AnimatedCrossFade(
-                      firstChild: GridView.count(
-                        crossAxisCount: availableTypes.length > 4 ? 2 : 1,
+                    ] else ...[  // Single column for 3 or fewer types
+                      ListView.builder(
                         shrinkWrap: true,
-                        childAspectRatio: availableTypes.length > 4 ? 4 : 6,
                         physics: const NeverScrollableScrollPhysics(),
-                        children: availableTypes.map((type) {
+                        padding: EdgeInsets.zero,
+                        itemCount: availableTypes.length,
+                        itemBuilder: (context, index) {
+                          final type = availableTypes.elementAt(index);
                           final modelsOfType = currentProvider.models
                               .where((m) => (m.type ?? 'unknown') == type);
-                          final enabledCount = modelsOfType
-                              .where((m) => m.isEnabled)
-                              .length;
+                          final enabledCount = modelsOfType.where((m) => m.isEnabled).length;
                           final totalCount = modelsOfType.length;
                           final allEnabled = modelsOfType.every((m) => m.isEnabled);
 
-                          return SwitchListTile(
-                            title: Text(
-                              type.toUpperCase(),
-                              style: const TextStyle(fontSize: 14),
+                          return SizedBox(
+                            height: 56,
+                            child: SwitchListTile(
+                              title: Text(
+                                type.toUpperCase(),
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                              subtitle: Text(
+                                '$enabledCount/$totalCount models enabled',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              dense: true,
+                              value: allEnabled,
+                              onChanged: (enabled) => _toggleTypeEnabled(type, enabled),
                             ),
-                            subtitle: Text(
-                              '$enabledCount/$totalCount models enabled',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            dense: true,
-                            value: allEnabled,
-                            onChanged: (enabled) => _toggleTypeEnabled(type, enabled),
                           );
-                        }).toList(),
+                        },
                       ),
-                      secondChild: const SizedBox.shrink(),
-                      crossFadeState: _showModelTypes
-                          ? CrossFadeState.showFirst
-                          : CrossFadeState.showSecond,
-                      duration: const Duration(milliseconds: 300),
+                    ],
+                  ],
+                ),
+
+              const Divider(height: 1),
+
+              // Controls row
+              SizedBox(
+                height: 48, // Fixed height
+                child: Row(
+                  children: [
+                    // Switch section with constrained width
+                    Expanded(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Switch(
+                              value: _showAllModels,
+                              onChanged: (value) {
+                                setState(() => _showAllModels = value);
+                              },
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Text(
+                              _showAllModels ? 'Show all models' : 'Show only enabled models',
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const Divider(height: 1),
-                    // View options in a row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: SwitchListTile(
-                            title: const Text('Show Individual Models'),
-                            dense: true,
-                            value: _showDetailedView,
-                            onChanged: (value) {
-                              setState(() => _showDetailedView = value);
-                            },
-                          ),
-                        ),
-                        Expanded(
-                          child: SwitchListTile(
-                            title: const Text('Enabled Only'),
-                            dense: true,
-                            value: _showEnabledOnly,
-                            onChanged: (value) {
-                              setState(() {
-                                _showEnabledOnly = value;
-                                if (value) {
-                                  _showDetailedView = true;
-                                }
-                              });
-                            },
-                          ),
-                        ),
-                      ],
+                    // Vertical divider
+                    const SizedBox(
+                      height: 48,
+                      child: VerticalDivider(width: 1),
+                    ),
+                    // Add custom button
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add custom model'),
+                        onPressed: _addCustomModel,
+                      ),
                     ),
                   ],
                 ),
               ),
-              if (_showDetailedView)
-                Expanded(
-                  child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : _error != null
-                      ? Center(child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Error: $_error'),
-                      TextButton(
-                        onPressed: _refreshModels,
-                        child: const Text('RETRY'),
-                      ),
-                    ],
-                  ))
-                      : ListView.builder(
-                    itemCount: currentProvider.models.length,
-                    itemBuilder: (context, index) {
-                      final model = currentProvider.models[index];
-                      // Filter out disabled models if showEnabledOnly is true
-                      if (_showEnabledOnly && !model.isEnabled) {
-                        return const SizedBox.shrink();
-                      }
-                      return _ModelListItem(
-                        model: model,
-                        onToggle: (enabled) => _toggleModel(model, enabled),
-                      );
-                    },
-                  ),
+
+              Expanded(
+                child: ListView(
+                  children: modelsToShow.map((model) {
+                    return _ModelListItem(
+                      model: model,
+                      onToggle: (enabled) => _toggleModel(model, enabled),
+                    );
+                  }).toList(),
                 ),
+              ),
             ],
           ),
         );
@@ -356,9 +422,10 @@ class _ModelListItemState extends State<_ModelListItem> {
         ),
         if (_expanded)
           Padding(
-            padding: const EdgeInsets.only(left: 72.0, bottom: 16.0),
+            padding: const EdgeInsets.only(left: 16.0, bottom: 16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Text('ID: ${widget.model.id}'),
                 const SizedBox(height: 4),

@@ -224,6 +224,8 @@ class ModelFetcherFactory {
         return AnthropicModelFetcher();
       case ProviderType.gemini:
         return GeminiModelFetcher();
+      case ProviderType.openRouter:
+        return OpenRouterModelFetcher();
       default:
         return null;
     }

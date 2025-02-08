@@ -129,9 +129,15 @@ class OpenRouterService extends AIService {
 
               if (data['error'] != null) {
                 throw AIServiceException(
-                  'OpenRouter API error: ${data['error']['metadata']['raw']['data']['message']}',
+                  'OpenRouter API error: ${data['error']}',
                   provider: provider.name,
                 );
+              }
+
+              if (data['choices'] == null ||
+                  data['choices'].isEmpty ||
+                  data['choices'][0]['delta'] == null) {
+                continue;
               }
 
               final content = data['choices'][0]['delta']['content'];
@@ -148,8 +154,7 @@ class OpenRouterService extends AIService {
                     'content': currentBlock,
                   };
                   currentBlock = '';
-                } else if (content.contains('<') && content.contains('>') &&
-                    !isHtmlBlock) {
+                } else if (content.contains('<') && content.contains('>') && !isHtmlBlock) {
                   isHtmlBlock = true;
                   currentBlock = content;
                 } else if (content.contains('</') && isHtmlBlock) {
@@ -166,8 +171,7 @@ class OpenRouterService extends AIService {
                   // Handle regular text with word streaming
                   await for (final chunk in processStreamingChunk(
                     content: content,
-                    enableWordByWordStreaming: settings
-                        .enableWordByWordStreaming,
+                    enableWordByWordStreaming: settings.enableWordByWordStreaming,
                     streamingWordDelay: settings.streamingWordDelay,
                   )) {
                     yield chunk;
