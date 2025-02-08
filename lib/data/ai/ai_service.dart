@@ -39,6 +39,8 @@ abstract class AIService {
         return AnthropicService(provider);
       case ProviderType.gemini:
         return GeminiService(provider);
+      case ProviderType.openRouter:
+        return OpenRouterService(provider);
     }
   }
 

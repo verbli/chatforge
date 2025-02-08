@@ -1,7 +1,5 @@
 // lib/screens/providers_screen.dart
 
-import 'package:chatforge/data/ai/providers/model_fetcher.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,7 +7,7 @@ import '../data/models.dart';
 import '../data/model_defaults.dart';
 import '../data/providers.dart';
 import '../providers/theme_provider.dart';
-import '../themes/chat_theme.dart';
+import 'models_screen.dart';
 
 class ProvidersScreen extends ConsumerWidget {
   const ProvidersScreen({super.key});
@@ -130,7 +128,7 @@ class _ProviderListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasApiKey = provider.apiKey.isNotEmpty;
 
-    return ExpansionTile(
+    return ListTile(
       leading: hasApiKey
           ? null
           : const Icon(Icons.warning_amber_rounded, color: Colors.orange),
@@ -138,39 +136,26 @@ class _ProviderListItem extends StatelessWidget {
       subtitle: Text(
         hasApiKey ? provider.type.displayName : 'API key required',
       ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Models:', style: TextStyle(fontWeight: FontWeight.bold)),
-              ...provider.models.map((m) => Text('• ${m.name}')),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: onTest,
-                    child: const Text('TEST'),
-                  ),
-                  TextButton(
-                    onPressed: onEdit,
-                    child: const Text('EDIT'),
-                  ),
-                  TextButton(
-                    onPressed: onDelete,
-                    style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.error,
-                    ),
-                    child: const Text('DELETE'),
-                  ),
-                ],
-              ),
-            ],
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: onEdit,
           ),
-        ),
-      ],
+          IconButton(
+            icon: const Icon(Icons.view_list),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ModelsScreen(provider: provider),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -293,89 +278,23 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
           child: const Text('CANCEL'),
         ),
         TextButton(
-          onPressed: () async {
+          onPressed: () {
             if (_formKey.currentState!.validate()) {
               final preset = ModelDefaults.getDefaultProvider(_type);
               if (preset == null) return;
 
-              // Show loading dialog
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => const AlertDialog(
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Fetching available models...'),
-                    ],
-                  ),
+              Navigator.pop(
+                context,
+                preset.copyWith(
+                  name: _nameController.text,
+                  apiKey: _apiKeyController.text,
+                  baseUrl: _baseUrlController.text.isNotEmpty
+                      ? _baseUrlController.text
+                      : preset.baseUrl,
+                  models: [], // Start with empty models list
+                  allowFallback: null,
                 ),
               );
-
-              try {
-                // Fetch models
-                final fetcher = ModelFetcherFactory.getModelFetcher(_type);
-                if (fetcher == null) throw Exception('Provider type not supported');
-
-                final fetchedModels = await fetcher.fetchModels(_apiKeyController.text);
-
-                // Get default models for comparison
-                final defaultModels = preset.models;
-
-                // Mark models as enabled if they exist in defaults
-                final models = fetchedModels.map((model) {
-                  final defaultModel = defaultModels.firstWhereOrNull(
-                          (m) => m.id == model.id
-                  );
-                  return model.copyWith(
-                    isEnabled: defaultModel != null,
-                  );
-                }).toList();
-
-                if (!mounted) return;
-                Navigator.pop(context); // Remove loading dialog
-
-                // Show model selection dialog
-                final selectedModels = await showDialog<List<ModelConfig>>(
-                  context: context,
-                  builder: (context) => _ModelSelectionDialog(
-                    models: models,
-                  ),
-                );
-
-                if (selectedModels != null && mounted) {
-                  Navigator.pop(
-                    context,
-                    preset.copyWith(
-                      name: _nameController.text,
-                      apiKey: _apiKeyController.text,
-                      baseUrl: _baseUrlController.text.isNotEmpty
-                          ? _baseUrlController.text
-                          : preset.baseUrl,
-                      models: selectedModels,
-                      allowFallback: null,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (!mounted) return;
-                Navigator.pop(context); // Remove loading dialog
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Error'),
-                    content: Text('Failed to fetch models: $e'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('OK'),
-                      ),
-                    ],
-                  ),
-                );
-              }
             }
           },
           child: const Text('SAVE'),
@@ -406,88 +325,5 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
     _apiKeyController.dispose();
     _baseUrlController.dispose();
     super.dispose();
-  }
-}
-
-class _ModelSelectionDialog extends StatefulWidget {
-  final List<ModelConfig> models;
-
-  const _ModelSelectionDialog({required this.models});
-
-  @override
-  State<_ModelSelectionDialog> createState() => _ModelSelectionDialogState();
-}
-
-class _ModelSelectionDialogState extends State<_ModelSelectionDialog> {
-  late List<ModelConfig> selectedModels;
-
-  @override
-  void initState() {
-    super.initState();
-    selectedModels = widget.models;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Split and sort models
-    final enabledModels = selectedModels
-        .where((m) => m.isEnabled)
-        .toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
-
-    final disabledModels = selectedModels
-        .where((m) => !m.isEnabled)
-        .toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
-
-    return AlertDialog(
-      title: const Text('Select Models'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            // Enabled models
-            ...enabledModels.map((model) => _buildModelTile(model)),
-
-            // Show divider only if there are both enabled and disabled models
-            if (enabledModels.isNotEmpty && disabledModels.isNotEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: Divider(),
-              ),
-
-            // Disabled models
-            ...disabledModels.map((model) => _buildModelTile(model)),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('CANCEL'),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context, selectedModels);
-          },
-          child: const Text('SAVE'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildModelTile(ModelConfig model) {
-    final index = selectedModels.indexWhere((m) => m.id == model.id);
-    return CheckboxListTile(
-      title: Text(model.name),
-      subtitle: Text(model.id),
-      value: model.isEnabled,
-      onChanged: (value) {
-        setState(() {
-          selectedModels[index] = model.copyWith(isEnabled: value ?? false);
-        });
-      },
-    );
   }
 }

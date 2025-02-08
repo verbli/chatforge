@@ -10,7 +10,8 @@ part 'models.g.dart';
 enum ProviderType {
   openAI('OpenAI'),
   anthropic('Anthropic'),
-  gemini('Google Gemini'),;
+  gemini('Google Gemini'),
+  openRouter('OpenRouter');
 
   final String displayName;
   const ProviderType(this.displayName);
@@ -54,6 +55,8 @@ class ModelConfig with _$ModelConfig {
     required ModelCapabilities capabilities,
     required ModelSettings settings,
     @Default(false) bool isEnabled,
+    ModelPricing? pricing,
+    String? type,
   }) = _ModelConfig;
 
   factory ModelConfig.fromJson(Map<String, dynamic> json) =>
@@ -134,4 +137,40 @@ class Message with _$Message {
   }) = _Message;
 
   factory Message.fromJson(Map<String, dynamic> json) => _$MessageFromJson(json);
+}
+
+@freezed
+class TokenPrice with _$TokenPrice {
+  const factory TokenPrice({
+    required double price,
+    int? minTokens,
+    int? maxTokens,
+  }) = _TokenPrice;
+
+  factory TokenPrice.fromJson(Map<String, dynamic> json) =>
+      _$TokenPriceFromJson(json);
+}
+
+@freezed
+class ModelPricing with _$ModelPricing {
+  const factory ModelPricing({
+    required List<TokenPrice> input,
+    required List<TokenPrice> output,
+    List<TokenPrice>? batchInput,
+    List<TokenPrice>? batchOutput,
+    List<TokenPrice>? cacheRead,
+    double? cacheWrite,
+  }) = _ModelPricing;
+
+  factory ModelPricing.fromJson(Map<String, dynamic> json) =>
+      _$ModelPricingFromJson(json);
+
+  // Factory for simple pricing
+  factory ModelPricing.simple({
+    required double input,
+    required double output,
+  }) => ModelPricing(
+    input: [TokenPrice(price: input)],
+    output: [TokenPrice(price: output)],
+  );
 }
