@@ -1,5 +1,7 @@
 // lib/screens/providers_screen.dart
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -144,7 +146,7 @@ class _ProviderListItem extends StatelessWidget {
             onPressed: onEdit,
           ),
           IconButton(
-            icon: const Icon(Icons.view_list),
+            icon: const Icon(Icons.chevron_right),
             onPressed: () {
               Navigator.push(
                 context,
@@ -160,23 +162,29 @@ class _ProviderListItem extends StatelessWidget {
   }
 }
 
-class _ProviderSetupDialog extends StatefulWidget {
+class _ProviderSetupDialog extends ConsumerStatefulWidget {
   final ProviderConfig? existingProvider;
 
   const _ProviderSetupDialog({this.existingProvider});
 
   @override
-  State<_ProviderSetupDialog> createState() => _ProviderSetupDialogState();
+  ConsumerState<_ProviderSetupDialog> createState() => _ProviderSetupDialogState();
 }
 
-class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
+class _ProviderSetupDialogState extends ConsumerState<_ProviderSetupDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _apiKeyController;
+  late final TextEditingController _organizationController;
   late ProviderType _type;
   bool _obscureApiKey = true;
   bool _allowFallback = false;
   late final TextEditingController _baseUrlController;
+  bool _isTesting = false;
+  String? _testResult;
+  Timer? _testResultTimer;
+  bool _showingError = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -195,96 +203,82 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
     _baseUrlController = TextEditingController(
         text: provider?.baseUrl != defaultUrl ? provider?.baseUrl : ''
     );
+    _organizationController = TextEditingController(text: provider?.organization);
+
+    // Add listeners to relevant controllers
+    _apiKeyController.addListener(_resetTestStatus);
+    _baseUrlController.addListener(_resetTestStatus);
+  }
+
+  void _resetTestStatus() {
+    _testResultTimer?.cancel();
+    if (_testResult != null) {
+      setState(() {
+        _testResult = null;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.existingProvider != null ? 'Edit Provider' : 'Add Provider'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<ProviderType>(
-                value: _type,
-                decoration: const InputDecoration(labelText: 'Provider Type'),
-                items: ProviderType.values
-                    .map((type) => DropdownMenuItem(
-                  value: type,
-                  child: Text(type.displayName),
-                ))
-                    .toList(),
-                onChanged: (type) {
-                  if (type != null) {
-                    final preset = ModelDefaults.getDefaultProvider(type);
-                    setState(() {
-                      _type = type;
-                      _baseUrlController.text = preset?.baseUrl ?? '';
-                      _nameController.text = preset?.name ?? '';
-                    });
-                  }
-                },
-              ),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: (value) => value?.isEmpty == true ? 'Required' : null,
-                textCapitalization: TextCapitalization.sentences,
-              ),
-              TextFormField(
-                controller: _apiKeyController,
-                decoration: InputDecoration(
-                  labelText: 'API Key',
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscureApiKey ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _obscureApiKey = !_obscureApiKey),
-                  ),
-                ),
-                validator: (value) =>
-                (_type != ProviderType.ollama && value?.isEmpty == true)
-                    ? 'Required'
-                    : null,
-                obscureText: _obscureApiKey,
-              ),
-              TextFormField(
-                controller: _baseUrlController,
-                decoration: InputDecoration(
-                  labelText: 'Base URL (Optional)',
-                  helperText: _type == ProviderType.ollama
-                      ? 'Must end with /v1 (e.g. http://localhost:11434/v1)'
-                      : 'Leave empty to use default',
-                  hintText: ModelDefaults.getDefaultProvider(_type)?.baseUrl ?? '',
-                ),
-                onTap: () {
-                  if (!_baseUrlController.text.isNotEmpty) {
-                    _baseUrlController.clear();
-                  }
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) return null;
-                  try {
-                    final uri = Uri.parse(value);
-                    if (!uri.isAbsolute) return 'Must be absolute URL';
-                    if (_type == ProviderType.ollama && !value.endsWith('/v1')) {
-                      return 'URL must end with /v1';
-                    }
-                    return null;
-                  } catch (_) {
-                    return 'Invalid URL';
-                  }
-                },
-              ),
-            ],
+      title: _showingError
+          ? Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => setState(() {
+              _showingError = false;
+              _errorMessage = null;
+            }),
           ),
-        ),
+          const Text('Connection Error'),
+        ],
+      )
+          : Text(widget.existingProvider != null ? 'Edit Provider' : 'Add Provider'),
+      content: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        child: _showingError
+            ? _buildErrorContent()
+            : _buildMainContent(),
       ),
-      actions: [
+      actions:  _showingError
+          ? [
+        TextButton(
+          onPressed: () => setState(() {
+            _showingError = false;
+            _errorMessage = null;
+          }),
+          child: const Text('BACK'),
+        ),
+      ]
+          : [
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('CANCEL'),
         ),
+        if (_type == ProviderType.ollama || _apiKeyController.text.isNotEmpty)
+          TextButton(
+            onPressed: _isTesting ? null : _testProvider,
+            child: _isTesting
+                ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+                : Text(
+              _testResult == null
+                  ? 'TEST'
+                  : _testResult!.toUpperCase(),
+              style: TextStyle(
+                color: _testResult == null
+                    ? null
+                    : _testResult == 'passed'
+                    ? Colors.green
+                    : Colors.red,
+              ),
+            ),
+          ),
         TextButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
@@ -315,6 +309,186 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
     );
   }
 
+  Widget _buildErrorContent() {
+    return SizedBox(
+      width: double.maxFinite,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.error_outline,
+            color: Colors.red,
+            size: 48,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Failed to connect to provider',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _errorMessage ?? 'An unknown error occurred',
+            style: const TextStyle(fontSize: 14),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Troubleshooting tips:',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildTroubleshootingTips(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTroubleshootingTips() {
+    final tips = switch (_type) {
+      ProviderType.ollama => [
+        'Make sure Ollama is running',
+        'Check if the URL ends with /v1',
+        'Verify you can access the URL in your browser',
+      ],
+      ProviderType.openAI => [
+        'Verify your API key is correct',
+        'Check your internet connection',
+        'Ensure you have proper API access',
+      ],
+      _ => [
+        'Verify your API key is correct',
+        'Check your internet connection',
+      ],
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: tips.map((tip) => Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('• '),
+            Expanded(child: Text(tip)),
+          ],
+        ),
+      )).toList(),
+    );
+  }
+
+  Widget _buildMainContent() {
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DropdownButtonFormField<ProviderType>(
+              value: _type,
+              decoration: const InputDecoration(
+                labelText: 'Provider Type',
+                border: OutlineInputBorder(),
+              ),
+              items: ProviderType.values.map((type) => DropdownMenuItem(
+                value: type,
+                child: Text(type.displayName),
+              )).toList(),
+              onChanged: (type) {
+                if (type != null) {
+                  final preset = ModelDefaults.getDefaultProvider(type);
+                  setState(() {
+                    _type = type;
+                    _baseUrlController.text = preset?.baseUrl ?? '';
+                    _nameController.text = preset?.name ?? '';
+                    _resetTestStatus();
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                border: OutlineInputBorder(),
+                hintText: 'Display name for this provider',
+              ),
+              validator: (value) => value?.isEmpty == true ? 'Required' : null,
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _apiKeyController,
+              decoration: InputDecoration(
+                labelText: 'API Key',
+                border: const OutlineInputBorder(),
+                hintText: _type == ProviderType.ollama
+                    ? 'Optional for Ollama'
+                    : 'Enter your API key',
+                suffixIcon: IconButton(
+                  icon: Icon(_obscureApiKey ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () => setState(() => _obscureApiKey = !_obscureApiKey),
+                ),
+              ),
+              validator: (value) =>
+              _type != ProviderType.ollama && value?.isEmpty == true
+                  ? 'Required'
+                  : null,
+              obscureText: _obscureApiKey,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _baseUrlController,
+              decoration: InputDecoration(
+                labelText: 'Base URL (Optional)',
+                border: const OutlineInputBorder(),
+                helperText: _type == ProviderType.ollama
+                    ? 'Must end with /v1 (e.g. http://localhost:11434/v1)'
+                    : 'Leave empty to use default',
+                hintText: ModelDefaults.getDefaultProvider(_type)?.baseUrl ?? '',
+              ),
+              onTap: () {
+                if (_baseUrlController.text.isEmpty) {
+                  _baseUrlController.clear();
+                }
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) return null;
+                try {
+                  final uri = Uri.parse(value);
+                  if (!uri.isAbsolute) return 'Must be absolute URL';
+                  if (_type == ProviderType.ollama && !value.endsWith('/v1')) {
+                    return 'URL must end with /v1';
+                  }
+                  return null;
+                } catch (_) {
+                  return 'Invalid URL';
+                }
+              },
+            ),
+            if (_type == ProviderType.openAI) ...[
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _organizationController,
+                decoration: const InputDecoration(
+                  labelText: 'Organization ID (Optional)',
+                  border: OutlineInputBorder(),
+                  hintText: 'OpenAI organization ID',
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showHelpDialog(String title, String content) {
     showDialog(
       context: context,
@@ -331,11 +505,70 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
     );
   }
 
+  Future<void> _testProvider() async {
+    setState(() {
+      _isTesting = true;
+      _testResult = null;
+    });
+
+    try {
+      final preset = ModelDefaults.getDefaultProvider(_type);
+      if (preset == null) {
+        throw Exception('Invalid provider type');
+      }
+
+      final testProvider = preset.copyWith(
+        name: _nameController.text,
+        apiKey: _apiKeyController.text,
+        baseUrl: _baseUrlController.text.isNotEmpty
+            ? _baseUrlController.text
+            : preset.baseUrl,
+      );
+
+      final success = await ref.read(providerRepositoryProvider).testProvider(testProvider);
+
+      if (!success) {
+        setState(() {
+          _isTesting = false;
+          _testResult = 'failed';
+          _showingError = true;
+          _errorMessage = 'The provider rejected the connection attempt';
+        });
+        return;
+      }
+
+      setState(() {
+        _isTesting = false;
+        _testResult = 'passed';
+      });
+
+      _testResultTimer?.cancel();
+      _testResultTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() => _testResult = null);
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _isTesting = false;
+        _testResult = 'failed';
+        _showingError = true;
+        _errorMessage = e.toString();
+      });
+    }
+  }
+
   @override
   void dispose() {
+    // Remove listeners before disposing
+    _apiKeyController.removeListener(_resetTestStatus);
+    _baseUrlController.removeListener(_resetTestStatus);
+
     _nameController.dispose();
     _apiKeyController.dispose();
     _baseUrlController.dispose();
+    _testResultTimer?.cancel();
+    _organizationController.dispose();
     super.dispose();
   }
 }

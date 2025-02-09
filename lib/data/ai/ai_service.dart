@@ -104,8 +104,10 @@ abstract class AIService {
       return;
     }
 
-    await for (final word in WordStreamer.streamWords(content, streamingWordDelay)) {
-      yield {'type': 'text', 'content': word};
+    await for (final chunk in WordStreamer.streamWords(content, streamingWordDelay)) {
+      if (chunk.isNotEmpty) {
+        yield {'type': 'text', 'content': chunk};
+      }
     }
   }
 }
