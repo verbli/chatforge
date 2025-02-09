@@ -1,6 +1,7 @@
 // data/ai/ai_service.dart
 
 import 'package:chatforge/data/ai/providers/huggingface_service.dart';
+import 'package:chatforge/data/ai/providers/ollama_service.dart';
 import 'package:chatforge/data/ai/providers/openrouter_service.dart';
 import 'package:uuid/uuid.dart';
 
@@ -41,6 +42,8 @@ abstract class AIService {
         return GeminiService(provider);
       case ProviderType.openRouter:
         return OpenRouterService(provider);
+      case ProviderType.ollama:
+        return OllamaService(provider);
     }
   }
 
@@ -101,8 +104,10 @@ abstract class AIService {
       return;
     }
 
-    await for (final word in WordStreamer.streamWords(content, streamingWordDelay)) {
-      yield {'type': 'text', 'content': word};
+    await for (final chunk in WordStreamer.streamWords(content, streamingWordDelay)) {
+      if (chunk.isNotEmpty) {
+        yield {'type': 'text', 'content': chunk};
+      }
     }
   }
 }

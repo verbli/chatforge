@@ -6,17 +6,18 @@ class WordStreamer {
       return;
     }
 
-    // Split into chunks instead of individual words for better performance
-    final chunkSize = 3; // Process 3 words at a time
-    final words = text.split(' ');
-    String buffer = '';
+    // Stream character by character, buffering until we hit a space
+    StringBuffer buffer = StringBuffer();
 
-    for (var i = 0; i < words.length; i += chunkSize) {
-      buffer = words.skip(i).take(chunkSize).join(' ') + ' ';
-      yield buffer;
+    for (int i = 0; i < text.length; i++) {
+      buffer.write(text[i]);
 
-      // Add a small delay between chunks
-      await Future.delayed(Duration(milliseconds: delayMs));
+      // When we hit a space or it's the last character, yield the buffer
+      if (text[i] == ' ' || i == text.length - 1) {
+        yield buffer.toString();
+        await Future.delayed(Duration(milliseconds: delayMs));
+        buffer.clear();
+      }
     }
   }
 }

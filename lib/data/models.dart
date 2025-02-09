@@ -11,7 +11,8 @@ enum ProviderType {
   openAI('OpenAI'),
   anthropic('Anthropic'),
   gemini('Google Gemini'),
-  openRouter('OpenRouter');
+  openRouter('OpenRouter'),
+  ollama('Ollama');
 
   final String displayName;
   const ProviderType(this.displayName);
@@ -38,9 +39,9 @@ class ProviderConfig with _$ProviderConfig {
     required ProviderType type,
     required String baseUrl,
     required String apiKey,
-    required List<ModelConfig> models,
+    @Default([]) List<ModelConfig> models,
     String? organization,
-    bool? allowFallback,
+    @Default(false) bool? allowFallback,
   }) = _ProviderConfig;
 
   factory ProviderConfig.fromJson(Map<String, dynamic> json) =>
@@ -57,6 +58,7 @@ class ModelConfig with _$ModelConfig {
     @Default(false) bool isEnabled,
     ModelPricing? pricing,
     String? type,
+    @Default(false) bool hasBeenEdited,
   }) = _ModelConfig;
 
   factory ModelConfig.fromJson(Map<String, dynamic> json) =>

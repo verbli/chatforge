@@ -39,6 +39,14 @@ class ModelDefaults {
       apiKey: '',
       models: [],
     ),
+    const ProviderConfig(
+      id: 'ollama',
+      name: 'Ollama',
+      type: ProviderType.ollama,
+      baseUrl: 'http://127.0.0.1:11434/v1',
+      apiKey: 'ollama',
+      models: [],
+    ),
   ];
 
   static ProviderConfig? getDefaultProvider(ProviderType type) {

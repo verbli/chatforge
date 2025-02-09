@@ -206,9 +206,9 @@ class _$ProviderConfigImpl
       required this.type,
       required this.baseUrl,
       required this.apiKey,
-      required final List<ModelConfig> models,
+      final List<ModelConfig> models = const [],
       this.organization,
-      this.allowFallback})
+      this.allowFallback = false})
       : _models = models;
 
   factory _$ProviderConfigImpl.fromJson(Map<String, dynamic> json) =>
@@ -226,6 +226,7 @@ class _$ProviderConfigImpl
   final String apiKey;
   final List<ModelConfig> _models;
   @override
+  @JsonKey()
   List<ModelConfig> get models {
     if (_models is EqualUnmodifiableListView) return _models;
     // ignore: implicit_dynamic_type
@@ -235,6 +236,7 @@ class _$ProviderConfigImpl
   @override
   final String? organization;
   @override
+  @JsonKey()
   final bool? allowFallback;
 
   @override
@@ -311,7 +313,7 @@ abstract class _ProviderConfig implements ProviderConfig {
       required final ProviderType type,
       required final String baseUrl,
       required final String apiKey,
-      required final List<ModelConfig> models,
+      final List<ModelConfig> models,
       final String? organization,
       final bool? allowFallback}) = _$ProviderConfigImpl;
 
@@ -356,6 +358,7 @@ mixin _$ModelConfig {
   bool get isEnabled => throw _privateConstructorUsedError;
   ModelPricing? get pricing => throw _privateConstructorUsedError;
   String? get type => throw _privateConstructorUsedError;
+  bool get hasBeenEdited => throw _privateConstructorUsedError;
 
   /// Serializes this ModelConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -380,7 +383,8 @@ abstract class $ModelConfigCopyWith<$Res> {
       ModelSettings settings,
       bool isEnabled,
       ModelPricing? pricing,
-      String? type});
+      String? type,
+      bool hasBeenEdited});
 
   $ModelCapabilitiesCopyWith<$Res> get capabilities;
   $ModelSettingsCopyWith<$Res> get settings;
@@ -409,6 +413,7 @@ class _$ModelConfigCopyWithImpl<$Res, $Val extends ModelConfig>
     Object? isEnabled = null,
     Object? pricing = freezed,
     Object? type = freezed,
+    Object? hasBeenEdited = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -439,6 +444,10 @@ class _$ModelConfigCopyWithImpl<$Res, $Val extends ModelConfig>
           ? _value.type
           : type // ignore: cast_nullable_to_non_nullable
               as String?,
+      hasBeenEdited: null == hasBeenEdited
+          ? _value.hasBeenEdited
+          : hasBeenEdited // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 
@@ -492,7 +501,8 @@ abstract class _$$ModelConfigImplCopyWith<$Res>
       ModelSettings settings,
       bool isEnabled,
       ModelPricing? pricing,
-      String? type});
+      String? type,
+      bool hasBeenEdited});
 
   @override
   $ModelCapabilitiesCopyWith<$Res> get capabilities;
@@ -522,6 +532,7 @@ class __$$ModelConfigImplCopyWithImpl<$Res>
     Object? isEnabled = null,
     Object? pricing = freezed,
     Object? type = freezed,
+    Object? hasBeenEdited = null,
   }) {
     return _then(_$ModelConfigImpl(
       id: null == id
@@ -552,6 +563,10 @@ class __$$ModelConfigImplCopyWithImpl<$Res>
           ? _value.type
           : type // ignore: cast_nullable_to_non_nullable
               as String?,
+      hasBeenEdited: null == hasBeenEdited
+          ? _value.hasBeenEdited
+          : hasBeenEdited // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -566,7 +581,8 @@ class _$ModelConfigImpl with DiagnosticableTreeMixin implements _ModelConfig {
       required this.settings,
       this.isEnabled = false,
       this.pricing,
-      this.type});
+      this.type,
+      this.hasBeenEdited = false});
 
   factory _$ModelConfigImpl.fromJson(Map<String, dynamic> json) =>
       _$$ModelConfigImplFromJson(json);
@@ -586,10 +602,13 @@ class _$ModelConfigImpl with DiagnosticableTreeMixin implements _ModelConfig {
   final ModelPricing? pricing;
   @override
   final String? type;
+  @override
+  @JsonKey()
+  final bool hasBeenEdited;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'ModelConfig(id: $id, name: $name, capabilities: $capabilities, settings: $settings, isEnabled: $isEnabled, pricing: $pricing, type: $type)';
+    return 'ModelConfig(id: $id, name: $name, capabilities: $capabilities, settings: $settings, isEnabled: $isEnabled, pricing: $pricing, type: $type, hasBeenEdited: $hasBeenEdited)';
   }
 
   @override
@@ -603,7 +622,8 @@ class _$ModelConfigImpl with DiagnosticableTreeMixin implements _ModelConfig {
       ..add(DiagnosticsProperty('settings', settings))
       ..add(DiagnosticsProperty('isEnabled', isEnabled))
       ..add(DiagnosticsProperty('pricing', pricing))
-      ..add(DiagnosticsProperty('type', type));
+      ..add(DiagnosticsProperty('type', type))
+      ..add(DiagnosticsProperty('hasBeenEdited', hasBeenEdited));
   }
 
   @override
@@ -620,13 +640,15 @@ class _$ModelConfigImpl with DiagnosticableTreeMixin implements _ModelConfig {
             (identical(other.isEnabled, isEnabled) ||
                 other.isEnabled == isEnabled) &&
             (identical(other.pricing, pricing) || other.pricing == pricing) &&
-            (identical(other.type, type) || other.type == type));
+            (identical(other.type, type) || other.type == type) &&
+            (identical(other.hasBeenEdited, hasBeenEdited) ||
+                other.hasBeenEdited == hasBeenEdited));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, id, name, capabilities, settings, isEnabled, pricing, type);
+  int get hashCode => Object.hash(runtimeType, id, name, capabilities, settings,
+      isEnabled, pricing, type, hasBeenEdited);
 
   /// Create a copy of ModelConfig
   /// with the given fields replaced by the non-null parameter values.
@@ -652,7 +674,8 @@ abstract class _ModelConfig implements ModelConfig {
       required final ModelSettings settings,
       final bool isEnabled,
       final ModelPricing? pricing,
-      final String? type}) = _$ModelConfigImpl;
+      final String? type,
+      final bool hasBeenEdited}) = _$ModelConfigImpl;
 
   factory _ModelConfig.fromJson(Map<String, dynamic> json) =
       _$ModelConfigImpl.fromJson;
@@ -671,6 +694,8 @@ abstract class _ModelConfig implements ModelConfig {
   ModelPricing? get pricing;
   @override
   String? get type;
+  @override
+  bool get hasBeenEdited;
 
   /// Create a copy of ModelConfig
   /// with the given fields replaced by the non-null parameter values.

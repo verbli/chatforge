@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../data/ai/providers/model_fetcher.dart';
 import '../data/models.dart';
 import '../data/providers.dart';
@@ -47,16 +48,28 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
 
       // Create a map of existing enabled states
       final enabledStates = <String, bool>{};
+      final editedModels = <String, ModelConfig>{};
       for (final model in currentProvider.models) {
         enabledStates[model.id] = model.isEnabled;
+        if (model.hasBeenEdited) {
+          editedModels[model.id] = model;
+        }
       }
 
-      final fetchedModels = await fetcher.fetchModels();
+      final fetchedModels = await fetcher.fetchModels(
+        widget.provider.apiKey,
+        widget.provider.baseUrl,
+      );
 
-      // Update models preserving existing enabled states
+      // Update models preserving existing states and edited models
       final updatedModels = fetchedModels.map((model) {
-        // If we have an existing state for this model, use it
-        // Otherwise, preserve the model's current enabled state
+        if (editedModels.containsKey(model.id)) {
+          // Keep the edited model but update enabled state if changed
+          return editedModels[model.id]!.copyWith(
+            isEnabled: enabledStates[model.id] ?? model.isEnabled,
+          );
+        }
+        // For non-edited models, just preserve enabled state
         return model.copyWith(
           isEnabled: enabledStates.containsKey(model.id)
               ? enabledStates[model.id]!
@@ -71,6 +84,49 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
       setState(() => _error = e.toString());
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _revertModel(ModelConfig model) async {
+    try {
+      final fetcher = ModelFetcherFactory.getModelFetcher(widget.provider.type);
+      if (fetcher == null) {
+        throw Exception('No model fetcher available for ${widget.provider.type}');
+      }
+
+      // Fetch fresh models
+      final fetchedModels = await fetcher.fetchModels();
+
+      // Find the original model
+      final originalModel = fetchedModels.firstWhere(
+            (m) => m.id == model.id,
+        orElse: () => model,
+      );
+
+      // Preserve only the enabled state from the current model
+      final revertedModel = originalModel.copyWith(
+        isEnabled: model.isEnabled,
+        hasBeenEdited: false,
+      );
+
+      // Update the provider's models
+      final currentProvider = await ref.read(providerRepositoryProvider).getProvider(widget.provider.id);
+      final updatedModels = currentProvider.models.map((m) {
+        if (m.id == model.id) {
+          return revertedModel;
+        }
+        return m;
+      }).toList();
+
+      await ref.read(providerRepositoryProvider).updateProvider(
+        widget.provider.copyWith(models: updatedModels),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error reverting model: $e')),
+        );
+      }
     }
   }
 
@@ -345,6 +401,37 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
                     return _ModelListItem(
                       model: model,
                       onToggle: (enabled) => _toggleModel(model, enabled),
+                      onEdit: (updatedModel) async {
+                        try {
+                          // Get current provider state
+                          final provider = await ref
+                              .read(providerRepositoryProvider)
+                              .getProvider(widget.provider.id);
+
+                          // Update the model in the provider's models list
+                          final updatedModels = provider.models.map((m) {
+                            if (m.id == updatedModel.id) {
+                              return updatedModel;
+                            }
+                            return m;
+                          }).toList();
+
+                          // Update provider with new models list
+                          await ref.read(providerRepositoryProvider).updateProvider(
+                            provider.copyWith(models: updatedModels),
+                          );
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error updating model: $e'),
+                                backgroundColor: Theme.of(context).colorScheme.error,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      onRevert: model.hasBeenEdited ? () => _revertModel(model) : null,
                     );
                   }).toList(),
                 ),
@@ -388,10 +475,14 @@ class _ModelSimpleItem extends StatelessWidget {
 class _ModelListItem extends StatefulWidget {
   final ModelConfig model;
   final ValueChanged<bool> onToggle;
+  final ValueChanged<ModelConfig>? onEdit;
+  final VoidCallback? onRevert;
 
   const _ModelListItem({
     required this.model,
     required this.onToggle,
+    required this.onEdit,
+    this.onRevert,
   });
 
   @override
@@ -400,9 +491,136 @@ class _ModelListItem extends StatefulWidget {
 
 class _ModelListItemState extends State<_ModelListItem> {
   bool _expanded = false;
+  bool _editing = false;
+
+  late final TextEditingController _nameController;
+  late final TextEditingController _maxContextController;
+  late final TextEditingController _maxResponseController;
+  late final TextEditingController _inputPriceController;
+  late final TextEditingController _outputPriceController;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeControllers();
+  }
+
+  void _initializeControllers() {
+    _nameController = TextEditingController(text: widget.model.name);
+    _maxContextController = TextEditingController(
+        text: widget.model.capabilities.maxContextTokens.toString()
+    );
+    _maxResponseController = TextEditingController(
+        text: widget.model.capabilities.maxResponseTokens.toString()
+    );
+    _inputPriceController = TextEditingController(
+        text: widget.model.pricing?.input.firstOrNull?.price.toString() ?? "0"
+    );
+    _outputPriceController = TextEditingController(
+        text: widget.model.pricing?.output.firstOrNull?.price.toString() ?? "0"
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _maxContextController.dispose();
+    _maxResponseController.dispose();
+    _inputPriceController.dispose();
+    _outputPriceController.dispose();
+    super.dispose();
+  }
+
+  double _calculateBlendedRate() {
+    if (widget.model.pricing == null) return 0.0;
+
+    // Get the first price from input and output lists
+    final inputPrice = widget.model.pricing!.input.firstOrNull?.price ?? 0.0;
+    final outputPrice = widget.model.pricing!.output.firstOrNull?.price ?? 0.0;
+
+    // Assuming a 1:3 ratio of input to output tokens for blended rate
+    return (inputPrice * 0.25 + outputPrice * 0.75);
+  }
+
+  void _startEditing() {
+    setState(() {
+      _editing = true;
+      _expanded = true;
+    });
+    _initializeControllers();
+  }
+
+  void _saveEdits() {
+    // Validate input
+    final maxContext = int.tryParse(_maxContextController.text);
+    final maxResponse = int.tryParse(_maxResponseController.text);
+    final inputPrice = double.tryParse(_inputPriceController.text);
+    final outputPrice = double.tryParse(_outputPriceController.text);
+
+    if (maxContext == null || maxResponse == null ||
+        inputPrice == null || outputPrice == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter valid numbers')),
+      );
+      return;
+    }
+
+    final updatedModel = widget.model.copyWith(
+      name: _nameController.text,
+      capabilities: ModelCapabilities(
+        maxContextTokens: maxContext,
+        maxResponseTokens: maxResponse,
+        supportsStreaming: widget.model.capabilities.supportsStreaming,
+        supportsFunctions: widget.model.capabilities.supportsFunctions,
+        supportsSystemPrompt: widget.model.capabilities.supportsSystemPrompt,
+      ),
+      pricing: ModelPricing(
+        input: [TokenPrice(price: inputPrice)],
+        output: [TokenPrice(price: outputPrice)],
+      ),
+      hasBeenEdited: true,
+    );
+
+    widget.onEdit?.call(updatedModel);
+    setState(() => _editing = false);
+  }
+
+  Widget _buildEditableField({
+    required String label,
+    required TextEditingController controller,
+    TextInputType? keyboardType,
+    String? suffix,
+    String? prefix,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label),
+          SizedBox(
+            width: 120,
+            child: TextField(
+              controller: controller,
+              keyboardType: keyboardType,
+              decoration: InputDecoration(
+                isDense: true,
+                prefix: prefix != null ? Text(prefix) : null,
+                suffix: suffix != null ? Text(suffix) : null,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isLocal = widget.model.type == 'local';
+    final isCustom = widget.model.type == 'custom';
+    final hasBeenEdited = widget.model.hasBeenEdited;
+
     return Column(
       children: [
         ListTile(
@@ -414,36 +632,157 @@ class _ModelListItemState extends State<_ModelListItem> {
               }
             },
           ),
-          title: Text(widget.model.name),
-          trailing: IconButton(
-            icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
-            onPressed: () => setState(() => _expanded = !_expanded),
+          title: Row(
+            children: [
+              Expanded(child: Text(widget.model.name)),
+              if (hasBeenEdited)
+                const Tooltip(
+                  message: 'This model has been edited',
+                  child: Icon(Icons.edit_note, size: 16),
+                ),
+            ],
+          ),
+          subtitle: isLocal ? const Text('Local') : (isCustom ? const Text('Custom') : null),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLocal || isCustom || hasBeenEdited) ...[
+                if (hasBeenEdited)
+                  IconButton(
+                    icon: const Icon(Icons.undo),
+                    tooltip: 'Revert changes',
+                    onPressed: widget.onRevert,
+                  ),
+                IconButton(
+                  icon: Icon(_editing ? Icons.save : Icons.edit),
+                  onPressed: _editing ? _saveEdits : _startEditing,
+                ),
+              ],
+              IconButton(
+                icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+                onPressed: () => setState(() => _expanded = !_expanded),
+              ),
+            ],
           ),
         ),
         if (_expanded)
           Padding(
-            padding: const EdgeInsets.only(left: 16.0, bottom: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Text('ID: ${widget.model.id}'),
-                const SizedBox(height: 4),
-                Text(
-                  'Context Window: ${widget.model.capabilities.maxContextTokens} tokens',
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Max Response: ${widget.model.capabilities.maxResponseTokens} tokens',
-                ),
-                if (widget.model.pricing != null) ...[
-                  const SizedBox(height: 8),
-                  const Text('Pricing (per million tokens):',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  _buildPricingInfo(widget.model.pricing!),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Left Column - Tokens
+                  Expanded(
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Tokens',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const Divider(),
+                        if (_editing) ...[
+                          _buildEditableField(
+                            label: 'Name:',
+                            controller: _nameController,
+                          ),
+                          _buildEditableField(
+                            label: 'Max Input:',
+                            controller: _maxContextController,
+                            keyboardType: TextInputType.number,
+                            suffix: 'tokens',
+                          ),
+                          _buildEditableField(
+                            label: 'Max Output:',
+                            controller: _maxResponseController,
+                            keyboardType: TextInputType.number,
+                            suffix: 'tokens',
+                          ),
+                        ] else ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Max Input:'),
+                              Text(NumberFormat.compact()
+                                  .format(widget.model.capabilities.maxContextTokens)),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Max Output:'),
+                              Text(NumberFormat.compact()
+                                  .format(widget.model.capabilities.maxResponseTokens)),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const VerticalDivider(),
+                  // Right Column - Pricing
+                  Expanded(
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Pricing',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const Divider(),
+                        if (!_editing) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Blended:'),
+                              Text('\$${_calculateBlendedRate().toStringAsFixed(4)}/M'),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        if (_editing) ...[
+                          _buildEditableField(
+                            label: 'Input Price:',
+                            controller: _inputPriceController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            prefix: '\$',
+                            suffix: '/M',
+                          ),
+                          _buildEditableField(
+                            label: 'Output Price:',
+                            controller: _outputPriceController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            prefix: '\$',
+                            suffix: '/M',
+                          ),
+                        ] else if (widget.model.pricing != null) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Input:'),
+                              Text('\$${widget.model.pricing!.input.firstOrNull?.price.toStringAsFixed(4) ?? "0.00"}/M'),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Output:'),
+                              Text('\$${widget.model.pricing!.output.firstOrNull?.price.toStringAsFixed(4) ?? "0.00"}/M'),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ],
-              ],
+              ),
             ),
           ),
         const Divider(),
@@ -489,98 +828,6 @@ class _ModelListItemState extends State<_ModelListItem> {
             child: Text('$range tokens: \$${price.price.toStringAsFixed(4)}/M'),
           );
         }),
-      ],
-    );
-  }
-}
-
-class _AddCustomModelDialog extends StatefulWidget {
-  const _AddCustomModelDialog();
-
-  @override
-  State<_AddCustomModelDialog> createState() => _AddCustomModelDialogState();
-}
-
-class _AddCustomModelDialogState extends State<_AddCustomModelDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _idController = TextEditingController();
-  final _nameController = TextEditingController();
-  final _contextTokensController = TextEditingController(text: '4096');
-  final _responseTokensController = TextEditingController(text: '4096');
-
-  @override
-  void dispose() {
-    _idController.dispose();
-    _nameController.dispose();
-    _contextTokensController.dispose();
-    _responseTokensController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Add Custom Model'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _idController,
-              decoration: const InputDecoration(labelText: 'Model ID'),
-              validator: (value) =>
-              value?.isEmpty == true ? 'Required' : null,
-            ),
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Display Name'),
-              validator: (value) =>
-              value?.isEmpty == true ? 'Required' : null,
-            ),
-            TextFormField(
-              controller: _contextTokensController,
-              decoration: const InputDecoration(labelText: 'Context Window (tokens)'),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value?.isEmpty == true) return 'Required';
-                final number = int.tryParse(value!);
-                if (number == null || number <= 0) return 'Invalid number';
-                return null;
-              },
-            ),
-            TextFormField(
-              controller: _responseTokensController,
-              decoration: const InputDecoration(labelText: 'Max Response (tokens)'),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value?.isEmpty == true) return 'Required';
-                final number = int.tryParse(value!);
-                if (number == null || number <= 0) return 'Invalid number';
-                return null;
-              },
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('CANCEL'),
-        ),
-        TextButton(
-          onPressed: () {
-            if (_formKey.currentState?.validate() == true) {
-              Navigator.pop(context, {
-                'id': _idController.text,
-                'name': _nameController.text,
-                'contextTokens': int.parse(_contextTokensController.text),
-                'responseTokens': int.parse(_responseTokensController.text),
-              });
-            }
-          },
-          child: const Text('ADD'),
-        ),
       ],
     );
   }

@@ -13,11 +13,12 @@ _$ProviderConfigImpl _$$ProviderConfigImplFromJson(Map<String, dynamic> json) =>
       type: $enumDecode(_$ProviderTypeEnumMap, json['type']),
       baseUrl: json['baseUrl'] as String,
       apiKey: json['apiKey'] as String,
-      models: (json['models'] as List<dynamic>)
-          .map((e) => ModelConfig.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      models: (json['models'] as List<dynamic>?)
+              ?.map((e) => ModelConfig.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       organization: json['organization'] as String?,
-      allowFallback: json['allowFallback'] as bool?,
+      allowFallback: json['allowFallback'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$ProviderConfigImplToJson(
@@ -38,6 +39,7 @@ const _$ProviderTypeEnumMap = {
   ProviderType.anthropic: 'anthropic',
   ProviderType.gemini: 'gemini',
   ProviderType.openRouter: 'openRouter',
+  ProviderType.ollama: 'ollama',
 };
 
 _$ModelConfigImpl _$$ModelConfigImplFromJson(Map<String, dynamic> json) =>
@@ -53,6 +55,7 @@ _$ModelConfigImpl _$$ModelConfigImplFromJson(Map<String, dynamic> json) =>
           ? null
           : ModelPricing.fromJson(json['pricing'] as Map<String, dynamic>),
       type: json['type'] as String?,
+      hasBeenEdited: json['hasBeenEdited'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$ModelConfigImplToJson(_$ModelConfigImpl instance) =>
@@ -64,6 +67,7 @@ Map<String, dynamic> _$$ModelConfigImplToJson(_$ModelConfigImpl instance) =>
       'isEnabled': instance.isEnabled,
       'pricing': instance.pricing,
       'type': instance.type,
+      'hasBeenEdited': instance.hasBeenEdited,
     };
 
 _$ModelCapabilitiesImpl _$$ModelCapabilitiesImplFromJson(

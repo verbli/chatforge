@@ -11,19 +11,19 @@ import '../../models.dart';
 import '../ai_service.dart';
 
 class OpenAIService extends AIService {
-  final ProviderConfig _provider;
-  final Dio _dio;
+  final ProviderConfig provider;
+  final Dio dio;
   late final Tiktoken _tokenizer;
 
-  OpenAIService(this._provider) : _dio = Dio() {
-    _dio.options.baseUrl = _provider.baseUrl;
-    _dio.options.headers = {
-      'Authorization': 'Bearer ${_provider.apiKey}',
+  OpenAIService(this.provider) : dio = Dio() {
+    dio.options.baseUrl = provider.baseUrl;
+    dio.options.headers = {
+      'Authorization': 'Bearer ${provider.apiKey}',
       'Content-Type': 'application/json',
     };
 
-    if (_provider.organization != null) {
-      _dio.options.headers['OpenAI-Organization'] = _provider.organization!;
+    if (provider.organization != null) {
+      dio.options.headers['OpenAI-Organization'] = provider.organization!;
     }
 
     _tokenizer = getEncoding('cl100k_base');
@@ -84,7 +84,7 @@ class OpenAIService extends AIService {
       );
 
       // Make streaming request
-      final response = await _dio.post<ResponseBody>(
+      final response = await dio.post<ResponseBody>(
         '/chat/completions',
         options: Options(
           responseType: ResponseType.stream,
@@ -210,7 +210,7 @@ class OpenAIService extends AIService {
   @override
   Future<bool> testConnection() async {
     try {
-      await _dio.get('/models');
+      await dio.get('/models');
       return true;
     } catch (_) {
       return false;
