@@ -58,6 +58,7 @@ class ModelConfig with _$ModelConfig {
     @Default(false) bool isEnabled,
     ModelPricing? pricing,
     String? type,
+    @Default(false) bool hasBeenEdited,
   }) = _ModelConfig;
 
   factory ModelConfig.fromJson(Map<String, dynamic> json) =>
