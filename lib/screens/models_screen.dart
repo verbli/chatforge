@@ -559,6 +559,7 @@ class _ModelListItemState extends State<_ModelListItem> {
   @override
   Widget build(BuildContext context) {
     final isLocal = widget.model.type == 'local';
+    final isCustom = widget.model.type == 'custom';
 
     return Column(
       children: [
@@ -572,11 +573,11 @@ class _ModelListItemState extends State<_ModelListItem> {
             },
           ),
           title: Text(widget.model.name),
-          subtitle: isLocal ? const Text('Local Model (Editable)') : null,
+          subtitle: isLocal ? const Text('Local') : (isCustom ? const Text('Custom') : null),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (isLocal)
+              if (isLocal || isCustom)
                 IconButton(
                   icon: Icon(_editing ? Icons.save : Icons.edit),
                   onPressed: _editing ? _saveEdits : _startEditing,

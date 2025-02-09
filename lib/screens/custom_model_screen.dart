@@ -228,6 +228,7 @@ class _AddCustomModelScreenState extends ConsumerState<AddCustomModelScreen> {
           input: _convertPrice(_inputPriceController.text),
           output: _convertPrice(_outputPriceController.text),
         ),
+        type: 'custom',
       );
 
       // Add new model to provider's models list

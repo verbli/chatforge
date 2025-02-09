@@ -283,6 +283,8 @@ class ModelFetcherFactory {
         return GeminiModelFetcher();
       case ProviderType.openRouter:
         return OpenRouterModelFetcher();
+      case ProviderType.ollama:
+        return OllamaModelFetcher();
       default:
         return null;
     }
