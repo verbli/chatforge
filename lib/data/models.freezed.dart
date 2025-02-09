@@ -206,9 +206,9 @@ class _$ProviderConfigImpl
       required this.type,
       required this.baseUrl,
       required this.apiKey,
-      required final List<ModelConfig> models,
+      final List<ModelConfig> models = const [],
       this.organization,
-      this.allowFallback})
+      this.allowFallback = false})
       : _models = models;
 
   factory _$ProviderConfigImpl.fromJson(Map<String, dynamic> json) =>
@@ -226,6 +226,7 @@ class _$ProviderConfigImpl
   final String apiKey;
   final List<ModelConfig> _models;
   @override
+  @JsonKey()
   List<ModelConfig> get models {
     if (_models is EqualUnmodifiableListView) return _models;
     // ignore: implicit_dynamic_type
@@ -235,6 +236,7 @@ class _$ProviderConfigImpl
   @override
   final String? organization;
   @override
+  @JsonKey()
   final bool? allowFallback;
 
   @override
@@ -311,7 +313,7 @@ abstract class _ProviderConfig implements ProviderConfig {
       required final ProviderType type,
       required final String baseUrl,
       required final String apiKey,
-      required final List<ModelConfig> models,
+      final List<ModelConfig> models,
       final String? organization,
       final bool? allowFallback}) = _$ProviderConfigImpl;
 

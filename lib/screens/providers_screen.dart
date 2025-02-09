@@ -242,14 +242,19 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
                     onPressed: () => setState(() => _obscureApiKey = !_obscureApiKey),
                   ),
                 ),
-                validator: (value) => value?.isEmpty == true ? 'Required' : null,
+                validator: (value) =>
+                (_type != ProviderType.ollama && value?.isEmpty == true)
+                    ? 'Required'
+                    : null,
                 obscureText: _obscureApiKey,
               ),
               TextFormField(
                 controller: _baseUrlController,
                 decoration: InputDecoration(
                   labelText: 'Base URL (Optional)',
-                  helperText: 'Leave empty to use default',
+                  helperText: _type == ProviderType.ollama
+                      ? 'Must end with /v1 (e.g. http://localhost:11434/v1)'
+                      : 'Leave empty to use default',
                   hintText: ModelDefaults.getDefaultProvider(_type)?.baseUrl ?? '',
                 ),
                 onTap: () {
@@ -262,6 +267,9 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
                   try {
                     final uri = Uri.parse(value);
                     if (!uri.isAbsolute) return 'Must be absolute URL';
+                    if (_type == ProviderType.ollama && !value.endsWith('/v1')) {
+                      return 'URL must end with /v1';
+                    }
                     return null;
                   } catch (_) {
                     return 'Invalid URL';
@@ -283,11 +291,15 @@ class _ProviderSetupDialogState extends State<_ProviderSetupDialog> {
               final preset = ModelDefaults.getDefaultProvider(_type);
               if (preset == null) return;
 
+              final apiKey = (_type == ProviderType.ollama && _apiKeyController.text.isEmpty)
+                  ? 'ollama'
+                  : _apiKeyController.text;
+
               Navigator.pop(
                 context,
                 preset.copyWith(
                   name: _nameController.text,
-                  apiKey: _apiKeyController.text,
+                  apiKey:  apiKey,
                   baseUrl: _baseUrlController.text.isNotEmpty
                       ? _baseUrlController.text
                       : preset.baseUrl,

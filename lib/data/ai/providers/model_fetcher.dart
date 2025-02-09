@@ -8,7 +8,7 @@ import '../../../core/constants.dart';
 import '../../models.dart';
 
 abstract class ModelFetcher {
-  Future<List<ModelConfig>> fetchModels([String? apiKey]);
+  Future<List<ModelConfig>> fetchModels([String? apiKey, String? baseUrl]);
 }
 
 ModelPricing _parsePricing(Map<String, dynamic> json) {
@@ -40,9 +40,66 @@ ModelPricing _parsePricing(Map<String, dynamic> json) {
   );
 }
 
+class OllamaModelFetcher implements ModelFetcher {
+  @override
+  Future<List<ModelConfig>> fetchModels([String? apiKey, String? baseUrl]) async {
+    final dio = Dio(BaseOptions(
+      baseUrl: baseUrl ?? 'http://localhost:11434/v1',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    ));
+
+    try {
+      final response = await dio.get('/models');
+
+      if (response.data['object'] != 'list' || response.data['data'] == null) {
+        throw Exception('Invalid response format from Ollama API');
+      }
+
+      final models = (response.data['data'] as List)
+          .map((m) => ModelConfig(
+        id: m['id'],
+        name: m['id'], // Use ID as name since Ollama models typically have descriptive IDs
+        capabilities: ModelCapabilities(
+          maxContextTokens: 32768, // Default values since Ollama doesn't provide these
+          maxResponseTokens: 4096,
+          supportsStreaming: true,
+          supportsFunctions: false,
+          supportsSystemPrompt: true,
+        ),
+        settings: ModelSettings(
+          maxContextTokens: 32768,
+          maxResponseTokens: 4096,
+        ),
+        isEnabled: true, // Enable by default
+        type: 'local',
+      ))
+          .toList();
+
+      if (models.isEmpty) {
+        throw Exception('No models found. Make sure you have pulled at least one model using "ollama pull <model>"');
+      }
+
+      return models;
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        throw Exception(
+            'Could not connect to Ollama. Make sure Ollama is running and accessible at http://localhost:11434'
+        );
+      }
+      throw Exception('Failed to fetch Ollama models: ${e.message}');
+    } catch (e) {
+      throw Exception('Failed to fetch Ollama models: $e');
+    }
+  }
+}
+
+
 class HuggingfaceModelFetcher implements ModelFetcher {
   @override
-  Future<List<ModelConfig>> fetchModels([String? apiKey]) async {
+  Future<List<ModelConfig>> fetchModels([String? apiKey, String? baseUrl]) async {
     final dio = Dio(BaseOptions(
       headers: {
         'Content-Type': 'application/json',
@@ -77,7 +134,7 @@ class HuggingfaceModelFetcher implements ModelFetcher {
 
 class OpenRouterModelFetcher implements ModelFetcher {
   @override
-  Future<List<ModelConfig>> fetchModels([String? apiKey]) async {
+  Future<List<ModelConfig>> fetchModels([String? apiKey, String? baseUrl]) async {
     final dio = Dio(BaseOptions(
       headers: {
         'Content-Type': 'application/json',
@@ -112,7 +169,7 @@ class OpenRouterModelFetcher implements ModelFetcher {
 
 class OpenAIModelFetcher implements ModelFetcher {
   @override
-  Future<List<ModelConfig>> fetchModels([String? apiKey]) async {
+  Future<List<ModelConfig>> fetchModels([String? apiKey, String? baseUrl]) async {
     final dio = Dio(BaseOptions(
       headers: {
         'Content-Type': 'application/json',
@@ -147,7 +204,7 @@ class OpenAIModelFetcher implements ModelFetcher {
 
 class AnthropicModelFetcher implements ModelFetcher {
   @override
-  Future<List<ModelConfig>> fetchModels([String? apiKey]) async {
+  Future<List<ModelConfig>> fetchModels([String? apiKey, String? baseUrl]) async {
     final dio = Dio(BaseOptions(
       headers: {
         'Content-Type': 'application/json',
@@ -182,7 +239,7 @@ class AnthropicModelFetcher implements ModelFetcher {
 
 class GeminiModelFetcher implements ModelFetcher {
   @override
-  Future<List<ModelConfig>> fetchModels([String? apiKey]) async {
+  Future<List<ModelConfig>> fetchModels([String? apiKey, String? baseUrl]) async {
     final dio = Dio(BaseOptions(
       headers: {
         'Content-Type': 'application/json',
