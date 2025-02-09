@@ -56,7 +56,10 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
         }
       }
 
-      final fetchedModels = await fetcher.fetchModels();
+      final fetchedModels = await fetcher.fetchModels(
+        widget.provider.apiKey,
+        widget.provider.baseUrl,
+      );
 
       // Update models preserving existing states and edited models
       final updatedModels = fetchedModels.map((model) {
